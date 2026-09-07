@@ -81,6 +81,14 @@ textarea.mono{font-family:var(--mono);font-size:11px;line-height:1.5}
 .card .pick{position:absolute;top:6px;left:6px;width:19px;height:19px;border-radius:50%;background:rgba(255,255,255,.92);border:1px solid var(--line);display:none;align-items:center;justify-content:center;font-size:10px;color:var(--pine);font-weight:700}
 .card.sel .pick{display:flex}
 .chip{display:inline-block;font-size:10.5px;padding:2px 8px;border:1px solid var(--line);border-radius:20px;color:var(--ink-70);margin:2px 4px 0 0}
+.card.trend,.acard.trend{border-color:#C0392B;box-shadow:0 0 0 1px #C0392B inset}
+.rankbadge.tb{background:#C0392B;letter-spacing:.06em}
+.hashrow{margin-top:3px;display:flex;flex-wrap:wrap;gap:2px 3px}
+.hashchip{font-size:9.5px;color:#C0392B;border:1px solid rgba(192,57,43,.35);border-radius:20px;padding:1px 6px;line-height:1.6}
+.rankline{font-size:10px;color:#2e7d32;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.htagsug{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.htagsug .sug{font-size:10.5px;padding:2px 8px;border:1px solid var(--line);border-radius:20px;color:var(--ink-70);cursor:pointer;background:var(--white)}
+.htagsug .sug:hover{border-color:var(--sand)}
 .chip.pine{border-color:var(--pine-l);color:var(--pine);background:#fff}
 .empty{padding:30px;text-align:center;color:var(--ink-45);font-size:13px;border:1px dashed var(--line);border-radius:12px;background:var(--white)}
 .slider-wrap{margin-top:14px}
@@ -135,9 +143,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 .selbox.on{background:var(--pine);border-color:var(--pine);color:#fff}
 .card.picked{outline:2px solid var(--pine);outline-offset:-2px}
 .acard .rankbadges{left:auto;right:6px;align-items:flex-end}
-.rankbadge{color:#fff;font-size:9.5px;font-weight:700;letter-spacing:.02em;padding:2px 6px;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
-.rankbadge.fw{background:#C0392B}
-.rankbadge.ss{background:#2C6BB3}
+.rankbadge{color:#fff;background:#C0392B;font-size:9.5px;font-weight:700;letter-spacing:.02em;padding:2px 6px;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
 .salerow{display:flex;flex-direction:column;gap:1px;margin-top:2px}
 .saleamt{font-size:10px;font-weight:700}
 .saleamt.fw{color:#C0392B}
@@ -636,6 +642,15 @@ const FABRIC_OPTS=['matte nylon','glossy nylon','silk-touch nylon','taffeta','ve
 const SEASONS=['27SS','27FW','28SS','28FW','29SS','29FW'];
 const GENDER_OPTS=['WOMEN','MEN','UNISEX'];
 const GCAT_OPTS=['OUTER','TOP','BOTTOM','DRESS','ACC','SHOES'];
+const CAT_ABBR={OUTER:'OTW',TOP:'TOP',BOTTOM:'BTM',DRESS:'DRS',ACC:'ACC',SHOES:'SHO'};
+function top10Badges(sales){var b=sales.filter(function(s){return s.rank&&s.rank<=10;}).map(function(s){var h=seasonHalf(s.season);var c=s.cat?'-'+(CAT_ABBR[s.cat]||s.cat):'';return '<span class="rankbadge">'+h+c+' #'+s.rank+'</span>';}).join('');return b?'<div class="rankbadges">'+b+'</div>':'';}
+function trendActive(it){return !!(it&&it.trend);}
+function cardBadges(it,sales){var parts=[];if(trendActive(it))parts.push('<span class="rankbadge tb">TREND</span>');(sales||[]).filter(function(s){return s.rank&&s.rank<=10;}).forEach(function(s){var c=s.cat?'-'+(CAT_ABBR[s.cat]||s.cat):'';parts.push('<span class="rankbadge">'+seasonHalf(s.season)+c+' #'+s.rank+'</span>');});return parts.length?'<div class="rankbadges">'+parts.join('')+'</div>':'';}
+function parseHashtags(str){return (str||'').split(/[\s,]+/).map(function(x){return x.replace(/^#+/,'').trim();}).filter(Boolean);}
+function allHashtags(){var freq={};(state.refs||[]).concat(state.lines||[]).forEach(function(it){(it.hashtags||[]).forEach(function(h){var t=(''+h).replace(/^#/,'').trim();if(t)freq[t]=(freq[t]||0)+1;});});return Object.keys(freq).sort(function(a,b){return freq[b]-freq[a];});}
+function hashHTML(it){var hs=(it.hashtags||[]);return hs.length?'<div class="hashrow">'+hs.map(function(h){return '<span class="hashchip">#'+esc((''+h).replace(/^#/,''))+'</span>';}).join('')+'</div>':'';}
+function fmtMon(ts){try{var d=new Date(ts||Date.now());var m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];return m+" '"+String(d.getFullYear()).slice(2);}catch(e){return'';}}
+function rankHTML(it){if(!it.rank)return'';var d=it.rankDate||fmtMon(it.createdAt);return '<div class="rankline">\uD83D\uDCC8 '+esc([d,it.rank].filter(Boolean).join(', '))+'</div>';}
 const GENDER_MAP={women:'WOMEN',w:'WOMEN','여성':'WOMEN','우먼':'WOMEN','여':'WOMEN',men:'MEN',m:'MEN','남성':'MEN','맨':'MEN','남':'MEN',unisex:'UNISEX','공용':'UNISEX','유니섹스':'UNISEX'};
 const GCAT_MAP={
   outer:'OUTER','아우터':'OUTER','자켓':'OUTER','재킷':'OUTER',jacket:'OUTER',outerwear:'OUTER','코트':'OUTER',coat:'OUTER','패딩':'OUTER','다운':'OUTER','점퍼':'OUTER','블루종':'OUTER','윈드브레이커':'OUTER','바람막이':'OUTER','베스트':'OUTER','조끼':'OUTER',
@@ -973,11 +988,11 @@ function libGrid(store){
   const selMode=filtered&&state.libSelMode[store];
   grid.innerHTML=items.map(it=>{
     const sales=salesFor(it);
-    const rb=''; // 상단 오버레이 제거 — 하단 매출줄로 통일(중복·undefined 방지)
+    const rb=cardBadges(it,sales); // TREND + 시즌-카테고리 TOP10 배지
     const sa=sales.length?`<div class="salerow">`+sales.map(s=>`<span class="saleamt ${(s.rank&&s.rank<=10)?(seasonHalf(s.season)==='SS'?'ss':'fw'):'dim'}">${esc(s.season)}${s.cat?' '+esc(s.cat):''} #${s.rank||'-'} · ${esc(s.amtStr)}</span>`).join('')+`</div>`:'';
     const on=selMode&&state.libSel[store].has(it.id);
     const selbox=selMode?`<span class="selbox ${on?'on':''}">${on?'✓':''}</span>`:'';
-    return`<div class="card ${sw} ${on?'picked':''}" data-id="${it.id}" data-store="${store}">${rb}${selbox}<button class="x" data-del="${it.id}" data-store="${store}">✕</button><span class="thumb" style="background-image:url('${it.dataUrl}')"></span><div class="meta"><div class="nm">${esc(it.name)}</div><div class="tg">${esc(metaLine(store,it))}</div>${sa}</div></div>`;
+    return`<div class="card ${sw} ${on?'picked':''} ${trendActive(it)?'trend':''}" data-id="${it.id}" data-store="${store}">${rb}${selbox}<button class="x" data-del="${it.id}" data-store="${store}">✕</button><span class="thumb" style="background-image:url('${it.dataUrl}')"></span><div class="meta"><div class="nm">${esc(it.name)}</div><div class="tg">${esc(metaLine(store,it))}</div>${hashHTML(it)}${rankHTML(it)}${sa}</div></div>`;
   }).join('');
 }
 async function bulkApply(store){
@@ -1059,9 +1074,9 @@ function openArchive(store){
     gridEl.innerHTML=items.map(it=>{
       const on=isLines?state.pick.line===it.id:state.pick.refs.has(it.id);
       const sales=salesFor(it);
-      const rb=''; // 상단 오버레이 제거
+      const rb=cardBadges(it,sales);
       const sa=sales.length?`<div class="salerow">`+sales.map(s=>`<span class="saleamt ${(s.rank&&s.rank<=10)?(seasonHalf(s.season)==='SS'?'ss':'fw'):'dim'}">${esc(s.season)}${s.cat?' '+esc(s.cat):''} #${s.rank||'-'} · ${esc(s.amtStr)}</span>`).join('')+`</div>`:'';
-      return`<div class="acard ${on?'sel':''}" data-aid="${it.id}">${rb}<span class="pick">✓</span><span class="thumb" style="background-image:url('${it.dataUrl}')"></span><div class="meta"><div class="br">DISCOVERY${it.season?' · '+esc(it.season):''}</div><div class="nm">${esc(it.name)}</div><div class="tg">${esc(metaLine(store,it))}</div>${sa}</div></div>`;
+      return`<div class="acard ${on?'sel':''} ${trendActive(it)?'trend':''}" data-aid="${it.id}">${rb}<span class="pick">✓</span><span class="thumb" style="background-image:url('${it.dataUrl}')"></span><div class="meta"><div class="br">${trendActive(it)?'[TREND] ':''}DISCOVERY${it.season?' · '+esc(it.season):''}</div><div class="nm">${esc(it.name)}</div><div class="tg">${esc(metaLine(store,it))}</div>${hashHTML(it)}${rankHTML(it)}${sa}</div></div>`;
     }).join('');
   }
   chips();render();
@@ -1211,10 +1226,17 @@ function openMeta(store,id){
     <div style="flex:1"><label class="fld">카테고리</label><select id="me-gcat" class="inp"><option value=""></option>${GCAT_OPTS.map(x=>`<option ${it.gcat===x?'selected':''}>${x}</option>`).join('')}</select></div>
     <div style="flex:1"><label class="fld">시즌</label><select id="me-season" class="inp"><option value=""></option>${SEASONS.map(s=>`<option ${it.season===s?'selected':''}>${s}</option>`).join('')}</select></div></div>`;
   if(store==='lines')f+=clsFields+`<div class="row" style="margin-top:12px"><div style="flex:1"><label class="fld">세부(자유)</label><input id="me-cat" class="inp" value="${esc(it.category||'')}" placeholder="경량/Short/Long"></div><div style="flex:1"><label class="fld">라이프스타일</label><select id="me-life" class="inp"><option value=""></option>${['URBAN','ACTIVE WELLNESS','APRES-SKI'].map(x=>`<option ${it.lifestyle===x?'selected':''}>${x}</option>`).join('')}</select></div></div>`;
-  if(store==='refs')f+=clsFields+`<label class="fld" style="margin-top:12px">태그 (쉼표)</label><input id="me-tags" class="inp" value="${esc((it.tags||[]).join(', '))}" placeholder="숄카라, 다이아퀼팅, 와이드…"><label class="row" style="font-size:12px;color:var(--ink-70);gap:6px;margin-top:12px"><input type="checkbox" id="me-detail" ${it.detail?'checked':''}> 디테일(하드웨어) 레퍼런스 — 벨트·스트링·지퍼풀러 등, 전체 실루엣이 아니라 이 디테일만 채용</label>`;
+  if(store==='refs')f+=clsFields+`<label class="row" style="font-size:12px;color:#C0392B;font-weight:600;gap:6px;margin-top:12px"><input type="checkbox" id="me-trend" ${it.trend?'checked':''}> 트렌드 아이템 (빨간 테두리)</label>`+`<label class="fld" style="margin-top:12px">해시태그 (쉼표 또는 #로 구분)</label><input id="me-hashtags" class="inp" value="${esc((it.hashtags||[]).map(h=>'#'+(''+h).replace(/^#/,'')).join(' '))}" placeholder="#발레코어 #메쉬 #버건디"><div class="htagsug" id="me-htag-sug"></div>`+`<label class="fld" style="margin-top:12px">태그 (쉼표)</label><input id="me-tags" class="inp" value="${esc((it.tags||[]).join(', '))}" placeholder="숄카라, 다이아퀼팅, 와이드…">`+`<div class="row" style="margin-top:12px"><div style="flex:2"><label class="fld">랭킹 표기 (해시태그와 별도로 카드에 표시)</label><input id="me-rank" class="inp" value="${esc(it.rank||'')}" placeholder="예: 무신사 Rank #1"></div><div style="flex:1"><label class="fld">날짜 월·연 (비우면 업로드월)</label><input id="me-rankdate" class="inp" value="${esc(it.rankDate||'')}" placeholder="Jan \'26 = 2026년 1월"></div></div>`+`<label class="row" style="font-size:12px;color:var(--ink-70);gap:6px;margin-top:12px"><input type="checkbox" id="me-detail" ${it.detail?'checked':''}> 디테일(하드웨어) 레퍼런스 — 벨트·스트링·지퍼풀러 등, 전체 실루엣이 아니라 이 디테일만 채용</label>`;
   if(store==='fabrics')f+=`<label class="fld" style="margin-top:12px">원단 타입</label><input id="me-ftype" class="inp" value="${esc(it.ftype||'')}" placeholder="glossy nylon / taffeta…">`;
   $('#m-body').innerHTML=`<div class="editgrid"><div><div class="preview"><img src="${it.dataUrl}"></div></div><div>${f}<button class="btn primary sm" id="me-save" style="margin-top:16px">저장</button></div></div>`;
-  $('#me-save').onclick=async()=>{it.name=$('#me-name').value.trim()||it.name;if(store==='lines'||store==='refs'){it.gender=$('#me-gender').value;it.gcat=$('#me-gcat').value;it.season=$('#me-season').value;}if(store==='lines'){it.category=$('#me-cat').value.trim();it.lifestyle=$('#me-life').value;}if(store==='refs'){it.tags=$('#me-tags').value.split(',').map(s=>s.trim()).filter(Boolean);it.detail=$('#me-detail').checked;}if(store==='fabrics')it.ftype=$('#me-ftype').value.trim();await storePut(store,it);libGrid(store);renderPicks();$('#modal').classList.remove('on');toast('저장됨');};
+  if(store==='refs'){
+    const sugEl=$('#me-htag-sug'),inp=$('#me-hashtags');
+    const renderSug=()=>{const cur=new Set(parseHashtags(inp.value).map(x=>x.toLowerCase()));const all=allHashtags().filter(t=>!cur.has(t.toLowerCase())).slice(0,18);sugEl.innerHTML=all.length?all.map(t=>`<span class="sug" data-tag="${esc(t)}">#${esc(t)}</span>`).join(''):'<span style="font-size:10.5px;color:var(--ink-45)">기존 키워드 없음 — 입력하면 다음부터 제안됩니다</span>';};
+    renderSug();
+    sugEl.addEventListener('click',e=>{const b=e.target.closest('[data-tag]');if(!b)return;inp.value=(inp.value.trim()+' #'+b.dataset.tag).trim()+' ';renderSug();inp.focus();});
+    inp.addEventListener('input',renderSug);
+  }
+  $('#me-save').onclick=async()=>{it.name=$('#me-name').value.trim()||it.name;if(store==='lines'||store==='refs'){it.gender=$('#me-gender').value;it.gcat=$('#me-gcat').value;it.season=$('#me-season').value;}if(store==='lines'){it.category=$('#me-cat').value.trim();it.lifestyle=$('#me-life').value;}if(store==='refs'){it.tags=$('#me-tags').value.split(',').map(s=>s.trim()).filter(Boolean);it.detail=$('#me-detail').checked;it.trend=$('#me-trend').checked;it.hashtags=parseHashtags($('#me-hashtags').value);it.rank=$('#me-rank').value.trim();it.rankDate=$('#me-rankdate').value.trim();}if(store==='fabrics')it.ftype=$('#me-ftype').value.trim();await storePut(store,it);libGrid(store);renderPicks();$('#modal').classList.remove('on');toast('저장됨');};
   $('#modal').classList.add('on');
 }
 
