@@ -294,7 +294,9 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
             <div><div class="sectlabel">3 · 모델</div>
               <select id="model-source" class="inp" style="margin-bottom:6px"><option value="idol">기본 아이돌 프롬프트</option><option value="preserve">베이스 라인 모델 유지</option></select>
               <div class="hint" style="margin:0 0 8px">아래에서 모델 이미지를 선택하면 그 인물로 대체합니다.</div>
-              <div id="pick-models" class="cards"></div></div>
+              <div id="pick-models" class="cards"></div>
+              <div class="sectlabel" style="margin-top:10px">포즈 <span class="hint" style="margin:0;font-weight:400">— 생성 시 이 포즈로</span></div>
+              <div class="pillrow" id="gen-pose"></div></div>
             <div><div class="sectlabel">4 · SHELL 원단 (선택)</div><div id="pick-fabrics" class="cards"></div>
               <button class="btn sm" id="btn-fabric-analyze" style="margin-top:8px" title="선택한 원단 스와치를 비전 모델이 읽어 색·조직·광택을 텍스트로 변환해 반영">AI 원단 분석</button>
               <div class="hint" id="fabric-ai-hint" style="margin:6px 0 0">원단 이미지만으론 약하게 반영돼요. 스와치를 셀렉하면 원단타입 텍스트가 자동 반영되고, 'AI 원단 분석'을 누르면 색·조직·광택까지 텍스트로 강하게 반영됩니다.</div>
@@ -730,7 +732,7 @@ const state={
   lines:[],refs:[],models:[],fabrics:[],gallery:[],
   pick:{line:null,refs:new Set(),model:null,fabric:null},
   brief:{keep:new Set(),replace:new Set(),adopt:new Set(),fabricType:''},
-  aiAttrs:{}, jsonDirty:false, galFilter:'all', refSecretView:false, galSelMode:false, galSel:new Set(), pose:'',
+  aiAttrs:{}, jsonDirty:false, galFilter:'all', refSecretView:false, galSelMode:false, galSel:new Set(), pose:'auto',
   libFilter:{lines:{gender:'ALL',gcat:'ALL',season:'ALL'},refs:{gender:'ALL',gcat:'ALL',season:'ALL'}},
   libSelMode:{lines:false,refs:false}, libSel:{lines:new Set(),refs:new Set()},
   salesMap:{}, salesRaw:'', salesRows:[], salesByCode:{}, salesByName:{}
@@ -773,11 +775,11 @@ function volumeText(v){v=+v;return v<18?'minimal down fill, slim low-loft silhou
 function volumeHint(v){v=+v;return v<18?'슬림·경량':v<42?'로우로프트':v<68?'미드로프트':v<86?'하이로프트':'맥시멀 볼륨';}
 const POSE_LIST=[{id:'auto',ko:'자동'},{id:'walking',ko:'걷기'},{id:'arm_raised',ko:'팔 올림'},{id:'seated',ko:'앉기'},{id:'hands_on_waist',ko:'허리에 손'},{id:'yoga_mat_shoulder',ko:'요가매트 숄더'}];
 const POSE_COMMON=`Edit IMAGE 1, the original model image. IMAGE 1 is the sole source of truth for the model's identity, face, hairstyle, body proportions, clothing and styling.
-Preserve exactly from IMAGE 1: the same recognizable facial identity; the same face shape, eyes, eyebrows, nose, lips and skin tone; the same hairstyle, hair length, color and texture; the same apparent age and natural body proportions; the exact same clothing design, color, material, fit and silhouette; the same garment construction, seams, trims, accessories AND the DISCOVERY chest logo (keep the logo exactly — same position, size, print style and spelling).
+Preserve exactly from IMAGE 1: the same recognizable facial identity; the same face shape, eyes, eyebrows, nose, lips and skin tone; the same hairstyle, hair length, color and texture; the same apparent age and natural proportions; the exact same clothing design, color, material, fit and silhouette; the same garment construction, seams, trims, accessories AND the DISCOVERY chest logo (keep the logo exactly — same position, size, print style and spelling).
 Change ONLY the model's body pose according to the pose instruction below.
 STUDIO BACKGROUND LOCK: place the model in a clean professional studio with a seamless warm-white studio cyclorama, no visible horizon line, soft diffused studio lighting, evenly illuminated face and clothing, a subtle natural grounding shadow, a neutral premium fashion lookbook mood. Keep the same background tone, camera height, camera distance, lighting and model scale.
 Do not generate an outdoor setting, street, building, window, ocean, pool, plants, furniture, decorative objects, textured walls, patterns, colored lighting or harsh shadows.
-Do not redesign or restyle the model. Do not change the face, expression, makeup, hairstyle, body shape or outfit. Do not add or remove garments. Avoid extra fingers, missing fingers, fused hands, duplicated limbs, distorted anatomy and unnatural joints.
+Do not redesign or restyle the model. Do not change the face, expression, makeup, hairstyle, figure or outfit. Do not add or remove garments. Avoid extra fingers, missing fingers, fused hands, duplicated limbs, distorted anatomy and unnatural joints.
 Produce one photorealistic high-resolution vertical full-body fashion lookbook image. Keep the head, hands, outfit and feet completely inside the frame.`;
 const POSE_PROMPTS={
   auto:`Create a subtle alternative standing fashion pose for the same model. Keep the model generally facing the camera. Make only a small natural adjustment to the arms, hands, shoulders and weight distribution. Use a relaxed premium fashion lookbook posture. Do not create an exaggerated pose.`,
@@ -787,7 +789,8 @@ const POSE_PROMPTS={
   hands_on_waist:`POSE CHANGE — HANDS ON WAIST: confident standing fashion pose — both hands resting naturally on the waist or upper hips, elbows angled outward, shoulders relaxed, torso upright, legs positioned naturally, face clearly visible, premium sportswear lookbook posture. Keep both hands and fingers anatomically correct. Do not distort the waist, garment shape or clothing details.`,
   yoga_mat_shoulder:`POSE CHANGE — YOGA MAT OVER SHOULDER: natural wellness walking pose — relaxed forward step, one arm holding the strap of a rolled yoga mat, the yoga mat resting naturally beside or behind the shoulder, opposite arm moving naturally, upright relaxed posture, face clearly visible, premium active-lifestyle mood. Add only one plain, unbranded, solid-color rolled yoga mat in a muted color that coordinates with the outfit. Do not add a handbag, sunglasses or any additional accessory. Keep the same warm-white studio background.`
 };
-function renderEditPose(){const el=$('#edit-pose');if(!el)return;el.innerHTML=POSE_LIST.map(p=>'<button class="togglepill" data-epose="'+p.id+'">'+p.ko+'</button>').join('');}
+function renderEditPose(sel){const el=$('#edit-pose');if(!el)return;el.innerHTML=POSE_LIST.map(p=>'<button class="togglepill '+(sel===p.id?'on':'')+'" data-epose="'+p.id+'">'+p.ko+'</button>').join('');}
+function renderGenPose(){const el=$('#gen-pose');if(!el)return;el.innerHTML=POSE_LIST.map(p=>'<button class="togglepill '+(state.pose===p.id?'on':'')+'" data-gpose="'+p.id+'">'+p.ko+'</button>').join('');}
 
 /* ---------- plan (images + roles) ---------- */
 function computePlan(){
@@ -867,6 +870,7 @@ function buildDesignJSON(){
     garment:g,
     design_balance:+$('#balance').value/100,
     color_balance:+($('#colorbal')?$('#colorbal').value:50)/100,
+    pose:state.pose||'auto',
     ref_mix:+($('#refmix')?$('#refmix').value:50)/100,
     branding:{brand:'DISCOVERY',logo_on:!!(($('#logo-generate')&&$('#logo-generate').checked)),logo_type:'print',logo:'authentic Discovery Expedition wordmark/emblem, wearer left chest, tone-on-tone PRINT',logo_position:'upper left chest (wearer left)',logo_scale:'small refined ~6-8cm'},
     priority:{model:plan.model?'model reference':'base image',garment_structure:'reference image',brand_rules:'DISCOVERY DNA'},
@@ -927,6 +931,7 @@ function jsonToPrompt(J,plan){
   }
   if(J.design_balance!=null)S.push(`DESIGN BALANCE — ${balanceText(J.design_balance*100)}`);
   if(J.color_balance!=null)S.push(colorBalWord(J.color_balance*100));
+  if(J.pose&&J.pose!=='auto'&&POSE_PROMPTS[J.pose])S.push('MODEL POSE — '+POSE_PROMPTS[J.pose]);
   if(J.ref_mix!=null&&plan&&plan.refs&&plan.refs.filter(r=>!r.detail).length>=2)S.push('REFERENCE MIX — '+refmixText(J.ref_mix*100)+' (reference 1 = first selected image, reference 2 = second).');
   {const cz=g.closure_zip?zipperText(g.closure_zip):'';if(cz)S.push(cz);const cp=g.front_placket?placketText(g.front_placket):'';if(cp)S.push(cp);}
   if(g.fill_volume!=null)S.push('DOWN FILL VOLUME — '+volumeText(g.fill_volume*100)+'. SHELL / FILL SHOW-THROUGH follows the Sheer setting: a thinner shell reveals more baffle and fill relief, a thicker shell reads flatter and more opaque.');
@@ -1284,8 +1289,9 @@ function openEdit(gid){
         <button class="btn sm" id="edit-model-go" style="margin-top:8px">선택 모델로 재생성</button>
         <div class="sectlabel">코디 변경 &amp; 디테일 수정</div><input id="edit-cody" class="inp" placeholder="예: 아우터 기장을 엉덩이까지 · 소매 롱하게 · 와이드 데님 코디">
         <button class="btn sm" id="edit-cody-go" style="margin-top:8px">코디 &amp; 디테일 수정 생성</button>
-        <div class="sectlabel">포즈 변형</div><div class="hint">기존 이미지 그대로 포즈만 바꿔 재생성 (얼굴·옷·배경·로고 유지). 클릭하면 바로 생성.</div>
+        <div class="sectlabel">포즈 변형</div><div class="hint">기존 이미지 그대로 포즈만 바꿔 재생성 (얼굴·옷·배경·로고 유지). 포즈 선택 후 버튼을 누르세요.</div>
         <div class="pillrow" id="edit-pose"></div>
+        <button class="btn sm" id="edit-pose-go" style="margin-top:8px">포즈 수정 생성</button>
         <div class="sectlabel">마감 재조절</div>
         <div class="slider-wrap" style="margin-top:6px"><div class="slider-head"><span class="lab">Sheer</span><span class="val" id="e-sheer-v">${editG.sheer}</span></div><input type="range" id="e-sheer" min="0" max="100" value="${editG.sheer}"></div>
         <div class="slider-wrap"><div class="slider-head"><span class="lab">Shimmer 광택</span><span class="val" id="e-shimmer-v">${editG.shimmer}</span></div><input type="range" id="e-shimmer" min="0" max="100" value="${editG.shimmer}"></div>
@@ -1302,8 +1308,9 @@ function openEdit(gid){
   $('#e-volume-h').textContent=volumeHint($('#e-volume').value);
   $('#edit-model-go').onclick=()=>{if(!chosenModel){toast('모델을 선택하세요.');return;}runEdit('model',{modelId:chosenModel});};
   $('#edit-cody-go').onclick=()=>{const t=$('#edit-cody').value.trim();if(!t){toast('변경 내용을 입력하세요.');return;}runEdit('cody',{text:t});};
-  renderEditPose();
-  $('#edit-pose').onclick=e=>{const b=e.target.closest('[data-epose]');if(!b)return;runEdit('pose',{pose:b.dataset.epose});};
+  let chosenPose='auto';renderEditPose('auto');
+  $('#edit-pose').onclick=e=>{const b=e.target.closest('[data-epose]');if(!b)return;chosenPose=b.dataset.epose;renderEditPose(chosenPose);};
+  $('#edit-pose-go').onclick=()=>runEdit('pose',{pose:chosenPose});
   $('#edit-finish-go').onclick=()=>runEdit('finish',{sheer:+$('#e-sheer').value,shimmer:+$('#e-shimmer').value,volume:+$('#e-volume').value});
   $('#edit-dl').onclick=()=>{const cur=state.gallery.find(g=>g.id===editShown);download(cur.logoUrl||cur.dataUrl,cur.name+'.png');};
   $('#edit-prev').onclick=()=>{const cur=state.gallery.find(g=>g.id===editShown)||editG;openLightbox(cur.logoUrl||cur.dataUrl);};
@@ -1327,7 +1334,7 @@ async function runEdit(kind,opt){
       sheer:kind==='finish'?opt.sheer:cur.sheer,shimmer:kind==='finish'?opt.shimmer:cur.shimmer,volume:kind==='finish'?opt.volume:cur.volume,balance:cur.balance,
       designJSON:cur.designJSON,prompt,extra:cur.extra,parentId:root,createdAt:Date.now()};
     state.gallery.push(ng);await storePut('gallery',ng);editShown=ng.id;prev.innerHTML=`<img src="${logoUrl}">`;renderVersions();galleryGrid();compareSelect();toast('수정본 생성됨');
-  }catch(e){prev.innerHTML=`<img src="${cur.logoUrl||cur.dataUrl}">`;toast('수정 실패: '+e.message);}
+  }catch(e){prev.innerHTML=`<img src="${cur.logoUrl||cur.dataUrl}">`;const msg=/safety system|rejected by the safety/i.test(e.message||'')?'OpenAI 안전 시스템이 이 요청을 거부했어요(코드 오류 아님). 노출이 많은 이미지·특정 포즈에서 자주 발생 — 다른 포즈를 고르거나 옷이 더 덮인 이미지로 시도해 보세요.':('수정 실패: '+e.message);toast(msg);}
 }
 
 /* ---------- meta editor ---------- */
@@ -1551,6 +1558,7 @@ function wire(){
 
   const sync=(id,vid,hid,fn)=>{const el=$('#'+id);el.addEventListener('input',()=>{$('#'+vid).textContent=el.value;if(hid)$('#'+hid).textContent=fn(el.value);refreshJSON();});};
   sync('balance','balance-v','balance-h',balanceHint);sync('sheer','sheer-v','sheer-h',sheerHint);
+  renderGenPose();{const gp=$('#gen-pose');if(gp)gp.addEventListener('click',e=>{const b=e.target.closest('[data-gpose]');if(!b)return;state.pose=b.dataset.gpose;renderGenPose();refreshJSON();});}
   sync('colorbal','colorbal-v','colorbal-h',colorBalHint);sync('refmix','refmix-v','refmix-h',refmixHint);sync('volume','volume-v','volume-h',volumeHint);
   $('#balance-h').textContent=balanceHint(35);$('#sheer-h').textContent=sheerHint(20);
   $('#colorbal-h').textContent=colorBalHint(50);$('#refmix-h').textContent=refmixHint(50);$('#volume-h').textContent=volumeHint(50);
