@@ -329,8 +329,15 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 
           <label class="row" id="logogen-wrap" style="font-size:12px;color:var(--ink-70);gap:6px;margin-top:14px;align-items:flex-start">
             <input type="checkbox" id="logo-generate" style="margin-top:2px">
-            <span>DISCOVERY 로고 생성에 포함 <span style="color:var(--ink-45)">— 켜면 착용자 왼가슴에 정품 5각 배지(톤온톤)를 생성 단계에서 그려 넣습니다. 끄면 무지로 생성 후 갤러리에서 로고 후처리 합성.</span></span>
+            <span>DISCOVERY 로고 생성에 포함 <span style="color:var(--ink-45)">— 켜면 업로드한 Discovery 로고를 레퍼로 넘겨 착용자 왼가슴에 <b>마크만(네모 박스 없이)</b> 톤온톤으로 그려 넣습니다. 끄면 무지로 생성.</span></span>
           </label>
+          <div class="row" id="logotype-wrap" style="gap:8px;margin-top:8px;align-items:center">
+            <label class="fld" style="margin:0">로고 형태</label>
+            <select id="logo-type" class="inp sm" style="width:auto">
+              <option value="patch">와펜 (자수·우븐 패치)</option>
+              <option value="print">프린트 (톤온톤 프린트)</option>
+            </select>
+          </div>
 
           <div style="margin-top:16px"><label class="fld">추가 디렉션 (선택)</label>
             <textarea id="extra" class="inp" placeholder="예: 벨티드 실루엣, 페이크퍼 트리밍, 딥 버건디 컬러웨이…"></textarea></div>
@@ -614,7 +621,12 @@ async function toBlob(du){if(/^data:/.test(du))return dataUrlToBlob(du);const r=
 /* ---------- defaults ---------- */
 const DNA_DEFAULT=`Premium Italian down outerwear house. Lightweight yet dimensional construction; sophisticated nylon surface with a subtle glossy or silky finish. Refined rather than sporty quilting; clean high-density stitching; premium volume control; modern feminine silhouette with controlled waist definition when appropriate. Avoid cheap flat quilting, avoid overly tactical outdoor appearance, avoid generic mass-market proportions. QUILTING RULE: diamond quilting must read clean, symmetrical and softly dimensional with consistent stitch tension and premium loft. LOGO RULE: do NOT draw any brand logo, patch, label or lettering on the garment — the surface stays completely blank and unbranded; the DISCOVERY logo is added later in post-production.`;
 const BASE_MODEL_DEFAULT=`Beautiful young adult Korean female K-pop idol, unmistakably Korean features: small refined oval face, soft V-line jaw, clear luminous skin, natural glossy hair. Minimal clean white studio background, full-length editorial lookbook lighting, wearing a Discovery-inspired premium piece.`;
-const LOGO_RULE=`DISCOVERY LOGO — MANDATORY BRAND RULE. Every generated DISCOVERY outerwear design MUST include exactly one DISCOVERY logo badge on the WEARER'S LEFT CHEST (viewer's right in a front-facing image). LOGO DESIGN: use the authentic DISCOVERY pentagonal badge silhouette — a horizontally wide pentagon with a distinct downward-pointing center at the bottom; display the word "DISCOVERY" once, correctly spelled, centered inside the badge; keep the logo small, refined, premium and proportionate to the garment, approximate physical width 5-6 cm. TONE-ON-TONE COLOR RULE: automatically derive the badge color from the garment's main outer-shell color; use the same hue family as the outer fabric; the badge may be only slightly darker or lighter than the garment with subtle tonal contrast; the logo must look integrated into the garment, not like a contrasting graphic; match the surface character of the outer fabric — matte on matte fabric, softly lustrous on glossy or velvet fabric. PLACEMENT RULE: fix the badge to the upper-left chest of the wearer; do not move it to the wearer's right chest, sleeve, collar, hem, pocket or center front; do not duplicate the logo; if the body is turned, preserve its true physical position on the wearer's left chest, allowing natural perspective or partial occlusion instead of relocating it. PROHIBITED: no rectangular or square logo patch; no generic shield, hexagon or upside-down badge; no white, gold, silver or high-contrast border unless explicitly requested; no oversized logo; no floating, printed, distorted, mirrored, duplicated or misspelled logo; no additional branding or text anywhere else on the garment. This is a mandatory construction element, not an optional styling detail.`;
+function logoRule(type){
+  var common='DISCOVERY LOGO — MANDATORY. Place exactly ONE DISCOVERY brand mark on the WEARER\'S LEFT CHEST (viewer\'s right in a front-facing image). Reproduce the authentic "Discovery Expedition" mark (the round globe/line emblem next to the word "Discovery") from the provided LOGO REFERENCE image — correct spelling and proportions. Keep it small and refined, physical width about 6-8 cm. TONE-ON-TONE: derive the mark colour from the garment main shell colour, only subtly lighter or darker, so it reads integrated into the fabric rather than a contrasting graphic. PLACEMENT: wearer upper-left chest only — never sleeve, collar, hem, pocket, center-front or right chest; never duplicate it. CRITICAL — render ONLY the mark itself directly on the garment fabric: do NOT include the reference image background, do NOT add any rectangular or square plaque, box, sticker, card, tag or border around it, and do NOT float it above the surface. No oversized, mirrored, distorted or misspelled logo; no other lettering or branding anywhere else on the garment.';
+  var patch=' FORM = WOVEN / EMBROIDERED PATCH (와펜): render the mark as a small embroidered or woven appliqué that conforms to the fabric surface and drape, with a subtle stitched tonal edge that hugs the mark outline and a slight raised thread texture — no large rectangular backing.';
+  var print=' FORM = FLAT PRINT (프린트): render the mark as a flat tonal screen-print / heat-transfer applied directly onto the fabric — no raised edge, no stitching, no backing plate; it moves and drapes with the fabric like printed ink.';
+  return common+((type==='print')?print:patch);
+}
 
 /* ---------- category model ---------- */
 function matDefault(){return{fabric_type:'',surface:'',finish:'',semi_sheer:0.2,shimmer:0.25,shell_ref:false};}
@@ -750,7 +762,7 @@ function computePlan(){
   const detailRole=`DETAIL / hardware reference — reproduce ONLY this DISCOVERY branded detail (logo drawcord/string, waist belt with engraved buckle, or branded zipper pull) on the garment; do NOT treat it as the overall ${noun} shape`;
   const roleFor=r=>r.detail?detailRole:designRole;
   const pushList=arr=>arr.forEach(r=>{images.push(r.dataUrl);roles.push(roleFor(r));});
-  const pushShell=()=>{if(shell){images.push(shell.dataUrl);roles.push('FINAL image = flat FABRIC SWATCH (material sample, not a garment) — replicate its colour, weave, texture and sheen across the whole garment shell; never copy its shape');}};
+  const pushShell=()=>{if(shell){images.push(shell.dataUrl);roles.push('a flat FABRIC SWATCH image (material sample, not a garment) — replicate its colour, weave, texture and sheen across the whole garment shell; never copy its shape');}};
   const designRefs=refs.filter(r=>!r.detail);
   let refLed=false;
   if(modelMode==='image'){
@@ -772,6 +784,8 @@ function computePlan(){
       pushList(refs);pushShell();
     }
   }
+  const _logoOn=!!($('#logo-generate')&&$('#logo-generate').checked);
+  if(_logoOn&&state.settings.logoDataUrl){images.push(state.settings.logoDataUrl);roles.push('DISCOVERY LOGO reference (small emblem) — reproduce ONLY this mark on the wearer left chest; ignore its background/box; never paste it as a rectangular patch');}
   return{line,model,refs,shell,images,roles,noun,hasModel:modelMode==='image',modelMode,refLed,balance:bal};
 }
 
@@ -802,7 +816,7 @@ function buildDesignJSON(){
     keep:[...state.brief.keep], replace:[...state.brief.replace], adopt_from_ref:[...state.brief.adopt],
     garment:g,
     design_balance:+$('#balance').value/100,
-    branding:{brand:'DISCOVERY',logo_on:!!(($('#logo-generate')&&$('#logo-generate').checked)),logo:'authentic DISCOVERY pentagonal badge, wearer left chest, tone-on-tone',logo_position:'upper left chest (wearer left)',logo_scale:'small refined 5-6cm'},
+    branding:{brand:'DISCOVERY',logo_on:!!(($('#logo-generate')&&$('#logo-generate').checked)),logo_type:(($('#logo-type')&&$('#logo-type').value)||'patch'),logo:'authentic Discovery Expedition wordmark/emblem, wearer left chest, tone-on-tone',logo_position:'upper left chest (wearer left)',logo_scale:'small refined ~6-8cm'},
     priority:{model:plan.model?'model reference':'base image',garment_structure:'reference image',brand_rules:'DISCOVERY DNA'},
     notes:$('#extra').value.trim()
   };
@@ -855,18 +869,19 @@ function jsonToPrompt(J,plan){
   if(md.length)S.push(`MATERIAL — ${md.join('; ')}.`);
   if(m.shell_ref){
     const nm=m.shell_name?` (${m.shell_name})`:'';
-    S.push(`FABRIC SWATCH${nm} — the FINAL image is a flat fabric swatch, a material sample and NOT a garment. Reproduce its exact colour, weave, texture and surface sheen across the ENTIRE ${noun} shell so the fabric reads identical to the swatch. Apply it as the overall material — do not paste the swatch as a panel, pocket or patch, and do not copy any shape from it.`);
+    S.push(`FABRIC SWATCH${nm} — the fabric-swatch image is a flat fabric swatch, a material sample and NOT a garment. Reproduce its exact colour, weave, texture and surface sheen across the ENTIRE ${noun} shell so the fabric reads identical to the swatch. Apply it as the overall material — do not paste the swatch as a panel, pocket or patch, and do not copy any shape from it.`);
   }
   if(J.design_balance!=null)S.push(`DESIGN BALANCE — ${balanceText(J.design_balance*100)}`);
   const b=J.branding||{};
   if(b.logo_on){
-    S.push(LOGO_RULE);
-    S.push(`Aside from this single DISCOVERY chest badge, keep every other surface of the garment clean and unbranded — no other logo, lettering, woven label or emblem anywhere.`);
+    S.push(logoRule(b.logo_type));
+    S.push(`Aside from this single DISCOVERY chest mark, keep every other surface of the garment clean and unbranded — no other logo, lettering, woven label or emblem anywhere.`);
   }else{
     S.push(`BRANDING — the garment surface must be COMPLETELY BLANK: no brand logo, no lettering, no woven label, no rubber patch, no emblem anywhere on the chest, sleeve, hood or body. Do NOT render any "DISCOVERY" text or any logo-like mark. The brand logo is composited separately in post-production, so keep every surface clean and unbranded.`);
   }
   if(J.notes)S.push(`ADDITIONAL — ${J.notes}.`);
   if(rolesText)S.push(`IMAGE ROLES — ${rolesText}.`);
+  S.push('FUR RULE — if the base or reference garment already has a fur collar, fur hood-trim or fur placket, keep ONLY that existing fur exactly as-is; do NOT add a second, additional or different fur collar/trim, and never layer new fur over existing fur. Add fur only when the garment has none AND it is explicitly requested.');
   S.push('Clean studio lighting, neutral seamless background, photorealistic, editorial luxury quality, sharp premium detail.');
   return S.join(' ');
 }
@@ -1432,6 +1447,7 @@ function wire(){
   $('#model-source').addEventListener('change',()=>updatePromptPrev());
   $('#extra').addEventListener('input',()=>refreshJSON());
   $('#logo-generate').addEventListener('change',()=>refreshJSON(true));
+  {const _lt=$('#logo-type');if(_lt)_lt.addEventListener('change',()=>refreshJSON(true));}
   $('#designjson').addEventListener('input',()=>{state.jsonDirty=true;updatePromptPrev();});
   $('#btn-rebuild').addEventListener('click',()=>{state.jsonDirty=false;refreshJSON(true);toast('브리프로 재생성됨');});
   $('#btn-analyze').addEventListener('click',analyzeRefs);
