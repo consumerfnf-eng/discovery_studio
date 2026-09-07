@@ -295,7 +295,8 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
               <select id="model-source" class="inp" style="margin-bottom:6px"><option value="idol">기본 아이돌 프롬프트</option><option value="preserve">베이스 라인 모델 유지</option></select>
               <div class="hint" style="margin:0 0 8px">아래에서 모델 이미지를 선택하면 그 인물로 대체합니다.</div>
               <div id="pick-models" class="cards"></div>
-              <label class="row" style="font-size:12px;color:var(--ink-70);gap:6px;margin-top:8px;align-items:flex-start"><input type="checkbox" id="pose-only" style="margin-top:2px"><span>선택한 모델의 <b>포즈만 참고</b> <span style="color:var(--ink-45)">— 모델의 포즈·구도·배경만 가져오고 얼굴·인물은 새 아이돌로 생성(옷은 디자인대로).</span></span></label></div>
+              <div class="sectlabel" style="margin-top:10px">포즈 <span class="hint" style="margin:0;font-weight:400">— 클릭해서 선택 (얼굴은 살짝만 · 포즈만 변형 · 스튜디오 배경 유지)</span></div>
+              <div class="pillrow" id="pose-pills"></div></div>
             <div><div class="sectlabel">4 · SHELL 원단 (선택)</div><div id="pick-fabrics" class="cards"></div>
               <button class="btn sm" id="btn-fabric-analyze" style="margin-top:8px" title="선택한 원단 스와치를 비전 모델이 읽어 색·조직·광택을 텍스트로 변환해 반영">AI 원단 분석</button>
               <div class="hint" id="fabric-ai-hint" style="margin:6px 0 0">원단 이미지만으론 약하게 반영돼요. 스와치를 셀렉하면 원단타입 텍스트가 자동 반영되고, 'AI 원단 분석'을 누르면 색·조직·광택까지 텍스트로 강하게 반영됩니다.</div>
@@ -727,7 +728,7 @@ const state={
   lines:[],refs:[],models:[],fabrics:[],gallery:[],
   pick:{line:null,refs:new Set(),model:null,fabric:null},
   brief:{keep:new Set(),replace:new Set(),adopt:new Set(),fabricType:''},
-  aiAttrs:{}, jsonDirty:false, galFilter:'all', refSecretView:false, galSelMode:false, galSel:new Set(),
+  aiAttrs:{}, jsonDirty:false, galFilter:'all', refSecretView:false, galSelMode:false, galSel:new Set(), pose:'',
   libFilter:{lines:{gender:'ALL',gcat:'ALL',season:'ALL'},refs:{gender:'ALL',gcat:'ALL',season:'ALL'}},
   libSelMode:{lines:false,refs:false}, libSel:{lines:new Set(),refs:new Set()},
   salesMap:{}, salesRaw:'', salesRows:[], salesByCode:{}, salesByName:{}
@@ -768,6 +769,15 @@ function adoptClauses(J,noun){
 }
 function volumeText(v){v=+v;return v<18?'minimal down fill, slim low-loft silhouette, barely padded':v<42?'light down fill, soft low-to-mid loft, lean profile':v<68?'medium down fill, balanced rounded loft':v<86?'high down fill, plump voluminous loft, pronounced puffiness':'maximum down fill, extremely puffy oversized high-loft volume';}
 function volumeHint(v){v=+v;return v<18?'슬림·경량':v<42?'로우로프트':v<68?'미드로프트':v<86?'하이로프트':'맥시멀 볼륨';}
+const POSES=[
+  {k:'walk',ko:'걷기',en:'walking naturally toward the camera, mid-stride, relaxed full-body editorial pose'},
+  {k:'armup',ko:'팔 올림',en:'one arm raised up near the head/hair, relaxed editorial full-body pose'},
+  {k:'sit',ko:'앉기',en:'seated on a simple low block or stool, relaxed full-body editorial pose'},
+  {k:'hiphand',ko:'허리에 손',en:'standing with one hand on the hip/waist, confident full-body pose'},
+  {k:'sideyoga',ko:'요가매트 옆선',en:'holding a rolled yoga mat/roll under one arm, body turned to show the side profile and silhouette, full-body pose'}
+];
+function poseText(k){const p=POSES.find(x=>x.k===k);return p?p.en:'';}
+function renderPosePills(){const el=$('#pose-pills');if(!el)return;el.innerHTML='<button class="togglepill '+(!state.pose?'on':'')+'" data-pose="">자동</button>'+POSES.map(p=>'<button class="togglepill '+(state.pose===p.k?'on':'')+'" data-pose="'+p.k+'">'+p.ko+'</button>').join('');}
 
 /* ---------- plan (images + roles) ---------- */
 function computePlan(){
@@ -779,7 +789,6 @@ function computePlan(){
   const sel=($('#model-source')&&$('#model-source').value)||'idol';
   const modelMode=model?'image':sel; // image | preserve | idol
   const bal=+($('#balance')?$('#balance').value:35);
-  const poseOnly=!!($('#pose-only')&&$('#pose-only').checked);
   const images=[],roles=[];
   const designRole=`${noun} reference — adopt its silhouette, neckline, collar and distinctive design for the ${noun}`;
   const detailRole=`DETAIL / hardware reference — reproduce ONLY this DISCOVERY branded detail (logo drawcord/string, waist belt with engraved buckle, or branded zipper pull) on the garment; do NOT treat it as the overall ${noun} shape`;
@@ -789,7 +798,7 @@ function computePlan(){
   const designRefs=refs.filter(r=>!r.detail);
   let refLed=false;
   if(modelMode==='image'){
-    images.push(model.dataUrl);roles.push(poseOnly?'POSE / COMPOSITION reference ONLY — copy this person\'s body pose, camera framing and background; do NOT reproduce their face, hair or identity (a NEW model is generated)':'THE MODEL to keep and dress — the output MUST show this exact person (face, hair, skin tone, body), wearing the new garment');
+    images.push(model.dataUrl);roles.push('THE MODEL to keep and dress — the output MUST show this exact person (face, hair, skin tone, body), wearing the new garment');
     if(line){images.push(line.dataUrl);roles.push(`DISCOVERY base form — source of the ${noun} design, outfit styling, pose and background (its person is NOT used)`);}
     pushList(refs);pushShell();
   }else if(modelMode==='preserve'){
@@ -847,7 +856,7 @@ function buildDesignJSON(){
     design_balance:+$('#balance').value/100,
     color_balance:+($('#colorbal')?$('#colorbal').value:50)/100,
     ref_mix:+($('#refmix')?$('#refmix').value:50)/100,
-    pose_only:!!($('#pose-only')&&$('#pose-only').checked),
+    pose:state.pose||'',
     branding:{brand:'DISCOVERY',logo_on:!!(($('#logo-generate')&&$('#logo-generate').checked)),logo_type:'print',logo:'authentic Discovery Expedition wordmark/emblem, wearer left chest, tone-on-tone PRINT',logo_position:'upper left chest (wearer left)',logo_scale:'small refined ~6-8cm'},
     priority:{model:plan.model?'model reference':'base image',garment_structure:'reference image',brand_rules:'DISCOVERY DNA'},
     notes:$('#extra').value.trim()
@@ -874,7 +883,7 @@ function jsonToPrompt(J,plan){
   S.push(`Full-body premium DISCOVERY fashion lookbook photograph for the ${J.target_season||'27FW'} season.`);
   if(dna)S.push(dna);
   if(mode==='image'){
-    if(!J.pose_only)S.push(`Show the EXACT person from image 1 — keep their face, hair, skin tone and body identical — now wearing a newly designed DISCOVERY ${noun}. Do not change who the person is; this is a dressing/try-on task.`);
+    S.push(`Show the EXACT person from image 1 — keep their face, hair, skin tone and body identical — now wearing a newly designed DISCOVERY ${noun}. Do not change who the person is; this is a dressing/try-on task.`);
     S.push(`${noun.toUpperCase()} DESIGN — construct the new ${noun} from image 2 (the DISCOVERY base form) together with the reference image(s), balanced per DESIGN BALANCE below.`);
     adoptClauses(J,noun).forEach(c=>S.push(c));
     S.push(`STYLING & POSE — follow the outfit styling, pose, framing and background of image 2, but the person is always the model from image 1.`);
@@ -910,7 +919,7 @@ function jsonToPrompt(J,plan){
   if(J.ref_mix!=null&&plan&&plan.refs&&plan.refs.filter(r=>!r.detail).length>=2)S.push('REFERENCE MIX — '+refmixText(J.ref_mix*100)+' (reference 1 = first selected image, reference 2 = second).');
   {const cz=g.closure_zip?zipperText(g.closure_zip):'';if(cz)S.push(cz);const cp=g.front_placket?placketText(g.front_placket):'';if(cp)S.push(cp);}
   if(g.fill_volume!=null)S.push('DOWN FILL VOLUME — '+volumeText(g.fill_volume*100)+'. SHELL / FILL SHOW-THROUGH follows the Sheer setting: a thinner shell reveals more baffle and fill relief, a thicker shell reads flatter and more opaque.');
-  if(J.pose_only){if(mode!=='idol'&&state.settings.baseModelPrompt)S.push('SUBJECT / MODEL — '+state.settings.baseModelPrompt.trim());S.push("POSE REFERENCE ONLY — copy ONLY the body pose, camera framing and background from the base/reference image; do NOT reproduce that person's face, hair or identity, and do NOT copy their existing clothing. Generate a NEW model per the SUBJECT/MODEL description in that same pose, wearing the newly designed garment.");}
+  if(J.pose){S.push('POSE — place the model in this pose: '+poseText(J.pose)+'. Vary the pose only slightly and naturally. Keep the model\'s FACE and identity LARGELY THE SAME — only a slight, subtle variation is allowed; do NOT change who the person is. Keep the existing plain studio background unchanged.');}
   S.push('MATERIAL QUALITY — every DISCOVERY material and component is PREMIUM QUALITY: high-grade shell fabric, premium lofty down/fill, refined tonal hardware and clean high-density finishing; luxury-level make, never cheap, flimsy, stiff, plasticky or mass-market.');
   const b=J.branding||{};
   if(b.logo_on){
@@ -1530,7 +1539,8 @@ function wire(){
   $('#balance-h').textContent=balanceHint(35);
   $('#colorbal-h').textContent=colorBalHint(50);$('#refmix-h').textContent=refmixHint(50);$('#volume-h').textContent=volumeHint(50);
   ['#c-zipper','#c-placket'].forEach(id=>{const el=$(id);if(el)el.addEventListener('change',()=>refreshJSON());});
-  {const po=$('#pose-only');if(po)po.addEventListener('change',()=>refreshJSON());}
+  renderPosePills();
+  {const pel=$('#pose-pills');if(pel)pel.addEventListener('click',e=>{const b=e.target.closest('[data-pose]');if(!b)return;state.pose=b.dataset.pose;renderPosePills();refreshJSON();});}
   $('#season').addEventListener('change',renderPicks);
   $('#cat-parent').addEventListener('change',()=>applyCategory(true));
   $('#cat-sub').addEventListener('change',()=>{updateVolumeVis();refreshJSON();});
