@@ -959,8 +959,7 @@ function libGrid(store){
   const selMode=filtered&&state.libSelMode[store];
   grid.innerHTML=items.map(it=>{
     const sales=salesFor(it);
-    const _b=sales.filter(s=>s.rank<=10).map(s=>`<span class="rankbadge ${s.half==='SS'?'ss':'fw'}">${s.half} #${s.rank}</span>`).join('');
-    const rb=_b?`<div class="rankbadges">${_b}</div>`:'';
+    const rb=''; // 상단 오버레이 제거 — 하단 매출줄로 통일(중복·undefined 방지)
     const sa=sales.length?`<div class="salerow">`+sales.map(s=>`<span class="saleamt ${(s.rank&&s.rank<=10)?(seasonHalf(s.season)==='SS'?'ss':'fw'):'dim'}">${esc(s.season)}${s.cat?' '+esc(s.cat):''} #${s.rank||'-'} · ${esc(s.amtStr)}</span>`).join('')+`</div>`:'';
     const on=selMode&&state.libSel[store].has(it.id);
     const selbox=selMode?`<span class="selbox ${on?'on':''}">${on?'✓':''}</span>`:'';
@@ -1046,8 +1045,7 @@ function openArchive(store){
     gridEl.innerHTML=items.map(it=>{
       const on=isLines?state.pick.line===it.id:state.pick.refs.has(it.id);
       const sales=salesFor(it);
-      const _b=sales.filter(s=>s.rank<=10).map(s=>`<span class="rankbadge ${s.half==='SS'?'ss':'fw'}">${s.half} #${s.rank}</span>`).join('');
-      const rb=_b?`<div class="rankbadges">${_b}</div>`:'';
+      const rb=''; // 상단 오버레이 제거
       const sa=sales.length?`<div class="salerow">`+sales.map(s=>`<span class="saleamt ${(s.rank&&s.rank<=10)?(seasonHalf(s.season)==='SS'?'ss':'fw'):'dim'}">${esc(s.season)}${s.cat?' '+esc(s.cat):''} #${s.rank||'-'} · ${esc(s.amtStr)}</span>`).join('')+`</div>`:'';
       return`<div class="acard ${on?'sel':''}" data-aid="${it.id}">${rb}<span class="pick">✓</span><span class="thumb" style="background-image:url('${it.dataUrl}')"></span><div class="meta"><div class="br">DISCOVERY${it.season?' · '+esc(it.season):''}</div><div class="nm">${esc(it.name)}</div><div class="tg">${esc(metaLine(store,it))}</div>${sa}</div></div>`;
     }).join('');
@@ -1222,13 +1220,17 @@ function seasonHalf(season){return /FW$/i.test(season||'')?'FW':/SS$/i.test(seas
 function salesFor(it){
   let hits=[];
   const code=codeOf(it);
-  if(code&&state.salesByCode&&state.salesByCode[code])hits=state.salesByCode[code].slice();
-  if(!hits.length&&state.salesByName){                 // 코드 매칭 실패 시 이름 정규화 부분일치 폴백
-    const nn=normName(it.name);
-    if(nn){
-      if(state.salesByName[nn])hits=state.salesByName[nn].slice();
-      else{for(const k in state.salesByName){if(k.includes(nn)||nn.includes(k))hits=hits.concat(state.salesByName[k]);}}
+  if(code&&state.salesByCode){
+    if(state.salesByCode[code])hits=state.salesByCode[code].slice();
+    else{ // 스타일코드↔SKU(색상 접미) 접두 매칭
+      for(const k in state.salesByCode){
+        if(k.length>=8&&code.length>=8&&(k.startsWith(code)||code.startsWith(k)))hits=hits.concat(state.salesByCode[k]);
+      }
     }
+  }
+  if(!hits.length&&state.salesByName){ // 코드 매칭 실패 시에만: 이름 '완전일치'만(부분일치 금지 — 서로 다른 상품이 같은 랭크로 뭉치는 것 방지)
+    const nn=normName(it.name);
+    if(nn&&state.salesByName[nn])hits=state.salesByName[nn].slice();
   }
   const bySeason={};hits.forEach(h=>{if(!bySeason[h.season]||h.amt>bySeason[h.season].amt)bySeason[h.season]=h;});
   return Object.values(bySeason).sort((x,y)=>seasonSortKey(y.season)-seasonSortKey(x.season)); // 시즌 최신순
