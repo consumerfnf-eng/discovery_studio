@@ -294,7 +294,8 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
             <div><div class="sectlabel">3 · 모델</div>
               <select id="model-source" class="inp" style="margin-bottom:6px"><option value="idol">기본 아이돌 프롬프트</option><option value="preserve">베이스 라인 모델 유지</option></select>
               <div class="hint" style="margin:0 0 8px">아래에서 모델 이미지를 선택하면 그 인물로 대체합니다.</div>
-              <div id="pick-models" class="cards"></div></div>
+              <div id="pick-models" class="cards"></div>
+              <label class="row" style="font-size:12px;color:var(--ink-70);gap:6px;margin-top:8px;align-items:flex-start"><input type="checkbox" id="pose-only" style="margin-top:2px"><span>선택한 모델의 <b>포즈만 참고</b> <span style="color:var(--ink-45)">— 모델의 포즈·구도·배경만 가져오고 얼굴·인물은 새 아이돌로 생성(옷은 디자인대로).</span></span></label></div>
             <div><div class="sectlabel">4 · SHELL 원단 (선택)</div><div id="pick-fabrics" class="cards"></div>
               <button class="btn sm" id="btn-fabric-analyze" style="margin-top:8px" title="선택한 원단 스와치를 비전 모델이 읽어 색·조직·광택을 텍스트로 변환해 반영">AI 원단 분석</button>
               <div class="hint" id="fabric-ai-hint" style="margin:6px 0 0">원단 이미지만으론 약하게 반영돼요. 스와치를 셀렉하면 원단타입 텍스트가 자동 반영되고, 'AI 원단 분석'을 누르면 색·조직·광택까지 텍스트로 강하게 반영됩니다.</div>
@@ -328,18 +329,9 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
             <input type="range" id="refmix" min="0" max="100" value="50">
             <div class="row" style="justify-content:space-between;margin-top:3px"><span class="slider-hint" style="margin:0">◀ 1번 레퍼</span><span class="slider-hint" id="refmix-h" style="margin:0;color:var(--pine);font-weight:600"></span><span class="slider-hint" style="margin:0">2번 레퍼 ▶</span></div>
           </div>
-          <label class="row" style="font-size:12px;color:var(--ink-70);gap:6px;margin-top:6px;align-items:flex-start"><input type="checkbox" id="pose-only" style="margin-top:2px"><span>모델 포즈만 참고하고 다시 생성 <span style="color:var(--ink-45)">— 베이스/레퍼의 포즈·구도·배경만 참고, 얼굴·인물은 새 아이돌로, 옷은 디자인대로 새로 생성.</span></span></label>
 
           <div class="sectlabel">소재 / FABRIC</div>
           <div class="pillrow" id="fabric-pills"></div>
-          <div class="slider-wrap">
-            <div class="slider-head"><span class="lab">Sheer 시스루</span><span class="val" id="sheer-v">20</span></div>
-            <input type="range" id="sheer" min="0" max="100" value="20"><div class="slider-hint" id="sheer-h"></div>
-          </div>
-          <div class="slider-wrap">
-            <div class="slider-head"><span class="lab">Shimmer 광택</span><span class="val" id="shimmer-v">25</span></div>
-            <input type="range" id="shimmer" min="0" max="100" value="25"><div class="slider-hint" id="shimmer-h"></div>
-          </div>
 
           <div id="construction-wrap">
           <div class="sectlabel">구조 디테일</div>
@@ -347,7 +339,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
             <div><label class="fld" style="margin:0">지퍼</label><select id="c-zipper" class="inp sm"><option value="">자동</option><option value="waterproof">워터프루프(방수 라미)</option><option value="stormflap">스톰플랩(플랩 덮개)</option><option value="exposed">노출형</option></select></div>
             <div><label class="fld" style="margin:0">플라켓</label><select id="c-placket" class="inp sm"><option value="">자동</option><option value="placket">있음</option><option value="no-placket">없음</option></select></div>
           </div>
-          <div class="slider-wrap">
+          <div class="slider-wrap" id="volume-wrap">
             <div class="slider-head"><span class="lab">충전재 볼륨</span><span class="val" id="volume-v">50</span></div>
             <input type="range" id="volume" min="0" max="100" value="50"><div class="slider-hint" id="volume-h"></div>
           </div>
@@ -787,6 +779,7 @@ function computePlan(){
   const sel=($('#model-source')&&$('#model-source').value)||'idol';
   const modelMode=model?'image':sel; // image | preserve | idol
   const bal=+($('#balance')?$('#balance').value:35);
+  const poseOnly=!!($('#pose-only')&&$('#pose-only').checked);
   const images=[],roles=[];
   const designRole=`${noun} reference — adopt its silhouette, neckline, collar and distinctive design for the ${noun}`;
   const detailRole=`DETAIL / hardware reference — reproduce ONLY this DISCOVERY branded detail (logo drawcord/string, waist belt with engraved buckle, or branded zipper pull) on the garment; do NOT treat it as the overall ${noun} shape`;
@@ -796,14 +789,14 @@ function computePlan(){
   const designRefs=refs.filter(r=>!r.detail);
   let refLed=false;
   if(modelMode==='image'){
-    images.push(model.dataUrl);roles.push('THE MODEL to keep and dress — the output MUST show this exact person (face, hair, skin tone, body), wearing the new garment');
+    images.push(model.dataUrl);roles.push(poseOnly?'POSE / COMPOSITION reference ONLY — copy this person\'s body pose, camera framing and background; do NOT reproduce their face, hair or identity (a NEW model is generated)':'THE MODEL to keep and dress — the output MUST show this exact person (face, hair, skin tone, body), wearing the new garment');
     if(line){images.push(line.dataUrl);roles.push(`DISCOVERY base form — source of the ${noun} design, outfit styling, pose and background (its person is NOT used)`);}
     pushList(refs);pushShell();
   }else if(modelMode==='preserve'){
     if(line){images.push(line.dataUrl);roles.push(`base lookbook — preserve its model, face, hair, pose, background and everything except the ${noun}`);}
     pushList(refs);pushShell();
   }else{ // idol
-    refLed=bal>=60&&designRefs.length>0;
+    refLed=(bal>=60||!line)&&designRefs.length>0; // 라인 없으면 레퍼 단독 생성
     if(refLed){
       const primary=designRefs[0];
       images.push(primary.dataUrl);roles.push(`PRIMARY ${noun} reference — build the garment ON this shape, silhouette and neckline`);
@@ -827,8 +820,7 @@ function buildDesignJSON(){
   const parent=$('#cat-parent').value, sub=$('#cat-sub').value, C=CATEGORIES[parent];
   let g=C.attrs();
   deepFill(g,state.aiAttrs.garment);
-  g.material.semi_sheer=+$('#sheer').value/100;
-  g.material.shimmer=+$('#shimmer').value/100;
+  g.material.semi_sheer=null;g.material.shimmer=null; // Sheer/Shimmer는 생성 아닌 '수정' 단계에서만
   g.material.shell_ref=!!plan.shell;
   // 스와치 → 텍스트 브릿지: 원단을 셀렉하면 그 스와치의 원단타입/AI분석 텍스트를 소재 설명에 함께 실어
   // (이미지만으론 약해서 TEXT보다 못하던 문제 해결) 우선순위: 수동 FABRIC 칩 > 스와치 ftype > AI 원단분석
@@ -845,7 +837,8 @@ function buildDesignJSON(){
   if(pk)g.front_placket=pk;
   // 퀼팅은 수동 셀렉트 없이 레퍼(가먼트) 분석·AI 원단분석에서 도출
   if(fabAI.quilting&&(fabAI.quilting.type||fabAI.quilting.scale)){g.quilting=g.quilting||{};if(fabAI.quilting.type&&!g.quilting.type)g.quilting.type=fabAI.quilting.type;if(fabAI.quilting.scale&&!g.quilting.scale)g.quilting.scale=fabAI.quilting.scale;}
-  g.fill_volume=+($('#volume')?$('#volume').value:50)/100;
+  const volVis=$('#volume-wrap')&&$('#volume-wrap').style.display!=='none';
+  g.fill_volume=volVis?(+($('#volume')?$('#volume').value:50)/100):null; // 충전재 볼륨은 INSULATION·DOWN만
   return{
     target_season:target, source_season:source,
     category:{parent,sub,noun:C.noun},
@@ -881,7 +874,7 @@ function jsonToPrompt(J,plan){
   S.push(`Full-body premium DISCOVERY fashion lookbook photograph for the ${J.target_season||'27FW'} season.`);
   if(dna)S.push(dna);
   if(mode==='image'){
-    S.push(`Show the EXACT person from image 1 — keep their face, hair, skin tone and body identical — now wearing a newly designed DISCOVERY ${noun}. Do not change who the person is; this is a dressing/try-on task.`);
+    if(!J.pose_only)S.push(`Show the EXACT person from image 1 — keep their face, hair, skin tone and body identical — now wearing a newly designed DISCOVERY ${noun}. Do not change who the person is; this is a dressing/try-on task.`);
     S.push(`${noun.toUpperCase()} DESIGN — construct the new ${noun} from image 2 (the DISCOVERY base form) together with the reference image(s), balanced per DESIGN BALANCE below.`);
     adoptClauses(J,noun).forEach(c=>S.push(c));
     S.push(`STYLING & POSE — follow the outfit styling, pose, framing and background of image 2, but the person is always the model from image 1.`);
@@ -907,7 +900,7 @@ function jsonToPrompt(J,plan){
   if(m.semi_sheer!=null)md.push(`semi-sheer ${Math.round(m.semi_sheer*100)}% (${sheerText(m.semi_sheer*100)})`);
   if(m.shimmer!=null)md.push(shimmerText(m.shimmer*100));
   if(md.length)S.push(`MATERIAL — ${md.join('; ')}.`);
-  {const hay=[m.fabric_type,m.surface,m.finish,J.notes].filter(Boolean).join(' ');if(/gore-?\s?tex|고어\s?텍스/i.test(hay))S.push('SHELL FABRIC (GORE-TEX) — render the shell as a GORE-TEX-type technical membrane: a smooth, matte, WRINKLE-FREE MID-WEIGHT or heavier structured shell that holds its shape with minimal creasing; crisp bonded/taped seams and a low even sheen. Do NOT render it as thin, papery, flimsy or heavily crinkled lightweight down nylon.');}
+  {const hay=[m.fabric_type,m.surface,m.finish,J.notes].filter(Boolean).join(' ');if(/gore-?\s?tex|고어\s?텍스/i.test(hay))S.push('SHELL FABRIC (GORE-TEX) — ALWAYS render as a high-performance GORE-TEX-type technical membrane: a MID-WEIGHT or heavier structured shell, FULLY OPAQUE (never sheer, translucent or see-through), a MATTE finish (no gloss, no shimmer, no wet look), WRINKLE-FREE holding its shape with minimal creasing, crisp bonded/taped seams. Never thin, papery, flimsy, glossy or heavily crinkled.');}
   if(m.shell_ref){
     const nm=m.shell_name?` (${m.shell_name})`:'';
     S.push(`FABRIC SWATCH${nm} — the fabric-swatch image is a flat fabric swatch, a material sample and NOT a garment. Reproduce its exact colour, weave, texture and surface sheen across the ENTIRE ${noun} shell so the fabric reads identical to the swatch. Apply it as the overall material — do not paste the swatch as a panel, pocket or patch, and do not copy any shape from it.`);
@@ -933,7 +926,7 @@ function jsonToPrompt(J,plan){
   return S.join(' ');
 }
 function rolesToText(roles){return roles.map((r,i)=>`image ${i+1}: ${r}`).join('. ');}
-function updatePromptPrev(){const plan=computePlan();$('#promptprev').textContent=jsonToPrompt(currentJSON(),plan);$('#btn-gen').disabled=!state.pick.line;}
+function updatePromptPrev(){const plan=computePlan();$('#promptprev').textContent=jsonToPrompt(currentJSON(),plan);$('#btn-gen').disabled=!(state.pick.line||state.pick.refs.size);}
 
 /* ---------- OpenAI ---------- */
 // API 키에서 보이지 않는 문자(공백·제로폭·NBSP·줄바꿈·비ASCII)를 제거 — 헤더 오류(non ISO-8859-1) 방지
@@ -986,7 +979,7 @@ async function analyzeFabric(){
 
 /* ---------- generate ---------- */
 async function doGenerate(){
-  if(!state.pick.line){toast('베이스 라인을 선택하세요.');return;}
+  if(!state.pick.line&&!state.pick.refs.size){toast('베이스 라인 또는 레퍼런스를 선택하세요.');return;}
   const plan=computePlan(),J=currentJSON(),prompt=jsonToPrompt(J,plan);
   const n=Math.max(1,Math.min(4,+($('#gen-n').value||state.settings.genCount||2)));
   const pv=$('#gen-preview');pv.classList.remove('multi');pv.innerHTML=`<div class="load"><div class="spinner"></div><span>생성 중… ${n}장</span></div>`;$('#btn-gen').disabled=true;
@@ -1092,6 +1085,7 @@ function refreshCounts(){['lines','refs','models','fabrics'].forEach(s=>$('#c-'+
 
 /* ---------- generate picks (bars + inline) ---------- */
 function updateRefMix(){const w=$('#refmix-wrap');if(!w)return;const n=state.refs.filter(r=>state.pick.refs.has(r.id)&&!r.detail).length;w.style.display=n>=2?'':'none';}
+function updateVolumeVis(){const w=$('#volume-wrap');if(!w)return;const parent=($('#cat-parent')||{}).value,sub=($('#cat-sub')||{}).value||'';w.style.display=(parent==='OUTERWEAR'&&/INSULATION|DOWN/i.test(sub))?'':'none';}
 function renderPickBar(store){
   const bar=$('#pick-'+store);
   const sel=store==='lines'?(state.pick.line?[state.lines.find(l=>l.id===state.pick.line)].filter(Boolean):[]):state.refs.filter(r=>state.pick.refs.has(r.id));
@@ -1186,6 +1180,7 @@ function applyCategory(reset){
   $('#cat-sub').innerHTML=C.subs.map(s=>`<option>${s}</option>`).join('');
   $('#cat-tag').textContent=`· ${C.noun} 기준`;
   {const cw=$('#construction-wrap');if(cw)cw.style.display=(parent==='OUTERWEAR')?'':'none';}
+  updateVolumeVis();
   if(reset){['#c-zipper','#c-placket'].forEach(id=>{const el=$(id);if(el)el.value='';});}
 
   if(reset){state.brief.keep=new Set(C.keepDefault);state.brief.replace=new Set(C.replaceDefault);state.brief.adopt=new Set(C.adoptDefault);state.aiAttrs={};}
@@ -1295,9 +1290,9 @@ function renderVersions(){const el=$('#edit-vers');el.innerHTML=editVersions().s
   $$('#edit-vers img').forEach(im=>im.onclick=()=>{editShown=im.dataset.ver;const v=state.gallery.find(g=>g.id===editShown);$('#edit-prev').innerHTML=`<img src="${v.logoUrl||v.dataUrl}">`;$$('#edit-vers img').forEach(x=>x.classList.toggle('on',x.dataset.ver===editShown));});}
 async function runEdit(kind,opt){
   const cur=state.gallery.find(g=>g.id===editShown)||editG;let prompt,imgs=[cur.dataUrl];
-  if(kind==='model'){const m=state.models.find(x=>x.id===opt.modelId);imgs.push(m.dataUrl);prompt='Keep the garment in the first image EXACTLY the same (identical design, color, construction). The output MUST depict the exact person from the SECOND image — their face, hair, skin tone and body — replacing the first image model entirely. Only the pose may follow the first image. Clean studio lighting, neutral background. Do not render legible logo text.';}
-  else if(kind==='cody')prompt=`Keep the DISCOVERY main garment identical. Restyle only the coordinating items — the other clothing, footwear and accessories — to: ${opt.text}. Keep the same model and framing. Do not render legible logo text.`;
-  else prompt=`Keep the garment design, silhouette and model identical. Re-render only the surface finish and padding — fabric sheer: ${sheerText(opt.sheer)}; surface: ${shimmerText(opt.shimmer)}; down fill volume: ${volumeText(opt.volume)}. Keep the original color. Do not render legible logo text.`;
+  if(kind==='model'){const m=state.models.find(x=>x.id===opt.modelId);imgs.push(m.dataUrl);prompt='Keep the garment in the first image EXACTLY the same (identical design, color, construction). The output MUST depict the exact person from the SECOND image — their face, hair, skin tone and body — replacing the first image model entirely. Only the pose may follow the first image. Clean studio lighting, neutral background. PRESERVE the DISCOVERY chest logo from the first image EXACTLY — same position, size, print style and spelling; do NOT remove, move, distort or re-draw it.';}
+  else if(kind==='cody')prompt=`Keep the DISCOVERY main garment identical. Restyle only the coordinating items — the other clothing, footwear and accessories — to: ${opt.text}. Keep the same model and framing. PRESERVE the DISCOVERY chest logo EXACTLY — same position, size and print style; do NOT remove, move, distort or alter it.`;
+  else prompt=`Keep the garment design, silhouette and model identical. Re-render only the surface finish and padding — fabric sheer: ${sheerText(opt.sheer)}; surface: ${shimmerText(opt.shimmer)}; down fill volume: ${volumeText(opt.volume)}. Keep the original color. PRESERVE the DISCOVERY chest logo EXACTLY — do NOT remove, move, distort or re-draw it.`;
   const prev=$('#edit-prev');prev.innerHTML=`<div class="load"><div class="spinner"></div><span>수정 중…</span></div>`;
   try{
     const raw=await openaiEdit(prompt,imgs);const logoUrl=state.settings.logoDefault?await applyLogo(raw):raw;const root=editG.parentId||editG.id;
@@ -1499,6 +1494,15 @@ function wire(){
   gdrop.addEventListener('dragleave',()=>gdrop.classList.remove('hot'));
   gdrop.addEventListener('drop',e=>{e.preventDefault();gdrop.classList.remove('hot');handleFiles(e.dataTransfer.files,'__gallery');});
   $('#hidden-file').addEventListener('change',e=>{if(e.target.files.length&&uploadStore)handleFiles(e.target.files,uploadStore);e.target.value='';});
+  document.addEventListener('paste',e=>{
+    const items=e.clipboardData&&e.clipboardData.items;if(!items)return;
+    const files=[];for(const it of items){if(it.type&&it.type.indexOf('image/')===0){const f=it.getAsFile();if(f)files.push(f);}}
+    if(!files.length)return;
+    let store=null;
+    document.querySelectorAll('.drop[data-store]').forEach(d=>{if(store===null&&d.offsetParent!==null)store=d.dataset.store;});
+    if(!store){const gd=$('#gal-drop');if(gd&&gd.offsetParent!==null)store='__gallery';}
+    if(store){e.preventDefault();handleFiles(files,store);toast('붙여넣기 '+files.length+'장 추가');}
+  });
 
   document.addEventListener('click',async e=>{
     const del=e.target.closest('[data-del]');if(del){const st=del.dataset.store;await storeDel(st,del.dataset.del);state[st]=state[st].filter(x=>x.id!==del.dataset.del);libGrid(st);refreshCounts();renderPicks();return;}
@@ -1521,15 +1525,15 @@ function wire(){
   });
 
   const sync=(id,vid,hid,fn)=>{const el=$('#'+id);el.addEventListener('input',()=>{$('#'+vid).textContent=el.value;if(hid)$('#'+hid).textContent=fn(el.value);refreshJSON();});};
-  sync('balance','balance-v','balance-h',balanceHint);sync('sheer','sheer-v','sheer-h',sheerHint);sync('shimmer','shimmer-v','shimmer-h',shimmerHint);
+  sync('balance','balance-v','balance-h',balanceHint);
   sync('colorbal','colorbal-v','colorbal-h',colorBalHint);sync('refmix','refmix-v','refmix-h',refmixHint);sync('volume','volume-v','volume-h',volumeHint);
-  $('#balance-h').textContent=balanceHint(35);$('#sheer-h').textContent=sheerHint(20);$('#shimmer-h').textContent=shimmerHint(25);
+  $('#balance-h').textContent=balanceHint(35);
   $('#colorbal-h').textContent=colorBalHint(50);$('#refmix-h').textContent=refmixHint(50);$('#volume-h').textContent=volumeHint(50);
   ['#c-zipper','#c-placket'].forEach(id=>{const el=$(id);if(el)el.addEventListener('change',()=>refreshJSON());});
   {const po=$('#pose-only');if(po)po.addEventListener('change',()=>refreshJSON());}
   $('#season').addEventListener('change',renderPicks);
   $('#cat-parent').addEventListener('change',()=>applyCategory(true));
-  $('#cat-sub').addEventListener('change',()=>refreshJSON());
+  $('#cat-sub').addEventListener('change',()=>{updateVolumeVis();refreshJSON();});
   $('#model-source').addEventListener('change',()=>updatePromptPrev());
   $('#extra').addEventListener('input',()=>refreshJSON());
   $('#logo-generate').addEventListener('change',()=>refreshJSON(true));
