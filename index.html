@@ -662,6 +662,20 @@ function indexSales(rows){
   rows.forEach(r=>{if(r.code){(byCode[r.code]=byCode[r.code]||[]).push(r);}const nn=normName(r.name);if(nn){(byName[nn]=byName[nn]||[]).push(r);}});
   state.salesRows=rows;state.salesByCode=byCode;state.salesByName=byName;
 }
+function salesMatchStats(){ // 업로드 사진이 매출과 얼마나 매칭되는지 진단
+  const items=[...(state.lines||[]),...(state.refs||[])];
+  let code=0,name=0,un=0;const unex=[];
+  for(const it of items){
+    const c=codeOf(it);let m='';
+    if(c&&state.salesByCode){
+      if(state.salesByCode[c])m='code';
+      else{for(const k in state.salesByCode){if(k.length>=8&&c.length>=8&&(k.startsWith(c)||c.startsWith(k))){m='code';break;}}}
+    }
+    if(!m){const nn=normName(it.name);if(nn&&state.salesByName&&state.salesByName[nn])m='name';}
+    if(m==='code')code++;else if(m==='name')name++;else{un++;if(unex.length<3)unex.push((it.name||'?')+' → '+(c||'코드없음'));}
+  }
+  return{total:items.length,code,name,un,unex,salesCodes:state.salesByCode?Object.keys(state.salesByCode).length:0};
+}
 
 /* ---------- state ---------- */
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -1263,7 +1277,8 @@ async function applySales(){
   try{localStorage.setItem('discovery_sales',JSON.stringify(doc));}catch(e){}   // 로컬 확실 저장 (새로고침 유지)
   try{await putOf('sales',{id:'main',...doc});}catch(e){}                       // IndexedDB 캐시(있으면)
   libGrid('lines');libGrid('refs');
-  $('#sales-status').textContent=`${count}개 행 · 카테고리별 랭크 적용됨`;
+  const st=salesMatchStats();
+  $('#sales-status').innerHTML=`${count}개 행 · 매출코드 ${st.salesCodes}개 · 카테고리별 랭크 적용<br>사진 ${st.total}개 중 매칭 <b>${st.code+st.name}</b>개 (코드 ${st.code} · 이름 ${st.name}) · 미매칭 ${st.un}`+(st.un&&st.unex.length?`<br><span style="opacity:.7">미매칭 예: ${st.unex.map(esc).join(' / ')}</span>`:'');
   if(cloudOn()){
     try{await supaPutRow('sales',{id:'main',data:{id:'main',...doc}});toast('판매 랭킹 적용 · 클라우드 저장됨(공용)');}
     catch(e){toast('로컬 저장됨 · 클라우드 실패: '+e.message);}
