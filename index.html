@@ -645,6 +645,24 @@ const GCAT_MAP={
   acc:'ACC','액세서리':'ACC','악세서리':'ACC',bag:'ACC','가방':'ACC','모자':'ACC','머플러':'ACC','스카프':'ACC',
   shoes:'SHOES','슈즈':'SHOES','신발':'SHOES','운동화':'SHOES'};
 
+/* ===== 시즌 정렬 + 매출 매칭 헬퍼 (25SS<25FW<26SS<26FW) ===== */
+function seasonSortKey(x){const m=/^(\d{2})(SS|FW)$/i.exec((x||'').trim().toUpperCase());return m?(+m[1])*10+(m[2].toUpperCase()==='SS'?0:1):9999;}
+function seasonCmp(a,b){return seasonSortKey(a)-seasonSortKey(b);}
+const _GCAT_KEYS=Object.keys(GCAT_MAP).sort((a,b)=>b.length-a.length);
+function gcatFromText(){const s=[].slice.call(arguments).filter(Boolean).join(' ').toLowerCase();for(const k of _GCAT_KEYS){if(s.includes(k.toLowerCase()))return GCAT_MAP[k];}return '';}
+const CODE_RE=/X\d{2}[FS][A-Z0-9]{4,}/i;
+function normCode(c){return (c||'').toUpperCase().replace(/[^A-Z0-9]/g,'');}
+function codeOf(it){const src=[it.code,it.prdtCd,it.name,it.id].filter(Boolean).join(' ');const m=CODE_RE.exec(src);return m?normCode(m[0]):'';}
+function normName(x){return (x||'').toUpperCase().replace(CODE_RE,'').replace(/[^0-9A-Z\uAC00-\uD7A3]/g,'');}
+function indexSales(rows){
+  const grp={};
+  rows.forEach(r=>{const key=r.season+'|'+(r.cat||'ETC');(grp[key]=grp[key]||[]).push(r);});
+  Object.values(grp).forEach(arr=>{arr.sort((a,b)=>b.amt-a.amt);arr.forEach((r,i)=>{r.rank=i+1;});}); // 카테고리별(시즌x카테고리) 매출 랭크
+  const byCode={},byName={};
+  rows.forEach(r=>{if(r.code){(byCode[r.code]=byCode[r.code]||[]).push(r);}const nn=normName(r.name);if(nn){(byName[nn]=byName[nn]||[]).push(r);}});
+  state.salesRows=rows;state.salesByCode=byCode;state.salesByName=byName;
+}
+
 /* ---------- state ---------- */
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const state={
@@ -656,7 +674,7 @@ const state={
   aiAttrs:{}, jsonDirty:false, galFilter:'all',
   libFilter:{lines:{gender:'ALL',gcat:'ALL',season:'ALL'},refs:{gender:'ALL',gcat:'ALL',season:'ALL'}},
   libSelMode:{lines:false,refs:false}, libSel:{lines:new Set(),refs:new Set()},
-  salesMap:{}, salesRaw:''
+  salesMap:{}, salesRaw:'', salesRows:[], salesByCode:{}, salesByName:{}
 };
 
 /* ---------- utils ---------- */
@@ -940,10 +958,10 @@ function libGrid(store){
   if(!items.length){grid.innerHTML=`<div class="empty" style="grid-column:1/-1">${filtered&&hasActiveFilter(store)?'해당 조건의 항목이 없습니다.':'아직 없습니다. 위에서 올려주세요.'}</div>`;return;}
   const selMode=filtered&&state.libSelMode[store];
   grid.innerHTML=items.map(it=>{
-    const sales=store==='lines'?salesFor(it):[];
+    const sales=salesFor(it);
     const _b=sales.filter(s=>s.rank<=10).map(s=>`<span class="rankbadge ${s.half==='SS'?'ss':'fw'}">${s.half} #${s.rank}</span>`).join('');
     const rb=_b?`<div class="rankbadges">${_b}</div>`:'';
-    const sa=sales.length?`<div class="salerow">`+sales.map(s=>`<span class="saleamt ${s.rank<=10?(s.half==='SS'?'ss':'fw'):'dim'}">${esc(s.season)} ${esc(s.amtStr)}</span>`).join('')+`</div>`:'';
+    const sa=sales.length?`<div class="salerow">`+sales.map(s=>`<span class="saleamt ${(s.rank&&s.rank<=10)?(seasonHalf(s.season)==='SS'?'ss':'fw'):'dim'}">${esc(s.season)}${s.cat?' '+esc(s.cat):''} #${s.rank||'-'} · ${esc(s.amtStr)}</span>`).join('')+`</div>`:'';
     const on=selMode&&state.libSel[store].has(it.id);
     const selbox=selMode?`<span class="selbox ${on?'on':''}">${on?'✓':''}</span>`:'';
     return`<div class="card ${sw} ${on?'picked':''}" data-id="${it.id}" data-store="${store}">${rb}${selbox}<button class="x" data-del="${it.id}" data-store="${store}">✕</button><span class="thumb" style="background-image:url('${it.dataUrl}')"></span><div class="meta"><div class="nm">${esc(it.name)}</div><div class="tg">${esc(metaLine(store,it))}</div>${sa}</div></div>`;
@@ -964,7 +982,7 @@ function chipGroup(store,axis,label,opts,current){
 function renderLibChips(store){
   const el=$('#lib-'+store+'-chips');if(!el)return;
   const f=state.libFilter[store];
-  const seasons=[...new Set(state[store].map(x=>x.season).filter(Boolean))].sort();
+  const seasons=[...new Set(state[store].map(x=>x.season).filter(Boolean))].sort(seasonCmp);
   el.innerHTML=chipGroup(store,'gender','성별',GENDER_OPTS,f.gender)+chipGroup(store,'gcat','카테고리',GCAT_OPTS,f.gcat)+chipGroup(store,'season','시즌',seasons,f.season);
 }
 function refreshCounts(){['lines','refs','models','fabrics'].forEach(s=>$('#c-'+s).textContent=state[s].length);}
@@ -1007,7 +1025,7 @@ function openArchive(store){
   const chipsEl=$('#arch-chips'),gridEl=$('#arch-grid'),countEl=$('#arch-count');
   const grp=(axis,label,opts,cur)=>`<div class="chipgroup"><span class="chiplabel">${label}</span>`+[['ALL','전체'],...opts.map(o=>[o,o])].map(([v,l])=>`<button class="togglepill ${cur===v?'on':''}" data-axis="${axis}" data-val="${esc(v)}">${esc(l)}</button>`).join('')+`</div>`;
   function chips(){
-    const seasons=[...new Set(state[store].map(x=>x.season).filter(Boolean))].sort();
+    const seasons=[...new Set(state[store].map(x=>x.season).filter(Boolean))].sort(seasonCmp);
     let h=grp('gender','성별',GENDER_OPTS,genderF)+grp('gcat','카테고리',GCAT_OPTS,gcatF)+grp('season','시즌',seasons,seasonF);
     if(!isLines){const tags=[...new Set(state.refs.flatMap(r=>r.tags||[]))].sort();if(tags.length)h+=grp('tag','태그',tags,tagF);}
     chipsEl.innerHTML=h;
@@ -1027,10 +1045,10 @@ function openArchive(store){
     if(!items.length){gridEl.innerHTML=`<div class="empty" style="grid-column:1/-1">조건에 맞는 항목이 없습니다.</div>`;return;}
     gridEl.innerHTML=items.map(it=>{
       const on=isLines?state.pick.line===it.id:state.pick.refs.has(it.id);
-      const sales=isLines?salesFor(it):[];
+      const sales=salesFor(it);
       const _b=sales.filter(s=>s.rank<=10).map(s=>`<span class="rankbadge ${s.half==='SS'?'ss':'fw'}">${s.half} #${s.rank}</span>`).join('');
       const rb=_b?`<div class="rankbadges">${_b}</div>`:'';
-      const sa=sales.length?`<div class="salerow">`+sales.map(s=>`<span class="saleamt ${s.rank<=10?(s.half==='SS'?'ss':'fw'):'dim'}">${esc(s.season)} ${esc(s.amtStr)}</span>`).join('')+`</div>`:'';
+      const sa=sales.length?`<div class="salerow">`+sales.map(s=>`<span class="saleamt ${(s.rank&&s.rank<=10)?(seasonHalf(s.season)==='SS'?'ss':'fw'):'dim'}">${esc(s.season)}${s.cat?' '+esc(s.cat):''} #${s.rank||'-'} · ${esc(s.amtStr)}</span>`).join('')+`</div>`:'';
       return`<div class="acard ${on?'sel':''}" data-aid="${it.id}">${rb}<span class="pick">✓</span><span class="thumb" style="background-image:url('${it.dataUrl}')"></span><div class="meta"><div class="br">DISCOVERY${it.season?' · '+esc(it.season):''}</div><div class="nm">${esc(it.name)}</div><div class="tg">${esc(metaLine(store,it))}</div>${sa}</div></div>`;
     }).join('');
   }
@@ -1070,7 +1088,7 @@ function applyCategory(reset){
 function galleryGrid(){
   const grid=$('#grid-gallery');let items=state.gallery.slice().sort((a,b)=>b.createdAt-a.createdAt);
   if(state.galFilter!=='all')items=items.filter(g=>g.season===state.galFilter);
-  const seasons=[...new Set(state.gallery.map(g=>g.season))];
+  const seasons=[...new Set(state.gallery.map(g=>g.season).filter(Boolean))].sort(seasonCmp);
   $('#gal-filter').innerHTML=['all',...seasons].map(s=>`<button class="togglepill ${state.galFilter===s?'on':''}" data-filter="${s}">${s==='all'?'전체':esc(s)}</button>`).join('');
   if(!items.length){grid.innerHTML=`<div class="empty" style="grid-column:1/-1">아직 생성물이 없습니다. 생성 탭에서 만들어보세요.</div>`;return;}
   const showLogo=$('#showlogo').checked;
@@ -1202,47 +1220,48 @@ function salesKey(season,name){return (season||'')+'~||~'+(name||'').trim();}
 function seasonHalf(season){return /FW$/i.test(season||'')?'FW':/SS$/i.test(season||'')?'SS':'';}
 /* 카드 아이템의 이름으로 FW·SS 각각의 랭크를 찾아 반환 (자기 시즌 우선, 없으면 같은 half 최신) */
 function salesFor(it){
-  const out=[];
-  const exact=state.salesMap[salesKey(it.season,it.name)];
-  const halves={FW:null,SS:null};
-  if(exact)halves[seasonHalf(it.season)]=exact;
-  // 이름이 같은 다른 시즌 엔트리들에서 FW/SS 대표 랭크 보강
-  const nm=(it.name||'').trim();
-  Object.values(state.salesMap).forEach(e=>{
-    if(e.name!==nm)return;const h=seasonHalf(e.season);if(!h)return;
-    if(!halves[h]||(e.season>halves[h].season))halves[h]=e;
-  });
-  ['FW','SS'].forEach(h=>{if(halves[h])out.push(Object.assign({half:h},halves[h]));});
-  return out;
+  let hits=[];
+  const code=codeOf(it);
+  if(code&&state.salesByCode&&state.salesByCode[code])hits=state.salesByCode[code].slice();
+  if(!hits.length&&state.salesByName){                 // 코드 매칭 실패 시 이름 정규화 부분일치 폴백
+    const nn=normName(it.name);
+    if(nn){
+      if(state.salesByName[nn])hits=state.salesByName[nn].slice();
+      else{for(const k in state.salesByName){if(k.includes(nn)||nn.includes(k))hits=hits.concat(state.salesByName[k]);}}
+    }
+  }
+  const bySeason={};hits.forEach(h=>{if(!bySeason[h.season]||h.amt>bySeason[h.season].amt)bySeason[h.season]=h;});
+  return Object.values(bySeason).sort((x,y)=>seasonSortKey(y.season)-seasonSortKey(x.season)); // 시즌 최신순
 }
 function parseSales(text){
   const lines=(text||'').split(/\r?\n/).map(l=>l.replace(/\s+$/,'')).filter(l=>l.trim());
-  if(!lines.length)return{map:{},count:0};
+  if(!lines.length)return{rows:[],count:0};
   const split=l=>l.indexOf('\t')>=0?l.split('\t'):l.split(/\s{2,}|,/);
   let header=null,start=0;
-  const h0=split(lines[0]).map(s=>s.trim().toUpperCase());
+  const h0=split(lines[0]).map(x=>x.trim().toUpperCase());
   if(h0.includes('PRDT_NM')||h0.includes('SESN')){header=h0;start=1;}
   const col=(cols,name,fb)=>{if(header){const i=header.indexOf(name);return i>=0?(cols[i]||''):'';}return cols[fb]||'';};
   const rows=[];
   for(let i=start;i<lines.length;i++){
-    const cols=split(lines[i]).map(s=>s.trim());
-    const sesn=col(cols,'SESN',0),pname=col(cols,'PRDT_NM',4),amt=col(cols,'SALE_AMT',5),amtStr=col(cols,'SALE_AMT_STR',9),share=col(cols,'SHARE_PCT',8);
-    if(!pname)continue;
-    rows.push({season:normSeason(sesn)||sesn.toUpperCase(),name:pname,amt:parseFloat((amt||'').replace(/[^0-9.]/g,''))||0,amtStr:amtStr||'',share:parseFloat(share)||0});
+    const cols=split(lines[i]).map(x=>x.trim());
+    const sesn=col(cols,'SESN',0),code=col(cols,'PRDT_CD',6),pname=col(cols,'PRDT_NM',7),
+          itemNm=col(cols,'ITEM_NM',5),itemGrp=col(cols,'ITEM_GROUP',3),
+          amt=col(cols,'SALE_AMT',8),amtStr=col(cols,'SALE_AMT_STR',12),share=col(cols,'SHARE_PCT',11);
+    if(!pname&&!code)continue;
+    rows.push({season:normSeason(sesn)||(sesn||'').toUpperCase(),code:normCode(code),name:pname,
+      cat:gcatFromText(itemNm,itemGrp,pname),
+      amt:parseFloat((amt||'').replace(/[^0-9.]/g,''))||0,amtStr:amtStr||'',share:parseFloat(share)||0});
   }
-  const bySeason={};rows.forEach(r=>{(bySeason[r.season]=bySeason[r.season]||[]).push(r);});
-  const map={};
-  Object.values(bySeason).forEach(arr=>{arr.sort((a,b)=>b.amt-a.amt);arr.forEach((r,idx)=>{map[salesKey(r.season,r.name)]={rank:idx+1,amtStr:r.amtStr,amt:r.amt,share:r.share,name:r.name,season:r.season};});});
-  return{map,count:rows.length};
+  return{rows,count:rows.length};
 }
 async function applySales(){
-  const raw=$('#s-sales').value;const{map,count}=parseSales(raw);
-  state.salesMap=map;state.salesRaw=raw;
-  const doc={map,raw,updatedAt:Date.now()};
+  const raw=$('#s-sales').value;const{rows,count}=parseSales(raw);
+  indexSales(rows);state.salesRaw=raw;
+  const doc={rows,raw,updatedAt:Date.now()};
   try{localStorage.setItem('discovery_sales',JSON.stringify(doc));}catch(e){}   // 로컬 확실 저장 (새로고침 유지)
   try{await putOf('sales',{id:'main',...doc});}catch(e){}                       // IndexedDB 캐시(있으면)
-  libGrid('lines');
-  $('#sales-status').textContent=`${count}개 행 · 매칭키 ${Object.keys(map).length}개 적용됨`;
+  libGrid('lines');libGrid('refs');
+  $('#sales-status').textContent=`${count}개 행 · 카테고리별 랭크 적용됨`;
   if(cloudOn()){
     try{await supaPutRow('sales',{id:'main',data:{id:'main',...doc}});toast('판매 랭킹 적용 · 클라우드 저장됨(공용)');}
     catch(e){toast('로컬 저장됨 · 클라우드 실패: '+e.message);}
@@ -1424,9 +1443,9 @@ async function afterAuthBoot(){
   try{state.lines=await storeAll('lines');state.refs=await storeAll('refs');state.models=await storeAll('models');state.fabrics=await storeAll('fabrics');state.gallery=await storeAll('gallery');}catch(e){toast('클라우드 로드 실패, 로컬 데이터로 표시: '+e.message);state.lines=await allOf('lines');state.refs=await allOf('refs');state.models=await allOf('models');state.fabrics=await allOf('fabrics');state.gallery=await allOf('gallery');}
   try{
     let loaded=false;
-    if(cloudOn()){try{const sr=await supaSelect('sales');const main=sr.find(x=>x.id==='main')||sr[0];if(main){state.salesMap=main.map||{};state.salesRaw=main.raw||'';loaded=true;}}catch(e){}}
-    if(!loaded){try{const d=JSON.parse(localStorage.getItem('discovery_sales')||'null');if(d){state.salesMap=d.map||{};state.salesRaw=d.raw||'';loaded=true;}}catch(e){}}
-    if(!loaded){try{const v=await allOf('sales');const main=(v||[]).find(x=>x.id==='main')||(v||[])[0];if(main){state.salesMap=main.map||{};state.salesRaw=main.raw||'';}}catch(e){}}
+    if(cloudOn()){try{const sr=await supaSelect('sales');const main=sr.find(x=>x.id==='main')||sr[0];if(main){const rws=(main.rows)||Object.values(main.map||{});indexSales(rws);state.salesRaw=main.raw||''; loaded=true;}}catch(e){}}
+    if(!loaded){try{const d=JSON.parse(localStorage.getItem('discovery_sales')||'null');if(d){const rws=(d.rows)||Object.values(d.map||{});indexSales(rws);state.salesRaw=d.raw||''; loaded=true;}}catch(e){}}
+    if(!loaded){try{const v=await allOf('sales');const main=(v||[]).find(x=>x.id==='main')||(v||[])[0];if(main){const rws=(main.rows)||Object.values(main.map||{});indexSales(rws);state.salesRaw=main.raw||'';}}catch(e){}}
   }catch(e){}
   renderAll();loadSettingsUI();updateAuthUI();
 }
