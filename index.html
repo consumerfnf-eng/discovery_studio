@@ -143,6 +143,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 .galbadge{position:absolute;top:6px;left:6px;z-index:3;font-size:9px;font-weight:700;padding:2px 6px;border-radius:6px;color:#fff}
 .galbadge.shared{background:#2C6BB3}
 .galbadge.own{background:#5a6b4d}
+.shdot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#C0392B;vertical-align:middle;margin-left:5px}
 .selbox.on{background:var(--pine);border-color:var(--pine);color:#fff}
 .card.picked{outline:2px solid var(--pine);outline-offset:-2px}
 .acard .rankbadges{left:auto;right:6px;align-items:flex-end}
@@ -298,7 +299,11 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
               <div class="pillrow" id="gen-pose"></div></div>
             <div><div class="sectlabel">4 · SHELL 원단 (선택)</div><div id="pick-fabrics" class="cards"></div>
               <button class="btn sm" id="btn-fabric-analyze" style="margin-top:8px" title="선택한 원단 스와치를 비전 모델이 읽어 색·조직·광택을 텍스트로 변환해 반영">AI 원단 분석</button>
-              <div class="hint" id="fabric-ai-hint" style="margin:6px 0 0">원단 이미지만으론 약하게 반영돼요. 스와치를 셀렉하면 원단타입 텍스트가 자동 반영되고, 'AI 원단 분석'을 누르면 색·조직·광택까지 텍스트로 강하게 반영됩니다.</div>
+              <div class="hint" id="fabric-ai-hint" style="margin:6px 0 0">원단 이미지만으론 약하게 반영돼요. 스와치를 셀렉하면 원단타입 텍스트가 자동 반영되고, 'AI 원단 분석'을 누르면 조직·광택까지 텍스트로 강하게 반영됩니다. (색은 사용하지 않아요 — 색은 라인·컬러 밸런스에서)</div>
+              <div class="sectlabel" style="margin-top:14px">퀼팅 shape (선택)</div>
+              <div class="drop" id="quilt-drop" tabindex="0" style="min-height:60px;display:flex;align-items:center;justify-content:center;text-align:center;gap:8px">퀼팅 참고 이미지 — 클릭·드래그·Ctrl+V<div id="quilt-prev"></div></div>
+              <div class="row" style="gap:8px;margin-top:8px"><button class="btn sm" id="btn-quilt-analyze">AI 퀼팅 분석</button><button class="btn sm ghost" id="btn-quilt-clear">비우기</button></div>
+              <div class="hint" id="quilt-hint" style="margin:6px 0 0">퀼팅 패턴(다이아·물결·가로 등)을 이 이미지에서 읽어 반영합니다. <b>색은 사용하지 않아요.</b></div>
             </div>
           </div>
         </div>
@@ -731,7 +736,7 @@ const state={
   lines:[],refs:[],models:[],fabrics:[],gallery:[],
   pick:{line:null,refs:new Set(),model:null,fabric:null},
   brief:{keep:new Set(),replace:new Set(),adopt:new Set(),fabricType:''},
-  aiAttrs:{}, jsonDirty:false, galFilter:'all', refSecretView:false, galSelMode:false, galSel:new Set(), pose:'auto',
+  aiAttrs:{}, jsonDirty:false, galFilter:'all', refSecretView:false, galSelMode:false, galSel:new Set(), pose:'auto', quiltRef:null,
   libFilter:{lines:{gender:'ALL',gcat:'ALL',season:'ALL'},refs:{gender:'ALL',gcat:'ALL',season:'ALL'}},
   libSelMode:{lines:false,refs:false}, libSel:{lines:new Set(),refs:new Set()},
   salesMap:{}, salesRaw:'', salesRows:[], salesByCode:{}, salesByName:{}
@@ -802,7 +807,7 @@ function computePlan(){
   const detailRole=`DETAIL / hardware reference — reproduce ONLY this DISCOVERY branded detail (logo drawcord/string, waist belt with engraved buckle, or branded zipper pull) on the garment; do NOT treat it as the overall ${noun} shape`;
   const roleFor=r=>r.detail?detailRole:designRole;
   const pushList=arr=>arr.forEach(r=>{images.push(r.dataUrl);roles.push(roleFor(r));});
-  const pushShell=()=>{if(shell){images.push(shell.dataUrl);roles.push('a flat FABRIC SWATCH image (material sample, not a garment) — replicate its colour, weave, texture and sheen across the whole garment shell; never copy its shape');}};
+  const pushShell=()=>{if(shell){images.push(shell.dataUrl);roles.push('a flat FABRIC SWATCH image (material sample, not a garment) — replicate ONLY its weave, texture, finish and sheen across the whole garment shell; do NOT take its colour (garment colour follows the base line and COLOUR BALANCE); never copy its shape');}};
   const designRefs=refs.filter(r=>!r.detail);
   let refLed=false;
   if(modelMode==='image'){
@@ -824,6 +829,7 @@ function computePlan(){
       pushList(refs);pushShell();
     }
   }
+  if(state.quiltRef&&state.quiltRef.dataUrl){images.push(state.quiltRef.dataUrl);roles.push('QUILTING PATTERN reference — copy ONLY the quilting/baffle channel pattern, its shape and direction from this image; IGNORE its colour and material entirely, do not take colour from it');}
   const _logoOn=!!($('#logo-generate')&&$('#logo-generate').checked);
   if(_logoOn&&state.settings.logoDataUrl){images.push(state.settings.logoDataUrl);roles.push('DISCOVERY LOGO reference (small emblem) — reproduce ONLY this mark on the wearer left chest; ignore its background/box; never paste it as a rectangular patch');}
   return{line,model,refs,shell,images,roles,noun,hasModel:modelMode==='image',modelMode,refLed,balance:bal};
@@ -849,13 +855,14 @@ function buildDesignJSON(){
   else if(fabAI.fabric_type)g.material.fabric_type=fabAI.fabric_type;
   if(!g.material.surface&&fabAI.surface)g.material.surface=fabAI.surface;
   if(!g.material.finish&&fabAI.finish)g.material.finish=fabAI.finish;
-  if(fabAI.color)g.material.shell_color=fabAI.color;
   if(plan.shell)g.material.shell_name=plan.shell.ftype||fabAI.fabric_type||'';
   const zip=($('#c-zipper')||{}).value||'',pk=($('#c-placket')||{}).value||'';
   if(zip)g.closure_zip=zip;
   if(pk)g.front_placket=pk;
   // 퀼팅은 수동 셀렉트 없이 레퍼(가먼트) 분석·AI 원단분석에서 도출
   if(fabAI.quilting&&(fabAI.quilting.type||fabAI.quilting.scale)){g.quilting=g.quilting||{};if(fabAI.quilting.type&&!g.quilting.type)g.quilting.type=fabAI.quilting.type;if(fabAI.quilting.scale&&!g.quilting.scale)g.quilting.scale=fabAI.quilting.scale;}
+  const qref=state.quiltRef&&state.quiltRef.quilting; // 퀼팅 shape 슬롯 우선
+  if(qref&&qref.type){g.quilting=g.quilting||{};g.quilting.type=qref.type;if(qref.scale)g.quilting.scale=qref.scale;if(qref.direction)g.quilting.direction=qref.direction;}
   const volVis=$('#volume-wrap')&&$('#volume-wrap').style.display!=='none';
   g.fill_volume=volVis?(+($('#volume')?$('#volume').value:50)/100):null; // 충전재 볼륨은 INSULATION·DOWN만
   return{
@@ -980,6 +987,19 @@ async function analyzeRefs(){
     const obj=JSON.parse(txt.slice(txt.indexOf('{'),txt.lastIndexOf('}')+1));
     state.aiAttrs.garment=obj;state.jsonDirty=false;refreshJSON(true);toast('레퍼런스 분석 완료 · JSON 반영');
   }catch(e){toast('분석 실패: '+e.message);}finally{btn.disabled=false;btn.textContent='AI 분석';}
+}
+function renderQuiltPrev(){const el=$('#quilt-prev');if(!el)return;el.innerHTML=state.quiltRef&&state.quiltRef.dataUrl?`<img src="${state.quiltRef.dataUrl}" style="max-height:52px;max-width:80px;border-radius:6px">`:'';}
+async function analyzeQuilt(){
+  if(!state.quiltRef||!state.quiltRef.dataUrl){toast('먼저 퀼팅 이미지를 넣으세요.');return;}
+  const btn=$('#btn-quilt-analyze');btn.disabled=true;btn.textContent='분석 중…';
+  try{
+    const content=[{type:'text',text:'이 이미지의 퀼팅/누빔 패턴만 분석해. 순수 JSON 하나만 출력(설명·코드펜스 금지): {"type":"영문 예: horizontal channel / vertical channel / diamond / box grid / wavy channel","scale":"fine / medium / wide","direction":"영문 방향 설명"} 색·소재는 무시. 퀼팅 안 보이면 type 빈 문자열.'},{type:'image_url',image_url:{url:state.quiltRef.dataUrl}}];
+    let txt=await openaiVision([{role:'user',content}]);txt=txt.replace(/```json/gi,'').replace(/```/g,'').trim();
+    const obj=JSON.parse(txt.slice(txt.indexOf('{'),txt.lastIndexOf('}')+1));
+    state.quiltRef.quilting=obj;refreshJSON(true);
+    $('#quilt-hint').innerHTML=obj.type?('반영됨 · 퀼팅 <b>'+esc(obj.type)+(obj.scale?' ('+esc(obj.scale)+')':'')+'</b> · 색 미사용'):'퀼팅이 감지되지 않았어요.';
+    toast('퀼팅 분석 완료');
+  }catch(e){toast('퀼팅 분석 실패: '+e.message);}finally{btn.disabled=false;btn.textContent='AI 퀼팅 분석';}
 }
 async function analyzeFabric(){
   const shell=state.fabrics.find(f=>f.id===state.pick.fabric);
@@ -1228,8 +1248,8 @@ function galleryGrid(){
     const mine=g.owner===me,sharedN=(g.sharedWith||[]).length,sel=state.galSelMode&&state.galSel.has(g.id);
     const selbox=state.galSelMode?`<span class="selbox ${sel?'on':''}">${sel?'✓':''}</span>`:'';
     const delBtn=mine?`<button class="x" data-galdel="${g.id}">✕</button>`:'';
-    const badge=state.galSelMode?'':(!mine?`<span class="galbadge shared">↗ 공유받음</span>`:(sharedN?`<span class="galbadge own">공유중 ${sharedN}</span>`:''));
-    return`<div class="card ${sel?'picked':''}" data-gid="${g.id}">${selbox}${delBtn}${badge}<span class="thumb" style="background-image:url('${showLogo&&g.logoUrl?g.logoUrl:g.dataUrl}')"></span><div class="meta"><div class="nm">${esc(g.name)}</div><div class="tg">${tg}</div></div></div>`;}).join('');
+    const badge=state.galSelMode?'':(!mine?`<span class="galbadge shared">↗ 공유받음</span>`:'');
+    return`<div class="card ${sel?'picked':''}" data-gid="${g.id}">${selbox}${delBtn}${badge}<span class="thumb" style="background-image:url('${showLogo&&g.logoUrl?g.logoUrl:g.dataUrl}')"></span><div class="meta"><div class="nm">${esc(g.name)}${(mine&&sharedN)?` <span class="shdot" title="공유중 ${sharedN}명"></span>`:''}</div><div class="tg">${tg}</div></div></div>`;}).join('');
 }
 
 /* ---------- compare ---------- */
@@ -1431,19 +1451,22 @@ function parseName(fn){
 }
 async function handleFiles(files,store){
   if(store==='__logo'){let du=await fileToDataUrl(files[0]);du=await resizeDataUrl(du,600);state.settings.logoDataUrl=du;await putOf('settings',state.settings);renderLogoPrev();toast('로고 저장됨');return;}
+  if(store==='__quilt'){const f=[...files].find(x=>x.type.startsWith('image/'));if(!f)return;let du=await fileToDataUrl(f);du=await resizeDataUrl(du,1024);state.quiltRef={dataUrl:du};renderQuiltPrev();$('#quilt-hint').textContent='이미지 넣음 · \'AI 퀼팅 분석\'을 누르면 패턴을 읽어 반영합니다. 색은 미사용.';refreshJSON();toast('퀼팅 이미지 추가');return;}
   if(store==='__gallery'){
-    const arr=[...files].filter(f=>f.type.startsWith('image/'));let parsed=0;
-    for(const f of arr){let du=await fileToDataUrl(f);du=await resizeDataUrl(du,1024);
-      const m=parseName(f.name);if(m.ok)parsed++;
+    const arr=[...files].filter(f=>f.type.startsWith('image/'));let parsed=0,skipped=0;
+    const seen=new Set(state.gallery.map(x=>(x.name||'').trim()).filter(Boolean));
+    for(const f of arr){const m=parseName(f.name);const _k=(m.name||'').trim();if(_k&&seen.has(_k)){skipped++;continue;} seen.add(_k);
+      let du=await fileToDataUrl(f);du=await resizeDataUrl(du,1024);if(m.ok)parsed++;
       const g={id:uid(),name:m.name,dataUrl:du,logoUrl:du,season:m.season||'',gender:m.gender||'',gcat:m.gcat||'',uploaded:true,sourceLineId:null,parentId:null,createdAt:Date.now()};
       state.gallery.push(g);await storePut('gallery',g);}
     galleryGrid();compareSelect();
-    toast(`${arr.length}장 갤러리에 추가${parsed?` · ${parsed}장 파일명 자동인식`:''}`);return;
+    toast(`${arr.length-skipped}장 갤러리에 추가${parsed?` · ${parsed}장 자동인식`:''}${skipped?` · 중복 ${skipped}장 건너뜀`:''}`);return;
   }
-  const arr=[...files].filter(f=>f.type.startsWith('image/'));let parsed=0;
+  const arr=[...files].filter(f=>f.type.startsWith('image/'));let parsed=0,skipped=0;
+  const seen=new Set(state[store].map(x=>(x.name||'').trim()).filter(Boolean));
   const pg=($('#pu-'+store+'-gender')||{}).value||'',pc=($('#pu-'+store+'-gcat')||{}).value||'',ps=($('#pu-'+store+'-season')||{}).value||'';
-  for(const f of arr){let du=await fileToDataUrl(f);du=await resizeDataUrl(du,1024);
-    const m=parseName(f.name);if(m.ok)parsed++;
+  for(const f of arr){const m=parseName(f.name);const _k=(m.name||'').trim();if(_k&&seen.has(_k)){skipped++;continue;} seen.add(_k);
+    let du=await fileToDataUrl(f);du=await resizeDataUrl(du,1024);if(m.ok)parsed++;
     const it={id:uid(),name:m.name,dataUrl:du,gender:pg||m.gender||'',gcat:pc||m.gcat||'',season:ps||m.season||'',createdAt:Date.now()};
     if(store==='lines'){it.category='';it.lifestyle='';}
     if(store==='refs'){it.tags=[];if(state.refSecretView&&canSecret()){it.secret=true;it.owner=authEmail();}}
@@ -1451,7 +1474,7 @@ async function handleFiles(files,store){
     state[store].push(it);await storePut(store,it);}
   libGrid(store);refreshCounts();renderPicks();
   const pre=(pg||pc||ps)?` · 지정(${[pg,pc,ps].filter(Boolean).join('/')})`:'';
-  toast(`${arr.length}장 추가${parsed?` · ${parsed}장 자동인식`:''}${pre}`);
+  toast(`${arr.length-skipped}장 추가${parsed?` · ${parsed}장 자동인식`:''}${pre}${skipped?` · 중복 ${skipped}장 건너뜀`:''}`);
 }
 
 /* ---------- settings ---------- */
@@ -1562,6 +1585,16 @@ function wire(){
   $('#btn-rebuild').addEventListener('click',()=>{state.jsonDirty=false;refreshJSON(true);toast('브리프로 재생성됨');});
   $('#btn-analyze').addEventListener('click',analyzeRefs);
   $('#btn-fabric-analyze').addEventListener('click',analyzeFabric);
+  {const qd=$('#quilt-drop');
+   if(qd){
+     qd.addEventListener('click',()=>{uploadStore='__quilt';$('#hidden-file').click();});
+     qd.addEventListener('dragover',e=>{e.preventDefault();qd.classList.add('drag');});
+     qd.addEventListener('dragleave',()=>qd.classList.remove('drag'));
+     qd.addEventListener('drop',e=>{e.preventDefault();qd.classList.remove('drag');if(e.dataTransfer.files.length)handleFiles(e.dataTransfer.files,'__quilt');});
+     qd.addEventListener('paste',e=>{const items=e.clipboardData&&e.clipboardData.items;if(!items)return;const fs=[];for(const it of items){if(it.type&&it.type.indexOf('image/')===0){const f=it.getAsFile();if(f)fs.push(f);}}if(fs.length){e.preventDefault();handleFiles(fs,'__quilt');}});
+   }
+   const qa=$('#btn-quilt-analyze');if(qa)qa.addEventListener('click',analyzeQuilt);
+   const qc=$('#btn-quilt-clear');if(qc)qc.addEventListener('click',()=>{state.quiltRef=null;renderQuiltPrev();$('#quilt-hint').innerHTML='퀼팅 패턴(다이아·물결·가로 등)을 이 이미지에서 읽어 반영합니다. <b>색은 사용하지 않아요.</b>';refreshJSON();});}
   $('#btn-gen').addEventListener('click',doGenerate);
   $('#showlogo').addEventListener('change',galleryGrid);
   $('#cmp-select').addEventListener('change',e=>renderCompare(e.target.value));
