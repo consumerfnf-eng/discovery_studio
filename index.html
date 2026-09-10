@@ -143,7 +143,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 .galbadge{position:absolute;top:6px;left:6px;z-index:3;font-size:9px;font-weight:700;padding:2px 6px;border-radius:6px;color:#fff}
 .galbadge.shared{background:#2C6BB3}
 .galbadge.own{background:#5a6b4d}
-.shdot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#C0392B;vertical-align:middle;margin-left:5px}
+.nm.sharedname{color:#C0392B;font-weight:600}
 .selbox.on{background:var(--pine);border-color:var(--pine);color:#fff}
 .card.picked{outline:2px solid var(--pine);outline-offset:-2px}
 .acard .rankbadges{left:auto;right:6px;align-items:flex-end}
@@ -971,9 +971,18 @@ async function openaiEdit(prompt,imgs,n){
 }
 async function openaiVision(messages){
   const st=state.settings;const key=cleanKey(st.apiKey);if(!key)throw new Error('API 키를 먼저 입력하세요.');
-  const r=await fetch(`${st.base.replace(/\/$/,'')}/chat/completions`,{method:'POST',headers:{'Authorization':`Bearer ${key}`,'Content-Type':'application/json'},body:JSON.stringify({model:st.vision||'gpt-4o-mini',messages})});
-  const j=await r.json();if(!r.ok)throw new Error(j.error?.message||('HTTP '+r.status));
-  return j.choices?.[0]?.message?.content||'';
+  const url=`${st.base.replace(/\/$/,'')}/chat/completions`;
+  const body=JSON.stringify({model:st.vision||'gpt-4o-mini',messages});
+  for(let attempt=0;attempt<3;attempt++){
+    const r=await fetch(url,{method:'POST',headers:{'Authorization':`Bearer ${key}`,'Content-Type':'application/json'},body});
+    if(r.status===429&&attempt<2){
+      let wait=2500;try{const je=await r.clone().json();const m=/try again in ([\d.]+)s/i.exec(je.error&&je.error.message||'');if(m)wait=Math.ceil(parseFloat(m[1])*1000)+500;}catch(e){}
+      await new Promise(res=>setTimeout(res,wait));continue;
+    }
+    const j=await r.json();if(!r.ok)throw new Error(j.error?.message||('HTTP '+r.status));
+    return j.choices?.[0]?.message?.content||'';
+  }
+  throw new Error('레이트리밋(분당 토큰 한도) — 잠시 후 다시 시도해 주세요.');
 }
 async function analyzeRefs(){
   const plan=computePlan();if(!plan.refs.length){toast('레퍼런스를 먼저 선택하세요.');return;}
@@ -993,7 +1002,7 @@ async function analyzeQuilt(){
   if(!state.quiltRef||!state.quiltRef.dataUrl){toast('먼저 퀼팅 이미지를 넣으세요.');return;}
   const btn=$('#btn-quilt-analyze');btn.disabled=true;btn.textContent='분석 중…';
   try{
-    const content=[{type:'text',text:'이 이미지의 퀼팅/누빔 패턴만 분석해. 순수 JSON 하나만 출력(설명·코드펜스 금지): {"type":"영문 예: horizontal channel / vertical channel / diamond / box grid / wavy channel","scale":"fine / medium / wide","direction":"영문 방향 설명"} 색·소재는 무시. 퀼팅 안 보이면 type 빈 문자열.'},{type:'image_url',image_url:{url:state.quiltRef.dataUrl}}];
+    const content=[{type:'text',text:'이 이미지의 퀼팅/누빔 패턴만 분석해. 순수 JSON 하나만 출력(설명·코드펜스 금지): {"type":"영문 예: horizontal channel / vertical channel / diamond / box grid / wavy channel","scale":"fine / medium / wide","direction":"영문 방향 설명"} 색·소재는 무시. 퀼팅 안 보이면 type 빈 문자열.'},{type:'image_url',image_url:{url:state.quiltRef.dataUrl,detail:'low'}}];
     let txt=await openaiVision([{role:'user',content}]);txt=txt.replace(/```json/gi,'').replace(/```/g,'').trim();
     const obj=JSON.parse(txt.slice(txt.indexOf('{'),txt.lastIndexOf('}')+1));
     state.quiltRef.quilting=obj;refreshJSON(true);
@@ -1006,7 +1015,7 @@ async function analyzeFabric(){
   if(!shell){toast('먼저 SHELL 원단을 선택하세요.');return;}
   const btn=$('#btn-fabric-analyze');btn.disabled=true;btn.textContent='분석 중…';
   try{
-    const content=[{type:'text',text:'이 이미지는 옷 겉감 원단/퀼팅 참고 이미지야. 아래 스키마의 순수 JSON 하나만 출력해 — 설명·마크다운·코드펜스 금지. {"fabric_type":"예: glossy nylon / matte taffeta / wool blend / velvet / gore-tex membrane","surface":"짜임·조직 묘사(영문 구, 예: tight ripstop weave, brushed twill)","finish":"광택·마감 묘사(영문 구, 예: soft satin sheen, matte)","color":"주요 색(영문)","quilting":{"type":"퀼팅/누빔 패턴 있으면 영문으로 — 예: horizontal channel / vertical channel / diamond / box grid / wavy channel / none","scale":"채널 폭·간격 — 예: fine / medium / wide"}} 퀼팅이 안 보이면 quilting은 빈 값. 확실치 않은 값은 빈 문자열.'},{type:'image_url',image_url:{url:shell.dataUrl}}];
+    const content=[{type:'text',text:'이 이미지는 옷 겉감 원단/퀼팅 참고 이미지야. 아래 스키마의 순수 JSON 하나만 출력해 — 설명·마크다운·코드펜스 금지. {"fabric_type":"예: glossy nylon / matte taffeta / wool blend / velvet / gore-tex membrane","surface":"짜임·조직 묘사(영문 구, 예: tight ripstop weave, brushed twill)","finish":"광택·마감 묘사(영문 구, 예: soft satin sheen, matte)","color":"주요 색(영문)","quilting":{"type":"퀼팅/누빔 패턴 있으면 영문으로 — 예: horizontal channel / vertical channel / diamond / box grid / wavy channel / none","scale":"채널 폭·간격 — 예: fine / medium / wide"}} 퀼팅이 안 보이면 quilting은 빈 값. 확실치 않은 값은 빈 문자열.'},{type:'image_url',image_url:{url:shell.dataUrl,detail:'low'}}];
     let txt=await openaiVision([{role:'user',content}]);
     txt=txt.replace(/```json/gi,'').replace(/```/g,'').trim();
     const obj=JSON.parse(txt.slice(txt.indexOf('{'),txt.lastIndexOf('}')+1));
@@ -1249,7 +1258,7 @@ function galleryGrid(){
     const selbox=state.galSelMode?`<span class="selbox ${sel?'on':''}">${sel?'✓':''}</span>`:'';
     const delBtn=mine?`<button class="x" data-galdel="${g.id}">✕</button>`:'';
     const badge=state.galSelMode?'':(!mine?`<span class="galbadge shared">↗ 공유받음</span>`:'');
-    return`<div class="card ${sel?'picked':''}" data-gid="${g.id}">${selbox}${delBtn}${badge}<span class="thumb" style="background-image:url('${showLogo&&g.logoUrl?g.logoUrl:g.dataUrl}')"></span><div class="meta"><div class="nm">${esc(g.name)}${(mine&&sharedN)?` <span class="shdot" title="공유중 ${sharedN}명"></span>`:''}</div><div class="tg">${tg}</div></div></div>`;}).join('');
+    return`<div class="card ${sel?'picked':''}" data-gid="${g.id}">${selbox}${delBtn}${badge}<span class="thumb" style="background-image:url('${showLogo&&g.logoUrl?g.logoUrl:g.dataUrl}')"></span><div class="meta"><div class="nm${(mine&&sharedN)?' sharedname':''}"${(mine&&sharedN)?` title="공유중 ${sharedN}명"`:''}>${esc(g.name)}</div><div class="tg">${tg}</div></div></div>`;}).join('');
 }
 
 /* ---------- compare ---------- */
