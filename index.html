@@ -292,8 +292,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
           <div id="pick-refs" class="pickbar"></div>
           <div class="grid2" style="gap:18px">
             <div><div class="sectlabel">3 · 모델</div>
-              <select id="model-source" class="inp" style="margin-bottom:6px"><option value="idol">기본 아이돌 프롬프트</option><option value="preserve">베이스 라인 모델 유지</option></select>
-              <div class="hint" style="margin:0 0 8px">아래에서 모델 이미지를 선택하면 그 인물로 대체합니다.</div>
+              <div class="hint" style="margin:0 0 8px">모델을 누르면 <b>그 얼굴</b>로, 안 누르면 <b>기본 K-pop 모델</b>로 생성됩니다. 아래 포즈를 함께 고르면 그 포즈로.</div>
               <div id="pick-models" class="cards"></div>
               <div class="sectlabel" style="margin-top:10px">포즈 <span class="hint" style="margin:0;font-weight:400">— 생성 시 이 포즈로</span></div>
               <div class="pillrow" id="gen-pose"></div></div>
@@ -774,22 +773,19 @@ function adoptClauses(J,noun){
 function volumeText(v){v=+v;return v<18?'minimal down fill, slim low-loft silhouette, barely padded':v<42?'light down fill, soft low-to-mid loft, lean profile':v<68?'medium down fill, balanced rounded loft':v<86?'high down fill, plump voluminous loft, pronounced puffiness':'maximum down fill, extremely puffy oversized high-loft volume';}
 function volumeHint(v){v=+v;return v<18?'슬림·경량':v<42?'로우로프트':v<68?'미드로프트':v<86?'하이로프트':'맥시멀 볼륨';}
 const POSE_LIST=[{id:'auto',ko:'자동'},{id:'walking',ko:'걷기'},{id:'arm_raised',ko:'팔 올림'},{id:'seated',ko:'앉기'},{id:'hands_on_waist',ko:'허리에 손'},{id:'yoga_mat_shoulder',ko:'요가매트 숄더'}];
-const POSE_COMMON=`Edit IMAGE 1, the original model image. IMAGE 1 is the sole source of truth for the model's identity, face, hairstyle, body proportions, clothing and styling.
-Preserve exactly from IMAGE 1: the same recognizable facial identity; the same face shape, eyes, eyebrows, nose, lips and skin tone; the same hairstyle, hair length, color and texture; the same apparent age and natural proportions; the exact same clothing design, color, material, fit and silhouette; the same garment construction, seams, trims, accessories AND the DISCOVERY chest logo (keep the logo exactly — same position, size, print style and spelling).
-Change ONLY the model's body pose according to the pose instruction below.
-STUDIO BACKGROUND LOCK: place the model in a clean professional studio with a seamless warm-white studio cyclorama, no visible horizon line, soft diffused studio lighting, evenly illuminated face and clothing, a subtle natural grounding shadow, a neutral premium fashion lookbook mood. Keep the same background tone, camera height, camera distance, lighting and model scale.
-Do not generate an outdoor setting, street, building, window, ocean, pool, plants, furniture, decorative objects, textured walls, patterns, colored lighting or harsh shadows.
-Do not redesign or restyle the model. Do not change the face, expression, makeup, hairstyle, figure or outfit. Do not add or remove garments. Avoid extra fingers, missing fingers, fused hands, duplicated limbs, distorted anatomy and unnatural joints.
-Produce one photorealistic high-resolution vertical full-body fashion lookbook image. Keep the head, hands, outfit and feet completely inside the frame.`;
+const POSE_COMMON=`Edit IMAGE 1, a fashion lookbook photo, to show the SAME outfit on the SAME model in a new standing posture.
+Keep from IMAGE 1 unchanged: the model's overall look and identity, hairstyle and hair colour, and the exact clothing — its design, colour, material, fit, silhouette, seams, trims, accessories and the DISCOVERY chest logo (keep the logo exactly: same position, size, print style and spelling).
+Change ONLY the model's posture and stance as described below.
+STUDIO BACKGROUND: keep a clean seamless warm-white studio backdrop with soft even lighting, a subtle natural grounding shadow and a neutral premium lookbook mood; keep the same camera height, distance and model scale. No outdoor scene, street, building, window, furniture, plants, props, patterns or coloured lighting.
+Do not restyle the outfit and do not add or remove garments; keep hands and fingers natural and avoid distorted anatomy. Produce one clean, high-quality vertical full-body fashion lookbook image with the head, hands, outfit and feet fully inside the frame.`;
 const POSE_PROMPTS={
-  auto:`Create a subtle alternative standing fashion pose for the same model. Keep the model generally facing the camera. Make only a small natural adjustment to the arms, hands, shoulders and weight distribution. Use a relaxed premium fashion lookbook posture. Do not create an exaggerated pose.`,
-  walking:`POSE CHANGE — WALKING: place the model in a natural forward-walking fashion pose — one leg stepping naturally in front, realistic weight transfer, gentle natural arm movement, upright but relaxed upper body, face clearly visible, natural mid-step posture. The model's hands must remain empty unless an object already exists in IMAGE 1.`,
-  arm_raised:`POSE CHANGE — ONE ARM RAISED: editorial standing pose — one arm raised gracefully above the head, raised elbow bent naturally, raised hand empty and relaxed, opposite arm resting naturally beside the body, body weight shifted onto one leg, other leg placed slightly across or in front, face clearly visible toward the camera. The raised arm and hand must not cover or distort the face.`,
-  seated:`POSE CHANGE — SEATED: natural editorial seated pose — seated lightly on one simple backless studio stool, torso leaning slightly forward, one knee raised or bent naturally, other leg positioned naturally for balance, one hand resting softly near the thigh, other arm relaxed, shoulders slightly angled, face clearly visible. The only permitted studio object is one minimal backless stool; do not add any other furniture or prop.`,
-  hands_on_waist:`POSE CHANGE — HANDS ON WAIST: confident standing fashion pose — both hands resting naturally on the waist or upper hips, elbows angled outward, shoulders relaxed, torso upright, legs positioned naturally, face clearly visible, premium sportswear lookbook posture. Keep both hands and fingers anatomically correct. Do not distort the waist, garment shape or clothing details.`,
-  yoga_mat_shoulder:`POSE CHANGE — YOGA MAT OVER SHOULDER: natural wellness walking pose — relaxed forward step, one arm holding the strap of a rolled yoga mat, the yoga mat resting naturally beside or behind the shoulder, opposite arm moving naturally, upright relaxed posture, face clearly visible, premium active-lifestyle mood. Add only one plain, unbranded, solid-color rolled yoga mat in a muted color that coordinates with the outfit. Do not add a handbag, sunglasses or any additional accessory. Keep the same warm-white studio background.`
+  auto:`Use a subtle alternative relaxed standing posture, generally facing the camera, with only a small natural change to the arms and stance. Keep it understated and premium.`,
+  walking:`A natural forward-walking posture: one foot stepping in front, relaxed natural arm movement, upright but relaxed upper body, face toward the camera. Hands stay empty unless the outfit already includes a held item.`,
+  arm_raised:`A relaxed editorial standing posture with one arm raised gracefully above the head (elbow softly bent, hand relaxed and empty) and the other arm resting by the side, face toward the camera. The raised arm must not cover the face.`,
+  seated:`A relaxed editorial seated posture on one simple backless studio stool, leaning slightly forward, one knee bent naturally, hands resting softly, face toward the camera. The only prop allowed is one minimal backless stool; add no other furniture or prop.`,
+  hands_on_waist:`A confident standing posture with both hands resting lightly at the waistline, elbows out, shoulders relaxed and an upright stance, face toward the camera — a premium sportswear lookbook look.`,
+  yoga_mat_shoulder:`A relaxed wellness walking posture holding the strap of one plain rolled yoga mat resting by the shoulder, the other arm moving naturally, face toward the camera. Add only one plain solid-colour rolled yoga mat in a muted tone that matches the outfit; no other accessory. Keep the warm-white studio backdrop.`
 };
-function renderEditPose(sel){const el=$('#edit-pose');if(!el)return;el.innerHTML=POSE_LIST.map(p=>'<button class="togglepill '+(sel===p.id?'on':'')+'" data-epose="'+p.id+'">'+p.ko+'</button>').join('');}
 function renderGenPose(){const el=$('#gen-pose');if(!el)return;el.innerHTML=POSE_LIST.map(p=>'<button class="togglepill '+(state.pose===p.id?'on':'')+'" data-gpose="'+p.id+'">'+p.ko+'</button>').join('');}
 
 /* ---------- plan (images + roles) ---------- */
@@ -799,8 +795,7 @@ function computePlan(){
   const refs=state.refs.filter(r=>state.pick.refs.has(r.id));
   const shell=state.fabrics.find(f=>f.id===state.pick.fabric);
   const noun=CATEGORIES[$('#cat-parent').value].noun;
-  const sel=($('#model-source')&&$('#model-source').value)||'idol';
-  const modelMode=model?'image':sel; // image | preserve | idol
+  const modelMode=model?'image':'idol'; // image(모델 선택=그 얼굴) | idol(미선택=기본 K-pop)
   const bal=+($('#balance')?$('#balance').value:35);
   const images=[],roles=[];
   const designRole=`${noun} reference — adopt its silhouette, neckline, collar and distinctive design for the ${noun}`;
@@ -901,7 +896,7 @@ function jsonToPrompt(J,plan){
     S.push(`Show the EXACT person from image 1 — keep their face, hair, skin tone and body identical — now wearing a newly designed DISCOVERY ${noun}. Do not change who the person is; this is a dressing/try-on task.`);
     S.push(`${noun.toUpperCase()} DESIGN — construct the new ${noun} from image 2 (the DISCOVERY base form) together with the reference image(s), balanced per DESIGN BALANCE below.`);
     adoptClauses(J,noun).forEach(c=>S.push(c));
-    S.push(`STYLING & POSE — follow the outfit styling, pose, framing and background of image 2, but the person is always the model from image 1.`);
+    S.push((J.pose&&J.pose!=='auto')?`STYLING — follow the outfit styling, framing and background of image 2; the person is always the model from image 1. Set the body pose from the MODEL POSE instruction below, not from image 2.`:`STYLING & POSE — follow the outfit styling, pose, framing and background of image 2, but the person is always the model from image 1.`);
   }else if(mode==='idol'){
     if(state.settings.baseModelPrompt)S.push(`SUBJECT / MODEL — ${state.settings.baseModelPrompt.trim()}`);
     if(plan&&plan.refLed)S.push(`${noun.toUpperCase()} DESIGN — build the ${noun} PRIMARILY from the reference image(s) (image 1): take their overall shape, silhouette and neckline. Use the DISCOVERY base form only for brand quilting quality and premium finishing, NOT for silhouette.`);
@@ -1012,8 +1007,8 @@ async function doGenerate(){
     const logoBaked=!!(J.branding&&J.branding.logo_on); // 생성 단계에서 로고를 이미 그렸으면 후처리 합성 생략(이중로고 방지)
     for(let i=0;i<raws.length;i++){
       const raw=raws[i];const logoUrl=(!logoBaked&&state.settings.logoDefault)?await applyLogo(raw):raw;
-      const g={id:uid(),name:`${plan.line.name} · ${J.target_season} ${J.category.parent}${raws.length>1?' #'+(i+1):''}`,season:J.target_season,
-        dataUrl:raw,logoUrl,sourceLineId:plan.line.id,refIds:plan.refs.map(r=>r.id),modelId:plan.model?plan.model.id:null,fabricId:plan.shell?plan.shell.id:null,
+      const _base=plan.line?plan.line.name:((plan.refs.find(r=>!r.detail)||plan.refs[0]||{}).name||'생성');const g={id:uid(),name:`${_base} · ${J.target_season} ${J.category.parent}${raws.length>1?' #'+(i+1):''}`,season:J.target_season,
+        dataUrl:raw,logoUrl,sourceLineId:plan.line?plan.line.id:null,refIds:plan.refs.map(r=>r.id),modelId:plan.model?plan.model.id:null,fabricId:plan.shell?plan.shell.id:null,
         category:J.category,keep:J.keep,replace:J.replace,adopt:J.adopt_from_ref,
         sheer:+($('#sheer')?$('#sheer').value:20),shimmer:+($('#shimmer')?$('#shimmer').value:25),balance:+$('#balance').value,
         designJSON:J,prompt,extra:J.notes,parentId:null,createdAt:Date.now()+i};
@@ -1289,9 +1284,6 @@ function openEdit(gid){
         <button class="btn sm" id="edit-model-go" style="margin-top:8px">선택 모델로 재생성</button>
         <div class="sectlabel">코디 변경 &amp; 디테일 수정</div><input id="edit-cody" class="inp" placeholder="예: 아우터 기장을 엉덩이까지 · 소매 롱하게 · 와이드 데님 코디">
         <button class="btn sm" id="edit-cody-go" style="margin-top:8px">코디 &amp; 디테일 수정 생성</button>
-        <div class="sectlabel">포즈 변형</div><div class="hint">기존 이미지 그대로 포즈만 바꿔 재생성 (얼굴·옷·배경·로고 유지). 포즈 선택 후 버튼을 누르세요.</div>
-        <div class="pillrow" id="edit-pose"></div>
-        <button class="btn sm" id="edit-pose-go" style="margin-top:8px">포즈 수정 생성</button>
         <div class="sectlabel">마감 재조절</div>
         <div class="slider-wrap" style="margin-top:6px"><div class="slider-head"><span class="lab">Sheer</span><span class="val" id="e-sheer-v">${editG.sheer}</span></div><input type="range" id="e-sheer" min="0" max="100" value="${editG.sheer}"></div>
         <div class="slider-wrap"><div class="slider-head"><span class="lab">Shimmer 광택</span><span class="val" id="e-shimmer-v">${editG.shimmer}</span></div><input type="range" id="e-shimmer" min="0" max="100" value="${editG.shimmer}"></div>
@@ -1308,9 +1300,6 @@ function openEdit(gid){
   $('#e-volume-h').textContent=volumeHint($('#e-volume').value);
   $('#edit-model-go').onclick=()=>{if(!chosenModel){toast('모델을 선택하세요.');return;}runEdit('model',{modelId:chosenModel});};
   $('#edit-cody-go').onclick=()=>{const t=$('#edit-cody').value.trim();if(!t){toast('변경 내용을 입력하세요.');return;}runEdit('cody',{text:t});};
-  let chosenPose='auto';renderEditPose('auto');
-  $('#edit-pose').onclick=e=>{const b=e.target.closest('[data-epose]');if(!b)return;chosenPose=b.dataset.epose;renderEditPose(chosenPose);};
-  $('#edit-pose-go').onclick=()=>runEdit('pose',{pose:chosenPose});
   $('#edit-finish-go').onclick=()=>runEdit('finish',{sheer:+$('#e-sheer').value,shimmer:+$('#e-shimmer').value,volume:+$('#e-volume').value});
   $('#edit-dl').onclick=()=>{const cur=state.gallery.find(g=>g.id===editShown);download(cur.logoUrl||cur.dataUrl,cur.name+'.png');};
   $('#edit-prev').onclick=()=>{const cur=state.gallery.find(g=>g.id===editShown)||editG;openLightbox(cur.logoUrl||cur.dataUrl);};
@@ -1323,12 +1312,11 @@ async function runEdit(kind,opt){
   const cur=state.gallery.find(g=>g.id===editShown)||editG;const curImg=Array.isArray(cur.dataUrl)?cur.dataUrl[0]:cur.dataUrl;let prompt,imgs=[curImg];
   if(kind==='model'){const m=state.models.find(x=>x.id===opt.modelId);imgs.push(m.dataUrl);prompt='Keep the garment in the first image EXACTLY the same (identical design, color, construction). The output MUST depict the exact person from the SECOND image — their face, hair, skin tone and body — replacing the first image model entirely. Only the pose may follow the first image. Clean studio lighting, neutral background. PRESERVE the DISCOVERY chest logo from the first image EXACTLY — same position, size, print style and spelling; do NOT remove, move, distort or re-draw it.';}
   else if(kind==='cody')prompt=`Edit the image to apply this change: ${opt.text}. This may adjust the DISCOVERY garment's OWN details, length, fit or hardware, OR the coordinating items (other clothing, footwear, accessories). Change ONLY what is requested and keep everything else the same — same model, face, pose, framing, background, colour and overall image quality. PRESERVE the DISCOVERY chest logo EXACTLY — same position, size and print style; do NOT remove, move, distort or alter it.`;
-  else if(kind==='pose')prompt=POSE_COMMON+'\n\n'+(POSE_PROMPTS[opt.pose]||POSE_PROMPTS.auto);
   else prompt=`Keep the garment design, silhouette and model identical. Re-render only the surface finish and padding — fabric sheer: ${sheerText(opt.sheer)}; surface: ${shimmerText(opt.shimmer)}; down fill volume: ${volumeText(opt.volume)}. Keep the original color. PRESERVE the DISCOVERY chest logo EXACTLY — do NOT remove, move, distort or re-draw it.`;
   const prev=$('#edit-prev');prev.innerHTML=`<div class="load"><div class="spinner"></div><span>수정 중…</span></div>`;
   try{
     const raw=(await openaiEdit(prompt,imgs))[0];const logoUrl=state.settings.logoDefault?await applyLogo(raw):raw;const root=editG.parentId||editG.id;
-    const ng={id:uid(),name:cur.name+' ·'+(kind==='model'?'M':kind==='cody'?'C':kind==='pose'?'P':'F'),season:cur.season,dataUrl:raw,logoUrl,
+    const ng={id:uid(),name:cur.name+' ·'+(kind==='model'?'M':kind==='cody'?'C':'F'),season:cur.season,dataUrl:raw,logoUrl,
       sourceLineId:cur.sourceLineId,refIds:cur.refIds,modelId:kind==='model'?opt.modelId:cur.modelId,fabricId:cur.fabricId,
       category:cur.category,keep:cur.keep,replace:cur.replace,adopt:cur.adopt,
       sheer:kind==='finish'?opt.sheer:cur.sheer,shimmer:kind==='finish'?opt.shimmer:cur.shimmer,volume:kind==='finish'?opt.volume:cur.volume,balance:cur.balance,
@@ -1438,6 +1426,7 @@ function parseName(fn){
     if(!season){const ns=normSeason(p);if(ns){season=ns;matched=true;continue;}}
     nameParts.push(p);
   }
+  if(!gcat){const gc=gcatFromText(base);if(gc){gcat=gc;matched=true;}} // 부분일치 폴백(다운점퍼·롱패딩 등)
   return{gender,gcat,season,name:nameParts.join('_')||base,ok:matched};
 }
 async function handleFiles(files,store){
@@ -1567,7 +1556,6 @@ function wire(){
   $('#season').addEventListener('change',renderPicks);
   $('#cat-parent').addEventListener('change',()=>applyCategory(true));
   $('#cat-sub').addEventListener('change',()=>{updateVolumeVis();refreshJSON();});
-  $('#model-source').addEventListener('change',()=>updatePromptPrev());
   $('#extra').addEventListener('input',()=>refreshJSON());
   $('#logo-generate').addEventListener('change',()=>refreshJSON(true));
   $('#designjson').addEventListener('input',()=>{state.jsonDirty=true;updatePromptPrev();});
@@ -1619,6 +1607,7 @@ async function afterAuthBoot(){
   await loadUserCloudSettings(); // 이 계정에 저장된 개인 키/설정을 클라우드에서 불러와 적용(리셋 방지)
   try{state.lines=await storeAll('lines');state.refs=await storeAll('refs');state.models=await storeAll('models');state.fabrics=await storeAll('fabrics');state.gallery=await storeAll('gallery');}catch(e){toast('클라우드 로드 실패, 로컬 데이터로 표시: '+e.message);state.lines=await allOf('lines');state.refs=await allOf('refs');state.models=await allOf('models');state.fabrics=await allOf('fabrics');state.gallery=await allOf('gallery');}
   state.refs=(state.refs||[]).filter(refVisible); // 시크릿 레퍼는 소유자에게만
+  [...(state.lines||[]),...(state.refs||[])].forEach(it=>{if(it&&!it.gcat&&it.name){const g=gcatFromText(it.name);if(g)it.gcat=g;}}); // 카테고리 비면 이름에서 보정
   try{
     let loaded=false;
     if(cloudOn()){try{const sr=await supaSelect('sales');const main=sr.find(x=>x.id==='main')||sr[0];if(main){const rws=(main.rows)||Object.values(main.map||{});indexSales(rws);state.salesRaw=main.raw||''; loaded=true;}}catch(e){}}
