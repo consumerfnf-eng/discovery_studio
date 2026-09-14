@@ -254,7 +254,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     </div>
     <div id="lib-refs" class="libpane" style="display:none">
       <div class="panel">
-        <div class="drop" data-store="refs"><b>레퍼런스 이미지 올리기</b><br><span style="font-size:12px">채용할 디자인(카라·퀼팅·실루엣·핏) 레퍼런스 · 파일명 <b>성별_카테고리_시즌_이름</b> 이면 자동 분류</span></div>
+        <div class="drop" data-store="refs"><b>레퍼런스 이미지 · CSV 올리기</b><br><span style="font-size:12px">이미지: 파일명 <b>성별_카테고리_시즌_이름</b> 자동 분류 · <b>CSV</b>(image_url·brand·season 포함)를 드래그하면 사진·브랜드·시즌 자동 임포트</span></div>
         <div class="bulkbar" data-store="refs"></div>
         <div class="arch-chips" id="lib-refs-chips" style="margin:14px 0 0"></div>
         <div id="grid-refs" class="cards lg"></div>
@@ -503,7 +503,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <div id="toast"></div>
 <div id="lightbox"><button class="lb-close">✕</button><img alt=""></div>
-<input type="file" id="hidden-file" accept="image/*" multiple style="display:none">
+<input type="file" id="hidden-file" accept="image/*,.csv" multiple style="display:none">
 <input type="file" id="hidden-json" accept="application/json" style="display:none">
 
 <script>
@@ -644,7 +644,7 @@ async function toBlob(du){if(/^data:/.test(du))return dataUrlToBlob(du);const r=
 
 /* ---------- defaults ---------- */
 const DNA_DEFAULT=`Premium Italian down outerwear house. Lightweight yet dimensional construction; sophisticated nylon surface with a subtle glossy or silky finish. Refined rather than sporty quilting; clean high-density stitching; premium volume control; modern feminine silhouette with controlled waist definition when appropriate. Avoid cheap flat quilting, avoid overly tactical outdoor appearance, avoid generic mass-market proportions. QUILTING RULE: diamond quilting must read clean, symmetrical and softly dimensional with consistent stitch tension and premium loft. LOGO RULE: do NOT draw any brand logo, patch, label or lettering on the garment — the surface stays completely blank and unbranded; the DISCOVERY logo is added later in post-production.`;
-const BASE_MODEL_DEFAULT=`Beautiful young adult Korean female K-pop idol, unmistakably Korean features: small refined oval face, soft V-line jaw, clear luminous skin, natural glossy hair. Minimal clean white studio background, full-length editorial lookbook lighting, wearing a Discovery-inspired premium piece.`;
+const BASE_MODEL_DEFAULT=`Beautiful young adult Korean female K-pop idol, unmistakably Korean features: small refined oval face, soft V-line jaw, clear luminous skin, natural glossy hair. Soft cool grey-blue seamless studio backdrop, soft diffused editorial lookbook lighting with a gentle natural shadow, wearing a Discovery-inspired premium piece.`;
 function logoRule(type){
   var common='DISCOVERY LOGO — MANDATORY. Place exactly ONE DISCOVERY brand mark on the WEARER\'S LEFT CHEST (viewer\'s right in a front-facing image). Reproduce the authentic "Discovery Expedition" mark (the round globe/line emblem next to the word "Discovery") from the provided LOGO REFERENCE image — correct spelling and proportions. Keep it small and refined, physical width about 6-8 cm. TONE-ON-TONE: derive the mark colour from the garment main shell colour, only subtly lighter or darker, so it reads integrated into the fabric rather than a contrasting graphic. PLACEMENT: wearer upper-left chest only — never sleeve, collar, hem, pocket, center-front or right chest; never duplicate it. CRITICAL — render ONLY the mark itself directly on the garment fabric: do NOT include the reference image background, do NOT add any rectangular or square plaque, box, sticker, card, tag or border around it, and do NOT float it above the surface. No oversized, mirrored, distorted or misspelled logo; no other lettering or branding anywhere else on the garment.';
   var patch=' FORM = WOVEN / EMBROIDERED PATCH (와펜): render the mark as a small embroidered or woven appliqué that conforms to the fabric surface and drape, with a subtle stitched tonal edge that hugs the mark outline and a slight raised thread texture — no large rectangular backing.';
@@ -765,7 +765,7 @@ function refmixHint(v){v=+v;return v<20?'1번 강하게':v<45?'1번 우선':v<70
 function refmixText(v){v=+v;return v<20?'weight the FIRST reference strongly for design':v<45?'favour the FIRST reference':v<70?'blend both references evenly':v<90?'favour the SECOND reference':'weight the SECOND reference strongly for design';}
 function zipperText(z){return z==='waterproof'?'CLOSURE — a waterproof laminated zipper: welded/taped seam-sealed zip with a matte tonal tape and minimal exposed teeth, like a technical shell (as in the reference)':z==='stormflap'?'CLOSURE — a center-front zipper hidden behind an overlapping storm placket/flap (the zip is covered by a fabric ribbon flap)':z==='exposed'?'CLOSURE — a clean EXPOSED front zipper: visible teeth, tonal tape, no covering flap':'';}
 function placketText(pk){return pk==='placket'?'FRONT PLACKET — include a front placket: a vertical fabric flap running down the center-front over the closure':pk==='no-placket'?'FRONT PLACKET — no placket; keep the center-front clean with no covering flap':'';}
-function quiltingClause(q){if(!q||!q.type||/^\s*(none|no)\b/i.test(q.type))return'';return 'QUILTING — clearly render '+q.type+(q.scale?' ('+q.scale+' scale)':'')+' quilting: consistent, evenly-spaced baffles/channels running in the correct direction, with premium even loft; make the quilting pattern and its direction distinctly visible across the whole garment.';}
+function quiltingClause(q){if(!q||!q.type||/^\s*(none|no)\b/i.test(q.type))return'';return 'QUILTING PATTERN — clearly render '+q.type+(q.scale?' ('+q.scale+' scale)':'')+' quilting: consistent, evenly-spaced baffles/channels in the correct direction, distinctly visible across the whole garment. Take ONLY the channel GEOMETRY and direction — the shell fabric, colour and sheen come from the SHELL FABRIC / MATERIAL, not from any quilting reference.';}
 function adoptClauses(J,noun){
   const a=J.adopt_from_ref||[],out=[];
   if(!a.length)return out;
@@ -829,7 +829,7 @@ function computePlan(){
       pushList(refs);pushShell();
     }
   }
-  if(state.quiltRef&&state.quiltRef.dataUrl){images.push(state.quiltRef.dataUrl);roles.push('QUILTING PATTERN reference — copy ONLY the quilting/baffle channel pattern, its shape and direction from this image; IGNORE its colour and material entirely, do not take colour from it');}
+  if(state.quiltRef&&state.quiltRef.dataUrl){images.push(state.quiltRef.dataUrl);roles.push('QUILTING PATTERN reference — take ONLY the quilting channel/baffle GEOMETRY, shape and direction from this image. Do NOT copy its fabric, colour, sheen or material — the shell fabric is defined separately by the fabric swatch / MATERIAL. Apply these channels on top of that shell fabric');}
   const _logoOn=!!($('#logo-generate')&&$('#logo-generate').checked);
   if(_logoOn&&state.settings.logoDataUrl){images.push(state.settings.logoDataUrl);roles.push('DISCOVERY LOGO reference (small emblem) — reproduce ONLY this mark on the wearer left chest; ignore its background/box; never paste it as a rectangular patch');}
   return{line,model,refs,shell,images,roles,noun,hasModel:modelMode==='image',modelMode,refLed,balance:bal};
@@ -909,7 +909,7 @@ function jsonToPrompt(J,plan){
     if(plan&&plan.refLed)S.push(`${noun.toUpperCase()} DESIGN — build the ${noun} PRIMARILY from the reference image(s) (image 1): take their overall shape, silhouette and neckline. Use the DISCOVERY base form only for brand quilting quality and premium finishing, NOT for silhouette.`);
     else S.push(`${noun.toUpperCase()} DESIGN — construct the new ${noun} from the DISCOVERY base form (image 1) together with the reference image(s), balanced per DESIGN BALANCE below. Redesign the ${noun}; keep the DISCOVERY look and quality.`);
     adoptClauses(J,noun).forEach(c=>S.push(c));
-    S.push(`Dress the described model in this ${noun}. Minimal clean white studio background, full-length editorial pose.`);
+    S.push(`Dress the described model in this ${noun}. Soft cool grey-blue seamless studio backdrop with soft diffused lighting and a gentle natural shadow, full-length editorial pose.`);
   }else{ // preserve
     const keep=(J.keep||[]);
     if(keep.length)S.push(`PRESERVE exactly from the base image, do not alter: ${keep.join(', ')}.`);
@@ -929,7 +929,7 @@ function jsonToPrompt(J,plan){
   {const hay=[m.fabric_type,m.surface,m.finish,J.notes].filter(Boolean).join(' ');if(/gore-?\s?tex|고어\s?텍스/i.test(hay))S.push('SHELL FABRIC (GORE-TEX) — ALWAYS render as a high-performance GORE-TEX-type technical membrane: a MID-WEIGHT or heavier structured shell, FULLY OPAQUE (never sheer, translucent or see-through), a MATTE finish (no gloss, no shimmer, no wet look), WRINKLE-FREE holding its shape with minimal creasing, crisp bonded/taped seams. Never thin, papery, flimsy, glossy or heavily crinkled.');}
   if(m.shell_ref){
     const nm=m.shell_name?` (${m.shell_name})`:'';
-    S.push(`FABRIC SWATCH${nm} — the fabric-swatch image is a flat fabric swatch, a material sample and NOT a garment. Reproduce its exact colour, weave, texture and surface sheen across the ENTIRE ${noun} shell so the fabric reads identical to the swatch. Apply it as the overall material — do not paste the swatch as a panel, pocket or patch, and do not copy any shape from it.`);
+    S.push(`SHELL FABRIC${nm} — the fabric-swatch image defines the SHELL MATERIAL for the whole garment: reproduce its exact weave, texture, surface and sheen across the ENTIRE ${noun} shell so the material reads identical to the swatch. Do NOT take its colour (garment colour follows the base line and COLOUR BALANCE). It is a material sample, not a garment — do not paste it as a panel, pocket or patch, and do not copy any shape from it. Any quilting channels are formed ON TOP of this shell fabric.`);
   }
   if(J.design_balance!=null)S.push(`DESIGN BALANCE — ${balanceText(J.design_balance*100)}`);
   if(J.color_balance!=null)S.push(colorBalWord(J.color_balance*100));
@@ -948,7 +948,7 @@ function jsonToPrompt(J,plan){
   if(J.notes)S.push(`ADDITIONAL — ${J.notes}.`);
   if(rolesText)S.push(`IMAGE ROLES — ${rolesText}.`);
   S.push('FUR RULE — if the base or reference garment already has a fur collar, fur hood-trim or fur placket, keep ONLY that existing fur exactly as-is; do NOT add a second, additional or different fur collar/trim, and never layer new fur over existing fur. Add fur only when the garment has none AND it is explicitly requested.');
-  S.push('Clean studio lighting, neutral seamless background, photorealistic, editorial luxury quality, sharp premium detail.');
+  S.push('Soft COOL GREY-BLUE seamless studio backdrop, soft diffused directional studio lighting with a gentle natural drop shadow and even, true-to-fabric colour; calm premium editorial lookbook mood, photorealistic, sharp premium detail.');
   return S.join(' ');
 }
 function rolesToText(roles){return roles.map((r,i)=>`image ${i+1}: ${r}`).join('. ');}
@@ -1458,7 +1458,53 @@ function parseName(fn){
   if(!gcat){const gc=gcatFromText(base);if(gc){gcat=gc;matched=true;}} // 부분일치 폴백(다운점퍼·롱패딩 등)
   return{gender,gcat,season,name:nameParts.join('_')||base,ok:matched};
 }
+function parseCSV(text){
+  const rows=[];let row=[],cur='',q=false;text=(text||'').replace(/^\ufeff/,'');
+  for(let i=0;i<text.length;i++){const ch=text[i];
+    if(q){if(ch==='"'){if(text[i+1]==='"'){cur+='"';i++;}else q=false;}else cur+=ch;}
+    else{if(ch==='"')q=true;else if(ch===','){row.push(cur);cur='';}else if(ch==='\n'){row.push(cur);rows.push(row);row=[];cur='';}else if(ch==='\r'){}else cur+=ch;}
+  }
+  if(cur!==''||row.length){row.push(cur);rows.push(row);}
+  return rows.filter(r=>r.some(x=>(x||'').trim()!==''));
+}
+function seasonFromYm(s){s=(s||'').trim();const fm=/^(\d{2})(SS|FW)$/i.exec(s);if(fm)return s.toUpperCase();const m=/^(\d{4})[-\/.](\d{1,2})/.exec(s);if(m){let y=+m[1],mo=+m[2];const half=(mo>=8||mo<=1)?'FW':'SS';if(mo<=1)y=y-1;return String(y%100).padStart(2,'0')+half;}const y2=/^(\d{4})/.exec(s);if(y2)return String((+y2[1])%100)+'FW';return '';}
+function gcatFromCsvCat(cat){cat=(cat||'').trim().toLowerCase();const map={outerwear:'OUTER',outer:'OUTER',jacket:'OUTER',coat:'OUTER',padding:'OUTER',down:'OUTER',top:'TOP',tops:'TOP',tshirt:'TOP','t-shirt':'TOP',knit:'TOP',shirt:'TOP',sweater:'TOP',hoodie:'TOP',bottom:'BOTTOM',bottoms:'BOTTOM',pants:'BOTTOM',pant:'BOTTOM',skirt:'BOTTOM',shorts:'BOTTOM',legging:'BOTTOM',leggings:'BOTTOM',dress:'DRESS',onepiece:'DRESS',acc:'ACC',accessory:'ACC',accessories:'ACC',bag:'ACC',hat:'ACC',cap:'ACC',shoes:'SHOES',shoe:'SHOES',footwear:'SHOES',sneakers:'SHOES'};if(map[cat])return map[cat];return gcatFromText(cat)||'';}
+async function importRefsCsv(file,store){
+  store=(store==='lines')?'lines':'refs';
+  let text='';try{text=await file.text();}catch(e){toast('CSV를 읽지 못했어요: '+e.message);return;}
+  const rows=parseCSV(text);
+  if(rows.length<2){toast('CSV에서 데이터 행을 찾지 못했어요.');return;}
+  const header=rows[0].map(h=>(h||'').replace(/^\ufeff/,'').trim().toLowerCase());
+  const col=n=>header.indexOf(n);
+  const iImg=col('image_url'),iBrand=col('brand'),iSeason=col('season'),iName=col('product_name'),iGender=col('gender'),iCat=col('category');
+  if(iImg<0){toast('CSV에 image_url 컬럼이 없어요.');return;}
+  const seen=new Set(state[store].map(x=>(x.name||'').trim()).filter(Boolean));
+  let added=0,skipped=0;
+  toast('CSV 임포트 중…');
+  for(let r=1;r<rows.length;r++){
+    const c=rows[r];const url=(c[iImg]||'').trim();
+    if(!/^https?:\/\//i.test(url)){skipped++;continue;}
+    const brand=iBrand>=0?(c[iBrand]||'').trim():'';
+    const pname=(iName>=0?(c[iName]||'').trim():'')||brand||'product';
+    const nm=((brand?brand+' ':'')+pname).trim();
+    if(nm&&seen.has(nm)){skipped++;continue;} if(nm)seen.add(nm);
+    const it={id:uid(),name:nm,dataUrl:url,brand:brand,
+      gender:iGender>=0?(GENDER_MAP[(c[iGender]||'').trim().toLowerCase()]||''):'',
+      gcat:iCat>=0?gcatFromCsvCat(c[iCat]):'',
+      season:iSeason>=0?seasonFromYm(c[iSeason]):'',
+      rankDate:iSeason>=0?(c[iSeason]||'').trim():'',
+      tags:[],createdAt:Date.now(),fromCsv:true};
+    state[store].push(it);
+    if(cloudOn()){try{await supaUpsert(store,{id:it.id,data:it});}catch(e){}}
+    putOf(store,it).catch(()=>{});
+    added++;
+  }
+  libGrid(store);refreshCounts();renderPicks();
+  toast(`CSV에서 ${added}개 레퍼런스 추가${skipped?` · 중복/무효 ${skipped} 건너뜀`:''}`);
+}
 async function handleFiles(files,store){
+  const _csv=[...files].find(f=>/\.csv$/i.test(f.name||'')||(f.type||'').indexOf('csv')>=0);
+  if(_csv){await importRefsCsv(_csv,store==='lines'?'lines':'refs');return;}
   if(store==='__logo'){let du=await fileToDataUrl(files[0]);du=await resizeDataUrl(du,600);state.settings.logoDataUrl=du;await putOf('settings',state.settings);renderLogoPrev();toast('로고 저장됨');return;}
   if(store==='__quilt'){const f=[...files].find(x=>x.type.startsWith('image/'));if(!f)return;let du=await fileToDataUrl(f);du=await resizeDataUrl(du,1024);state.quiltRef={dataUrl:du};renderQuiltPrev();$('#quilt-hint').textContent='이미지 넣음 · \'AI 퀼팅 분석\'을 누르면 패턴을 읽어 반영합니다. 색은 미사용.';refreshJSON();toast('퀼팅 이미지 추가');return;}
   if(store==='__gallery'){
