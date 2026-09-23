@@ -158,6 +158,9 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 .hint{font-size:11.5px;color:var(--ink-45);margin-top:6px}
 .divider{height:1px;background:var(--line);margin:18px 0}
 .pillrow{display:flex;gap:6px;flex-wrap:wrap}
+
+.ctlrow{margin-top:10px}
+.ctllab{display:block;font-size:11px;color:var(--ink-45);margin-bottom:4px}
 .togglepill{font-size:11.5px;padding:5px 11px;border:1px solid var(--line);border-radius:20px;background:var(--white);color:var(--ink-70);transition:.12s}
 .togglepill:hover{border-color:var(--pine-l)}
 .togglepill.on{background:var(--pine);border-color:var(--pine);color:#F4F1E7}
@@ -284,7 +287,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
         <div class="panel">
           <div class="row" style="gap:12px">
             <div style="flex:1"><label class="fld">타깃 시즌 (기획)</label><select id="season" class="inp"></select></div>
-            <div style="flex:1"><label class="fld">카테고리</label><select id="cat-parent" class="inp"><option>OUTERWEAR</option><option>BOTTOMS</option></select></div>
+            <div style="flex:1"><label class="fld">카테고리</label><select id="cat-parent" class="inp"><option>OUTERWEAR</option><option>TOP</option><option>PANTS</option><option>SKIRT</option><option>DRESS</option><option>SHOES</option></select></div>
             <div style="flex:1.2"><label class="fld">서브</label><select id="cat-sub" class="inp"></select></div>
           </div>
           <div class="sectlabel">1 · 베이스 라인 <span id="prevlabel" class="chip pine"></span> <span class="hint" style="margin:0">— 모델·포즈·나머지 스타일링을 유지할 원본</span></div>
@@ -322,7 +325,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
           <div class="slider-wrap">
             <div class="slider-head"><span class="lab">디자인 반영 밸런스</span><span class="val" id="balance-v">35</span></div>
             <input type="range" id="balance" min="0" max="100" value="35">
-            <div class="row" style="justify-content:space-between;margin-top:3px"><span class="slider-hint" style="margin:0">◀ 디스커버리 라인</span><span class="slider-hint" id="balance-h" style="margin:0;color:var(--pine);font-weight:600"></span><span class="slider-hint" style="margin:0">레퍼런스 ▶</span></div>
+            <div class="row" style="justify-content:space-between;margin-top:3px"><span class="slider-hint" id="balance-l" style="margin:0">◀ 디스커버리 라인</span><span class="slider-hint" id="balance-h" style="margin:0;color:var(--pine);font-weight:600"></span><span class="slider-hint" id="balance-r" style="margin:0">레퍼런스 ▶</span></div>
           </div>
           <div class="slider-wrap">
             <div class="slider-head"><span class="lab">컬러 밸런스</span><span class="val" id="colorbal-v">50</span></div>
@@ -337,22 +340,12 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 
           <div class="sectlabel">소재 / FABRIC</div>
           <div class="pillrow" id="fabric-pills"></div>
-          <div class="slider-wrap" id="sheer-wrap">
-            <div class="slider-head"><span class="lab">Sheer 시스루</span><span class="val" id="sheer-v">20</span></div>
-            <input type="range" id="sheer" min="0" max="100" value="20"><div class="slider-hint" id="sheer-h"></div>
+          <div class="slider-wrap">
+            <div class="slider-head"><span class="lab">소재 퍼포먼스</span><span class="val" id="matperf-v">50</span></div>
+            <input type="range" id="matperf" min="0" max="100" value="50">
+            <div class="row" style="justify-content:space-between;margin-top:3px"><span class="slider-hint" style="margin:0">◀ 천연 소재</span><span class="slider-hint" id="matperf-h" style="margin:0;color:var(--pine);font-weight:600"></span><span class="slider-hint" style="margin:0">퍼포먼스 ▶</span></div>
           </div>
-
-          <div id="construction-wrap">
-          <div class="sectlabel">구조 디테일</div>
-          <div class="row" style="gap:8px;flex-wrap:wrap;align-items:flex-end">
-            <div><label class="fld" style="margin:0">지퍼</label><select id="c-zipper" class="inp sm"><option value="">자동</option><option value="waterproof">워터프루프(방수 라미)</option><option value="stormflap">스톰플랩(플랩 덮개)</option><option value="exposed">노출형</option></select></div>
-            <div><label class="fld" style="margin:0">플라켓</label><select id="c-placket" class="inp sm"><option value="">자동</option><option value="placket">있음</option><option value="no-placket">없음</option></select></div>
-          </div>
-          <div class="slider-wrap" id="volume-wrap">
-            <div class="slider-head"><span class="lab">충전재 볼륨</span><span class="val" id="volume-v">50</span></div>
-            <input type="range" id="volume" min="0" max="100" value="50"><div class="slider-hint" id="volume-h"></div>
-          </div>
-          </div>
+          <div id="cat-controls"></div>
 
           <label class="row" id="logogen-wrap" style="font-size:12px;color:var(--ink-70);gap:6px;margin-top:14px;align-items:flex-start">
             <input type="checkbox" id="logo-generate" style="margin-top:2px">
@@ -655,25 +648,70 @@ function logoRule(type){
 /* ---------- category model ---------- */
 function matDefault(){return{fabric_type:'',surface:'',finish:'',semi_sheer:0.2,shimmer:0.25,shell_ref:false};}
 const CATEGORIES={
-  OUTERWEAR:{noun:'outerwear',
-    subs:['INSULATION JACKET','WINDBREAKER','LIGHT DOWN','LONG DOWN','VEST','COAT','PONCHO'],
-    keepDefault:['model identity','face','hair','pose','background','top','bottoms','footwear'],
-    replaceDefault:['outerwear'],
-    adoptDefault:['silhouette','neckline','collar','quilting'],
-    adoptOpts:['silhouette','neckline','collar','drape/scarf','hood','sleeve','quilting','length','closure','material surface','waist','pockets','trim','drawcord/string','belt','zipper pull','hardware'],
-    schema:'{"silhouette":"","length":"","neckline":"","collar":"","sleeve":"","quilting":{"type":"","scale":"","puffiness":""},"waist":"","pocket":"","material":{"fabric_type":"","surface":"","finish":""}}',
-    attrs:()=>({silhouette:'',length:'',neckline:'',collar:'',sleeve:'',quilting:{type:'',scale:'',puffiness:''},waist:'',pocket:'',material:matDefault()})},
-  BOTTOMS:{noun:'bottoms',
-    subs:['LEGGINGS','WIDE PANTS','STRAIGHT PANTS','SKIRT','SHORTS','JOGGER'],
-    keepDefault:['model identity','face','hair','pose','background','top','outerwear','footwear'],
-    replaceDefault:['bottoms'],
-    adoptDefault:['silhouette','leg shape','length'],
-    adoptOpts:['silhouette','rise','leg shape','length','waist','material surface','pockets','drawcord/string','belt','hardware'],
-    schema:'{"silhouette":"","rise":"","leg":"","length":"","waist":"","pocket":"","material":{"fabric_type":"","surface":"","finish":""}}',
-    attrs:()=>({silhouette:'',rise:'',leg:'',length:'',waist:'',pocket:'',material:matDefault()})}
+  OUTERWEAR:{noun:'outerwear',subs:['INSULATION JACKET','WINDBREAKER','LIGHT DOWN','LONG DOWN','VEST','COAT','PONCHO'],keepDefault:['model identity','face','hair','pose','background','top','bottoms','footwear'],replaceDefault:['outerwear'],adoptDefault:['silhouette','neckline','collar','quilting'],adoptOpts:['silhouette','neckline','collar','hood','sleeve','quilting','length','closure','material surface','waist','pockets','trim','drawcord/string','belt','hardware'],schema:'{"silhouette":"","material":{"fabric_type":"","surface":"","finish":""}}',attrs:()=>({silhouette:'',material:matDefault()})},
+  TOP:{noun:'top',subs:['T-SHIRT','KNIT','SHIRT','HOODIE','SWEATSHIRT','BLOUSE'],keepDefault:['model identity','face','hair','pose','background','outerwear','bottoms','footwear'],replaceDefault:['top'],adoptDefault:['silhouette','neckline'],adoptOpts:['silhouette','neckline','sleeve','length','fit','hem','material surface','graphic'],schema:'{"silhouette":"","material":{"fabric_type":"","surface":"","finish":""}}',attrs:()=>({silhouette:'',material:matDefault()})},
+  PANTS:{noun:'pants',subs:['STRAIGHT','WIDE','TAPERED','JOGGER','CARGO','LEGGINGS','SHORTS'],keepDefault:['model identity','face','hair','pose','background','top','outerwear','footwear'],replaceDefault:['bottoms'],adoptDefault:['silhouette','leg shape'],adoptOpts:['silhouette','rise','leg shape','length','waist','hem','material surface','pockets'],schema:'{"silhouette":"","material":{"fabric_type":"","surface":"","finish":""}}',attrs:()=>({silhouette:'',material:matDefault()})},
+  SKIRT:{noun:'skirt',subs:['MINI','MIDI','MAXI','PLEATED','WRAP','A-LINE'],keepDefault:['model identity','face','hair','pose','background','top','outerwear','footwear'],replaceDefault:['bottoms'],adoptDefault:['silhouette','length'],adoptOpts:['silhouette','length','waist','slit','material surface','pleats'],schema:'{"silhouette":"","material":{"fabric_type":"","surface":"","finish":""}}',attrs:()=>({silhouette:'',material:matDefault()})},
+  DRESS:{noun:'dress',subs:['MINI','MIDI','MAXI','SHIRT DRESS','KNIT DRESS','SLIP'],keepDefault:['model identity','face','hair','pose','background','footwear'],replaceDefault:['dress'],adoptDefault:['silhouette','neckline'],adoptOpts:['silhouette','neckline','sleeve','length','waist','material surface'],schema:'{"silhouette":"","material":{"fabric_type":"","surface":"","finish":""}}',attrs:()=>({silhouette:'',material:matDefault()})},
+  SHOES:{noun:'shoes',subs:['SNEAKERS','RUNNER','CHUNKY','LOAFER','BOOTS','SANDALS','FLAT'],keepDefault:['model identity','pose','background'],replaceDefault:['footwear'],adoptDefault:['silhouette'],adoptOpts:['silhouette','sole','toe','upper','closure','material surface'],schema:'{"silhouette":"","material":{"fabric_type":"","surface":"","finish":""}}',attrs:()=>({silhouette:'',material:matDefault()})}
 };
-const KEEP_OPTS=['model identity','face','hair','pose','background','top','outerwear','bottoms','footwear','bag'];
-const REPLACE_OPTS=['outerwear','top','bottoms','footwear'];
+const CAT_CONTROLS={
+ OUTERWEAR:{groups:[
+   {id:'closure',label:'여밈',opts:[['지퍼(노출)','exposed front zipper'],['워터프루프 지퍼','waterproof laminated zipper'],['스톰플랩','front zipper hidden behind a storm placket'],['스냅버튼','snap-button front'],['토글','toggle closure']]},
+   {id:'collar',label:'넥·칼라',opts:[['스탠드칼라','stand collar'],['후드','hood'],['후드+칼라','hood with a collar'],['셔츠칼라','shirt collar'],['퍼 칼라','fur collar'],['노칼라','collarless']]},
+   {id:'length',label:'기장',opts:[['크롭','cropped length'],['하프','hip length'],['롱','long length'],['맥시','maxi length']]},
+   {id:'fit',label:'핏',opts:[['슬림','slim fit'],['레귤러','regular fit'],['오버핏','oversized fit'],['코쿤','cocoon fit']]},
+   {id:'quilt',label:'퀼팅',opts:[['다이아','diamond quilting'],['가로채널','horizontal channel quilting'],['세로채널','vertical channel quilting'],['박스','box grid quilting']]},
+   {id:'hem',label:'밑단',opts:[['스트레이트','straight hem'],['드로스트링','drawcord hem'],['립 조임','ribbed hem']]},
+   {id:'volume',label:'충전재 볼륨',opts:[['슬림','slim low-loft fill'],['미드','mid-loft fill'],['하이','high-loft puffy fill'],['맥스','maximum voluminous fill']]}
+ ],details:[['집업','full zip'],['스냅 플라켓','snap placket over the zipper'],['포켓','patch/zip pockets'],['퍼 후드트림','fur hood trim']]},
+ TOP:{groups:[
+   {id:'neck',label:'넥라인',opts:[['크루넥','crew neck'],['브이넥','v-neck'],['헨리','henley placket neck'],['터틀넥','turtleneck'],['보트넥','boat neck'],['오프숄더','off-shoulder'],['폴로칼라','polo collar']]},
+   {id:'sleeveLen',label:'소매길이',opts:[['민소매','sleeveless'],['반팔','short sleeves'],['7부','three-quarter sleeves'],['긴팔','long sleeves']]},
+   {id:'sleeveType',label:'소매형태',opts:[['셋인','set-in sleeves'],['래글런','raglan sleeves'],['퍼프','puff sleeves'],['드롭숄더','drop-shoulder sleeves']]},
+   {id:'length',label:'기장',opts:[['크롭','cropped length'],['레귤러','regular length'],['롱','long length'],['튜닉','tunic length']]},
+   {id:'fit',label:'핏',opts:[['슬림','slim fit'],['레귤러','regular fit'],['박시','boxy fit'],['오버핏','oversized fit']]},
+   {id:'hem',label:'밑단',opts:[['스트레이트','straight hem'],['커브드','curved rounded hem'],['드로스트링','drawcord hem'],['립','ribbed hem']]}
+ ],details:[['집업','zip-up'],['버튼플래킷','button placket'],['포켓','pocket'],['그래픽 프린트','graphic print']]},
+ PANTS:{groups:[
+   {id:'fit',label:'핏',opts:[['스키니','skinny fit'],['슬림','slim fit'],['스트레이트','straight fit'],['테이퍼드','tapered fit'],['와이드','wide-leg fit'],['카고','cargo fit'],['조거','jogger fit']]},
+   {id:'rise',label:'밑위',opts:[['로우','low rise'],['미드','mid rise'],['하이','high rise']]},
+   {id:'length',label:'기장',opts:[['크롭','cropped length'],['앵클','ankle length'],['풀렝스','full length']]},
+   {id:'hem',label:'밑단',opts:[['스트레이트','straight hem'],['커프드','cuffed hem'],['드로스트링','drawcord hem'],['부츠컷','boot-cut hem']]},
+   {id:'waist',label:'웨이스트',opts:[['밴딩','elastic banded waist'],['드로스트링','drawstring waist'],['벨트루프','belt-loop waist']]}
+ ],details:[['카고포켓','cargo pockets'],['플리츠','pleats'],['사이드 스트라이프','side stripe']]},
+ SKIRT:{groups:[
+   {id:'silhouette',label:'실루엣',opts:[['A라인','A-line'],['플레어','flared'],['펜슬','pencil'],['랩','wrap'],['플리츠','pleated'],['벌룬','balloon']]},
+   {id:'length',label:'기장',opts:[['미니','mini length'],['미디','midi length'],['미디롱','below-knee length'],['맥시','maxi length']]},
+   {id:'waist',label:'웨이스트',opts:[['하이','high waist'],['미드','mid waist'],['밴딩','elastic banded waist'],['드로스트링','drawstring waist']]},
+   {id:'slit',label:'슬릿',opts:[['없음','no slit'],['프론트','front slit'],['사이드','side slit'],['백','back slit']]}
+ ],details:[['플리츠','pleats'],['카고포켓','cargo pockets'],['러플·프릴','ruffle frill'],['아시메트릭 밑단','asymmetric hem']]},
+ DRESS:{groups:[
+   {id:'neck',label:'넥라인',opts:[['크루','crew neck'],['브이','v-neck'],['스퀘어','square neck'],['홀터','halter neck'],['오프숄더','off-shoulder'],['스윗하트','sweetheart neck']]},
+   {id:'sleeve',label:'소매',opts:[['민소매','sleeveless'],['반팔','short sleeves'],['긴팔','long sleeves'],['퍼프','puff sleeves'],['케이프','cape sleeves']]},
+   {id:'silhouette',label:'실루엣',opts:[['A라인','A-line'],['시프트','shift'],['보디콘','bodycon'],['랩','wrap'],['엠파이어','empire waist'],['셔츠드레스','shirt dress'],['티어드','tiered']]},
+   {id:'length',label:'기장',opts:[['미니','mini length'],['미디','midi length'],['맥시','maxi length']]},
+   {id:'waist',label:'웨이스트',opts:[['정위치','natural waist'],['하이웨이스트','high waist'],['드롭웨이스트','drop waist'],['밴딩','elastic waist']]}
+ ],details:[['슬릿','slit'],['벨트','belt'],['버튼프론트','button front'],['셔링','shirring']]},
+ SHOES:{groups:[
+   {id:'type',label:'타입',opts:[['스니커즈','sneakers'],['러너','running shoe'],['청키','chunky dad shoe'],['로퍼','loafer'],['부츠','boots'],['샌들','sandals'],['발레','ballet flat']]},
+   {id:'sole',label:'굽·솔',opts:[['플랫','flat sole'],['로우','low platform'],['미드','mid platform'],['하이','high platform'],['청키힐','chunky heel']]},
+   {id:'toe',label:'토',opts:[['라운드','round toe'],['포인티드','pointed toe'],['스퀘어','square toe']]},
+   {id:'closure',label:'클로저',opts:[['레이스업','lace-up'],['슬립온','slip-on'],['스트랩','strap'],['벨크로','velcro strap'],['지퍼','side zip']]}
+ ],details:[['사이드 스트라이프','side stripe'],['로고 히트','heel logo hit'],['트랙 솔','track sole'],['투톤','two-tone colorway']]}
+};
+function matPerfWord(v){v=+v;return v<20?'a NATURAL-fibre look: cotton/linen/wool feel, fully matte, soft natural drape, visible natural weave, no sheen':v<40?'a mostly natural look with slight structure, matte finish, natural drape':v<60?'a FUNCTIONAL-blend look: tech-cotton or poly blend, clean smooth surface, light structure, subtle low sheen':v<80?'a TECH-blend look: smooth structured fabric, faint water-repellent sheen, crisp hand':'a HIGH-PERFORMANCE technical look: nylon/poly/soft-shell/ripstop, matte-tech to low sheen, water-repellent bonded seams, athletic structure';}
+function matPerfHint(v){v=+v;return v<20?'천연 (코튼·린넨·울)':v<40?'천연 혼방':v<60?'기능성 (텍스코튼·혼방)':v<80?'기능성+ (테크 혼방)':'퍼포먼스 (나일론·폴리 신소재)';}
+function renderCatControls(parent){
+  const el=$('#cat-controls');if(!el)return;const cfg=CAT_CONTROLS[parent];
+  if(!cfg){el.innerHTML='';return;}
+  let h='<div class="sectlabel">디자인 변형 <span class="hint" style="margin:0;font-weight:400">— 바꿀 것만 선택(안 고르면 자동)</span></div>';
+  cfg.groups.forEach(g=>{h+='<div class="ctlrow"><span class="ctllab">'+g.label+'</span><div class="pillrow">'+g.opts.map(o=>'<button class="togglepill '+(state.ctl[g.id]===o[1]?'on':'')+'" data-ctl="'+g.id+'" data-ctlv="'+esc(o[1])+'">'+o[0]+'</button>').join('')+'</div></div>';});
+  if(cfg.details&&cfg.details.length){h+='<div class="ctlrow"><span class="ctllab">디테일 (여러 개)</span><div class="pillrow">'+cfg.details.map(d=>'<button class="togglepill '+(state.ctlDetails.has(d[1])?'on':'')+'" data-ctld="'+esc(d[1])+'">'+d[0]+'</button>').join('')+'</div></div>';}
+  el.innerHTML=h;
+}
+const KEEP_OPTS=['model identity','face','hair','pose','background','top','outerwear','bottoms','dress','footwear','bag'];
+const REPLACE_OPTS=['outerwear','top','bottoms','dress','footwear'];
 const FABRIC_OPTS=['matte nylon','glossy nylon','silk-touch nylon','taffeta','velvet','wool blend'];
 const SEASONS=['27SS','27FW','28SS','28FW','29SS','29FW'];
 const GENDER_OPTS=['WOMEN','MEN','UNISEX'];
@@ -736,7 +774,7 @@ const state={
   lines:[],refs:[],models:[],fabrics:[],gallery:[],
   pick:{line:null,refs:new Set(),model:null,fabric:null},
   brief:{keep:new Set(),replace:new Set(),adopt:new Set(),fabricType:''},
-  aiAttrs:{}, jsonDirty:false, galFilter:'all', refSecretView:false, galSelMode:false, galSel:new Set(), pose:'auto', quiltRef:null,
+  aiAttrs:{}, jsonDirty:false, galFilter:'all', refSecretView:false, galSelMode:false, galSel:new Set(), pose:'auto', quiltRef:null, ctl:{}, ctlDetails:new Set(),
   libFilter:{lines:{gender:'ALL',gcat:'ALL',season:'ALL'},refs:{gender:'ALL',gcat:'ALL',season:'ALL'}},
   libSelMode:{lines:false,refs:false}, libSel:{lines:new Set(),refs:new Set()},
   salesMap:{}, salesRaw:'', salesRows:[], salesByCode:{}, salesByName:{}
@@ -797,7 +835,7 @@ function renderGenPose(){const el=$('#gen-pose');if(!el)return;el.innerHTML=POSE
 function computePlan(){
   const line=state.lines.find(l=>l.id===state.pick.line);
   const model=state.models.find(m=>m.id===state.pick.model);
-  const refs=state.refs.filter(r=>state.pick.refs.has(r.id));
+  const refs=pickedRefs();
   const shell=state.fabrics.find(f=>f.id===state.pick.fabric);
   const noun=CATEGORIES[$('#cat-parent').value].noun;
   const modelMode=model?'image':'idol'; // image(모델 선택=그 얼굴) | idol(미선택=기본 K-pop)
@@ -843,8 +881,7 @@ function buildDesignJSON(){
   const parent=$('#cat-parent').value, sub=$('#cat-sub').value, C=CATEGORIES[parent];
   let g=C.attrs();
   deepFill(g,state.aiAttrs.garment);
-  const sheerVis=$('#sheer-wrap')&&$('#sheer-wrap').style.display!=='none';
-  g.material.semi_sheer=sheerVis?(+($('#sheer')?$('#sheer').value:20)/100):null; // Sheer는 아우터에서만
+  g.material.semi_sheer=null;
   g.material.shimmer=null; // Shimmer는 수정 단계에서만
   g.material.shell_ref=!!plan.shell;
   // 스와치 → 텍스트 브릿지: 원단을 셀렉하면 그 스와치의 원단타입/AI분석 텍스트를 소재 설명에 함께 실어
@@ -856,15 +893,10 @@ function buildDesignJSON(){
   if(!g.material.surface&&fabAI.surface)g.material.surface=fabAI.surface;
   if(!g.material.finish&&fabAI.finish)g.material.finish=fabAI.finish;
   if(plan.shell)g.material.shell_name=plan.shell.ftype||fabAI.fabric_type||'';
-  const zip=($('#c-zipper')||{}).value||'',pk=($('#c-placket')||{}).value||'';
-  if(zip)g.closure_zip=zip;
-  if(pk)g.front_placket=pk;
   // 퀼팅은 수동 셀렉트 없이 레퍼(가먼트) 분석·AI 원단분석에서 도출
   if(fabAI.quilting&&(fabAI.quilting.type||fabAI.quilting.scale)){g.quilting=g.quilting||{};if(fabAI.quilting.type&&!g.quilting.type)g.quilting.type=fabAI.quilting.type;if(fabAI.quilting.scale&&!g.quilting.scale)g.quilting.scale=fabAI.quilting.scale;}
   const qref=state.quiltRef&&state.quiltRef.quilting; // 퀼팅 shape 슬롯 우선
   if(qref&&qref.type){g.quilting=g.quilting||{};g.quilting.type=qref.type;if(qref.scale)g.quilting.scale=qref.scale;if(qref.direction)g.quilting.direction=qref.direction;}
-  const volVis=$('#volume-wrap')&&$('#volume-wrap').style.display!=='none';
-  g.fill_volume=volVis?(+($('#volume')?$('#volume').value:50)/100):null; // 충전재 볼륨은 INSULATION·DOWN만
   return{
     target_season:target, source_season:source,
     category:{parent,sub,noun:C.noun},
@@ -873,7 +905,8 @@ function buildDesignJSON(){
     design_balance:+$('#balance').value/100,
     color_balance:+($('#colorbal')?$('#colorbal').value:50)/100,
     pose:state.pose||'auto',
-    ref_mix:+($('#refmix')?$('#refmix').value:50)/100,
+    material_perf:+($('#matperf')?$('#matperf').value:50)/100,
+    controls:{chips:Object.assign({},state.ctl),details:[...state.ctlDetails]},
     branding:{brand:'DISCOVERY',logo_on:!!(($('#logo-generate')&&$('#logo-generate').checked)),logo_type:'print',logo:'authentic Discovery Expedition wordmark/emblem, wearer left chest, tone-on-tone PRINT',logo_position:'upper left chest (wearer left)',logo_scale:'small refined ~6-8cm'},
     priority:{model:plan.model?'model reference':'base image',garment_structure:'reference image',brand_rules:'DISCOVERY DNA'},
     notes:$('#extra').value.trim()
@@ -931,10 +964,16 @@ function jsonToPrompt(J,plan){
     const nm=m.shell_name?` (${m.shell_name})`:'';
     S.push(`SHELL FABRIC${nm} — the fabric-swatch image defines the SHELL MATERIAL for the whole garment: reproduce its exact weave, texture, surface and sheen across the ENTIRE ${noun} shell so the material reads identical to the swatch. Do NOT take its colour (garment colour follows the base line and COLOUR BALANCE). It is a material sample, not a garment — do not paste it as a panel, pocket or patch, and do not copy any shape from it. Any quilting channels are formed ON TOP of this shell fabric.`);
   }
-  if(J.design_balance!=null)S.push(`DESIGN BALANCE — ${balanceText(J.design_balance*100)}`);
+  {const dr=(plan&&plan.refs)?plan.refs.filter(r=>!r.detail):[],n=dr.length,hasLine=!!(plan&&plan.line);
+   if(J.design_balance!=null){const bv=J.design_balance*100;
+     if(n>=2)S.push('REFERENCE MIX — '+refmixText(bv)+' (reference 1 = first selected image, reference 2 = second).');
+     else if(hasLine)S.push('DESIGN BALANCE — '+balanceText(bv));
+     else if(n===1)S.push('REFERENCE ADOPTION — '+(bv<25?'use the reference loosely, only as light inspiration for this new garment':bv<60?'moderately follow the reference silhouette and details':bv<85?'closely follow the reference design':'reproduce the reference design very closely as the base'));}}
   if(J.color_balance!=null)S.push(colorBalWord(J.color_balance*100));
+  {const _noun=(J.category&&J.category.noun)||'garment',_mm=(J.garment&&J.garment.material)||{};
+   if(J.controls){const cd=Object.keys(J.controls.chips||{}).map(k=>J.controls.chips[k]).filter(Boolean).concat(J.controls.details||[]);if(cd.length)S.push('DESIGN DIRECTIVES — apply exactly to the '+_noun+': '+cd.join('; ')+'.');}
+   if(J.material_perf!=null){const pv=J.material_perf*100,hay=[_mm.fabric_type,_mm.surface,J.notes].filter(Boolean).join(' ');if(_mm.shell_ref||/gore-?tex|고어텍스/i.test(hay))S.push('MATERIAL HAND-FEEL — nudge the fabric drape and finish slightly toward '+matPerfWord(pv)+'; the shell fabric identity still comes from the fabric reference.');else S.push('MATERIAL CHARACTER — render the fabric as '+matPerfWord(pv)+'.');}}
   if(J.pose&&J.pose!=='auto'&&POSE_PROMPTS[J.pose])S.push('MODEL POSE — '+POSE_PROMPTS[J.pose]);
-  if(J.ref_mix!=null&&plan&&plan.refs&&plan.refs.filter(r=>!r.detail).length>=2)S.push('REFERENCE MIX — '+refmixText(J.ref_mix*100)+' (reference 1 = first selected image, reference 2 = second).');
   {const cz=g.closure_zip?zipperText(g.closure_zip):'';if(cz)S.push(cz);const cp=g.front_placket?placketText(g.front_placket):'';if(cp)S.push(cp);}
   if(g.fill_volume!=null)S.push('DOWN FILL VOLUME — '+volumeText(g.fill_volume*100)+'. SHELL / FILL SHOW-THROUGH follows the Sheer setting: a thinner shell reveals more baffle and fill relief, a thicker shell reads flatter and more opaque.');
   S.push('MATERIAL QUALITY — every DISCOVERY material and component is PREMIUM QUALITY: high-grade shell fabric, premium lofty down/fill, refined tonal hardware and clean high-density finishing; luxury-level make, never cheap, flimsy, stiff, plasticky or mass-market.');
@@ -1092,6 +1131,11 @@ function renderBulkBar(store){
     ${(sel&&store==='refs'&&state.refSecretView&&canSecret())?`<button class="btn xs" data-selpromote="refs" style="background:#C0392B;border-color:#C0392B;color:#fff">↗ 공용으로 공유 ${n}개</button>`:''}
   </div><div class="hint" style="margin-top:4px">위 성별·카테고리·시즌을 정하면 <b>새로 올리는 이미지</b>에 그대로 적용됩니다(빈 칸은 파일명 자동인식). ‘선택 모드’로 <b>기존 항목</b>을 골라 일괄 지정도 가능해요.</div>`;
 }
+function thumb(url,w){
+  if(!url||typeof url!=='string')return url;
+  if(url.indexOf('/storage/v1/object/public/')<0)return url; // data:·외부 URL은 원본 그대로
+  return url.replace('/storage/v1/object/public/','/storage/v1/render/image/public/')+(url.indexOf('?')<0?'?':'&')+'width='+(w||400)+'&quality=55'; // 그리드용 소형 WebP
+}
 function libGrid(store){
   const grid=$('#grid-'+store),sw=store==='fabrics'?'sw':'';
   let items=state[store].slice().sort((a,b)=>b.createdAt-a.createdAt); // 최신순
@@ -1105,7 +1149,7 @@ function libGrid(store){
     const sa=sales.length?`<div class="salerow">`+sales.map(s=>`<span class="saleamt ${(s.rank&&s.rank<=10)?(seasonHalf(s.season)==='SS'?'ss':'fw'):'dim'}">${esc(s.season)}${s.cat?' '+esc(s.cat):''} #${s.rank||'-'} · ${esc(s.amtStr)}</span>`).join('')+`</div>`:'';
     const on=selMode&&state.libSel[store].has(it.id);
     const selbox=selMode?`<span class="selbox ${on?'on':''}">${on?'✓':''}</span>`:'';
-    return`<div class="card ${sw} ${on?'picked':''} ${trendActive(it)?'trend':''}" data-id="${it.id}" data-store="${store}">${rb}${selbox}<button class="x" data-del="${it.id}" data-store="${store}">✕</button><span class="thumb" style="background-image:url('${it.dataUrl}')"></span><div class="meta"><div class="nm">${esc(it.name)}</div><div class="tg">${esc(metaLine(store,it))}</div>${hashHTML(it)}${rankHTML(it)}${sa}</div></div>`;
+    return`<div class="card ${sw} ${on?'picked':''} ${trendActive(it)?'trend':''}" data-id="${it.id}" data-store="${store}">${rb}${selbox}<button class="x" data-del="${it.id}" data-store="${store}">✕</button><span class="thumb" style="background-image:url('${thumb(it.dataUrl)}')"></span><div class="meta"><div class="nm">${esc(it.name)}</div><div class="tg">${esc(metaLine(store,it))}</div>${hashHTML(it)}${rankHTML(it)}${sa}</div></div>`;
   }).join('');
 }
 async function bulkApply(store){
@@ -1132,19 +1176,24 @@ function renderLibChips(store){
 function refreshCounts(){['lines','refs','models','fabrics'].forEach(s=>$('#c-'+s).textContent=state[s].length);}
 
 /* ---------- generate picks (bars + inline) ---------- */
-function updateRefMix(){const w=$('#refmix-wrap');if(!w)return;const n=state.refs.filter(r=>state.pick.refs.has(r.id)&&!r.detail).length;w.style.display=n>=2?'':'none';}
+function galAsRef(g){return{id:'gal_'+g.id,name:g.name,dataUrl:(g.logoUrl||g.dataUrl),gcat:(g.category&&g.category.parent)||g.gcat||'',detail:false,_gallery:true};}
+function refByAny(id){if(id&&id.indexOf('gal_')===0){const g=state.gallery.find(x=>x.id===id.slice(4));return g?galAsRef(g):null;}return state.refs.find(r=>r.id===id)||null;}
+function pickedRefs(){return [...state.pick.refs].map(refByAny).filter(Boolean);}
+function balHintFor(v){const n=pickedRefs().filter(r=>!r.detail).length,hasLine=!!state.pick.line;if(n>=2)return refmixHint(v);if(!hasLine&&n===1){v=+v;return v<25?'약하게 반영':v<60?'적당히 반영':v<85?'강하게 반영':'거의 그대로';}return balanceHint(v);}
+function refreshBalEnds(){const n=pickedRefs().filter(r=>!r.detail).length,hasLine=!!state.pick.line,L=$('#balance-l'),R=$('#balance-r');if(!L||!R)return;if(n>=2){L.textContent='◀ 1번 레퍼';R.textContent='2번 레퍼 ▶';}else if(hasLine){L.textContent='◀ 디스커버리 라인';R.textContent='레퍼런스 ▶';}else if(n===1){L.textContent='◀ 형태 약하게';R.textContent='레퍼 그대로 ▶';}else{L.textContent='◀ 디스커버리 라인';R.textContent='레퍼런스 ▶';}const h=$('#balance-h');if(h)h.textContent=balHintFor(+($('#balance').value));}
+function updateRefMix(){const w=$('#refmix-wrap');if(w)w.style.display='none';refreshBalEnds();}
 function updateVolumeVis(){const w=$('#volume-wrap');if(!w)return;const parent=($('#cat-parent')||{}).value,sub=($('#cat-sub')||{}).value||'';w.style.display=(parent==='OUTERWEAR'&&/INSULATION|DOWN/i.test(sub))?'':'none';}
 function renderPickBar(store){
   const bar=$('#pick-'+store);
-  const sel=store==='lines'?(state.pick.line?[state.lines.find(l=>l.id===state.pick.line)].filter(Boolean):[]):state.refs.filter(r=>state.pick.refs.has(r.id));
-  bar.innerHTML=sel.map(it=>`<div class="thumbchip"><img src="${it.dataUrl}"><span>${esc(it.name)}</span><button data-unpick="${store}" data-uid="${it.id}">✕</button></div>`).join('')
+  const sel=store==='lines'?(state.pick.line?[state.lines.find(l=>l.id===state.pick.line)].filter(Boolean):[]):pickedRefs();
+  bar.innerHTML=sel.map(it=>`<div class="thumbchip"><img src="${thumb(it.dataUrl,120)}"><span>${esc(it.name)}</span><button data-unpick="${store}" data-uid="${it.id}">✕</button></div>`).join('')
     +`<button class="btn sm addarch" data-arch="${store}">＋ 아카이브에서 셀렉</button>`;
 }
 function pickGrid(store){
   const el=$('#pick-'+store),items=state[store],sw=store==='fabrics'?'sw':'';
   if(!items.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1;padding:16px">라이브러리에서 먼저 올려주세요.</div>`;return;}
   el.innerHTML=items.map(it=>{const on=store==='models'?state.pick.model===it.id:state.pick.fabric===it.id;
-    return`<div class="card ${sw} ${on?'sel':''}" data-pick="${store}" data-id="${it.id}"><span class="pick">✓</span><span class="thumb" style="background-image:url('${it.dataUrl}')"></span><div class="meta"><div class="nm">${esc(it.name)}</div><div class="tg">${esc(metaLine(store,it))}</div></div></div>`;}).join('');
+    return`<div class="card ${sw} ${on?'sel':''}" data-pick="${store}" data-id="${it.id}"><span class="pick">✓</span><span class="thumb" style="background-image:url('${thumb(it.dataUrl)}')"></span><div class="meta"><div class="nm">${esc(it.name)}</div><div class="tg">${esc(metaLine(store,it))}</div></div></div>`;}).join('');
 }
 function renderPicks(){
   const src=prevSeason($('#season').value);
@@ -1157,7 +1206,7 @@ function renderPicks(){
 /* ---------- ARCHIVE BROWSER ---------- */
 function openArchive(store){
   const isLines=store==='lines',multi=store==='refs';
-  let q='',genderF='ALL',gcatF='ALL',tagF='ALL',secretF=false,seasonF=isLines?(prevSeason($('#season').value)||'ALL'):'ALL';
+  let q='',genderF='ALL',gcatF='ALL',tagF='ALL',secretF=false,srcF='refs',seasonF=isLines?(prevSeason($('#season').value)||'ALL'):'ALL';
   $('#sheet').classList.add('wide');
   $('#m-title').textContent=isLines?'라인 아카이브':'레퍼런스 아카이브';
   $('#m-body').innerHTML=`
@@ -1173,18 +1222,20 @@ function openArchive(store){
   const grp=(axis,label,opts,cur)=>`<div class="chipgroup"><span class="chiplabel">${label}</span>`+[['ALL','전체'],...opts.map(o=>[o,o])].map(([v,l])=>`<button class="togglepill ${cur===v?'on':''}" data-axis="${axis}" data-val="${esc(v)}">${esc(l)}</button>`).join('')+`</div>`;
   function chips(){
     const seasons=[...new Set(state[store].map(x=>x.season).filter(Boolean))].sort(seasonCmp);
-    let h=grp('gender','성별',GENDER_OPTS,genderF)+grp('gcat','카테고리',GCAT_OPTS,gcatF)+grp('season','시즌',seasons,seasonF);
+    let h='';
+    if(!isLines)h+=`<div class="chipgroup"><span class="chiplabel">소스</span><button class="togglepill ${srcF==='refs'?'on':''}" data-axis="src" data-val="refs">레퍼런스</button><button class="togglepill ${srcF==='gallery'?'on':''}" data-axis="src" data-val="gallery">기존 생성물</button></div>`;
+    h+=grp('gender','성별',GENDER_OPTS,genderF)+grp('gcat','카테고리',GCAT_OPTS,gcatF)+grp('season','시즌',seasons,seasonF);
     if(!isLines){const tags=[...new Set(state.refs.flatMap(r=>r.tags||[]))].sort();if(tags.length)h+=grp('tag','태그',tags,tagF);}
     if(!isLines&&canSecret())h+=`<div class="chipgroup"><span class="chiplabel">방</span><button class="togglepill ${secretF?'on':''}" data-axis="secret" data-val="1" style="${secretF?'background:#C0392B;border-color:#C0392B;color:#fff':''}">🔒 소전팀만</button></div>`;
     chipsEl.innerHTML=h;
   }
   function list(){
-    let items=state[store].slice().sort((a,b)=>b.createdAt-a.createdAt);
+    let items=((!isLines&&srcF==='gallery')?state.gallery.map(galAsRef):state[store].slice()).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
     if(genderF!=='ALL')items=items.filter(x=>x.gender===genderF);
     if(gcatF!=='ALL')items=items.filter(x=>x.gcat===gcatF);
     if(seasonF!=='ALL')items=items.filter(x=>x.season===seasonF);
     if(!isLines&&tagF!=='ALL')items=items.filter(r=>(r.tags||[]).includes(tagF));
-    if(!isLines){if(secretF)items=items.filter(x=>x.secret);else items=items.filter(x=>!x.secret);}
+    if(!isLines&&srcF!=='gallery'){if(secretF)items=items.filter(x=>x.secret);else items=items.filter(x=>!x.secret);}
     if(q){const s=q.toLowerCase();items=items.filter(it=>((it.name||'')+' '+((it.tags||[]).join(' '))+' '+(it.season||'')+' '+(it.gender||'')+' '+(it.gcat||'')+' '+(it.category||'')+' '+(it.lifestyle||'')).toLowerCase().includes(s));}
     return items;
   }
@@ -1197,12 +1248,12 @@ function openArchive(store){
       const sales=salesFor(it);
       const rb=cardBadges(it,sales);
       const sa=sales.length?`<div class="salerow">`+sales.map(s=>`<span class="saleamt ${(s.rank&&s.rank<=10)?(seasonHalf(s.season)==='SS'?'ss':'fw'):'dim'}">${esc(s.season)}${s.cat?' '+esc(s.cat):''} #${s.rank||'-'} · ${esc(s.amtStr)}</span>`).join('')+`</div>`:'';
-      return`<div class="acard ${on?'sel':''} ${trendActive(it)?'trend':''}" data-aid="${it.id}">${rb}<span class="pick">✓</span><span class="thumb" style="background-image:url('${it.dataUrl}')"></span><div class="meta"><div class="br">${trendActive(it)?'[TREND] ':''}DISCOVERY${it.season?' · '+esc(it.season):''}</div><div class="nm">${esc(it.name)}</div><div class="tg">${esc(metaLine(store,it))}</div>${hashHTML(it)}${rankHTML(it)}${sa}</div></div>`;
+      return`<div class="acard ${on?'sel':''} ${trendActive(it)?'trend':''}" data-aid="${it.id}">${rb}<span class="pick">✓</span><span class="thumb" style="background-image:url('${thumb(it.dataUrl)}')"></span><div class="meta"><div class="br">${trendActive(it)?'[TREND] ':''}DISCOVERY${it.season?' · '+esc(it.season):''}</div><div class="nm">${esc(it.name)}</div><div class="tg">${esc(metaLine(store,it))}</div>${hashHTML(it)}${rankHTML(it)}${sa}</div></div>`;
     }).join('');
   }
   chips();render();
   $('#arch-q').addEventListener('input',e=>{q=e.target.value;render();});
-  chipsEl.addEventListener('click',e=>{const b=e.target.closest('[data-axis]');if(!b)return;const v=b.dataset.val,ax=b.dataset.axis;if(ax==='gender')genderF=v;else if(ax==='gcat')gcatF=v;else if(ax==='season')seasonF=v;else if(ax==='tag')tagF=v;else if(ax==='secret')secretF=!secretF;chips();render();});
+  chipsEl.addEventListener('click',e=>{const b=e.target.closest('[data-axis]');if(!b)return;const v=b.dataset.val,ax=b.dataset.axis;if(ax==='gender')genderF=v;else if(ax==='gcat')gcatF=v;else if(ax==='season')seasonF=v;else if(ax==='tag')tagF=v;else if(ax==='secret')secretF=!secretF;else if(ax==='src')srcF=v;chips();render();});
   gridEl.addEventListener('click',e=>{
     const c=e.target.closest('[data-aid]');if(!c)return;const id=c.dataset.aid;
     if(isLines)state.pick.line=state.pick.line===id?null:id;
@@ -1227,10 +1278,8 @@ function applyCategory(reset){
   const parent=$('#cat-parent').value,C=CATEGORIES[parent];
   $('#cat-sub').innerHTML=C.subs.map(s=>`<option>${s}</option>`).join('');
   $('#cat-tag').textContent=`· ${C.noun} 기준`;
-  {const cw=$('#construction-wrap');if(cw)cw.style.display=(parent==='OUTERWEAR')?'':'none';}
-  {const sw=$('#sheer-wrap');if(sw)sw.style.display=(parent==='OUTERWEAR')?'':'none';}
-  updateVolumeVis();
-  if(reset){['#c-zipper','#c-placket'].forEach(id=>{const el=$(id);if(el)el.value='';});}
+  if(reset){state.ctl={};state.ctlDetails=new Set();}
+  renderCatControls(parent);
 
   if(reset){state.brief.keep=new Set(C.keepDefault);state.brief.replace=new Set(C.replaceDefault);state.brief.adopt=new Set(C.adoptDefault);state.aiAttrs={};}
   renderPills();refreshJSON(true);
@@ -1258,7 +1307,7 @@ function galleryGrid(){
     const selbox=state.galSelMode?`<span class="selbox ${sel?'on':''}">${sel?'✓':''}</span>`:'';
     const delBtn=mine?`<button class="x" data-galdel="${g.id}">✕</button>`:'';
     const badge=state.galSelMode?'':(!mine?`<span class="galbadge shared">↗ 공유받음</span>`:'');
-    return`<div class="card ${sel?'picked':''}" data-gid="${g.id}">${selbox}${delBtn}${badge}<span class="thumb" style="background-image:url('${showLogo&&g.logoUrl?g.logoUrl:g.dataUrl}')"></span><div class="meta"><div class="nm${(mine&&sharedN)?' sharedname':''}"${(mine&&sharedN)?` title="공유중 ${sharedN}명"`:''}>${esc(g.name)}</div><div class="tg">${tg}</div></div></div>`;}).join('');
+    return`<div class="card ${sel?'picked':''}" data-gid="${g.id}">${selbox}${delBtn}${badge}<span class="thumb" style="background-image:url('${thumb(showLogo&&g.logoUrl?g.logoUrl:g.dataUrl)}')"></span><div class="meta"><div class="nm${(mine&&sharedN)?' sharedname':''}"${(mine&&sharedN)?` title="공유중 ${sharedN}명"`:''}>${esc(g.name)}</div><div class="tg">${tg}</div></div></div>`;}).join('');
 }
 
 /* ---------- compare ---------- */
@@ -1319,7 +1368,7 @@ function openEdit(gid){
         <div class="slider-wrap"><div class="slider-head"><span class="lab">볼륨 · 충전재</span><span class="val" id="e-volume-v">${editG.volume!=null?editG.volume:50}</span></div><input type="range" id="e-volume" min="0" max="100" value="${editG.volume!=null?editG.volume:50}"><div class="slider-hint" id="e-volume-h"></div></div>
         <button class="btn sm" id="edit-finish-go" style="margin-top:8px">마감 재적용</button>
       </div></div>`;
-  $('#edit-models').innerHTML=state.models.length?state.models.map(m=>`<div class="card" data-emodel="${m.id}"><span class="pick">✓</span><span class="thumb" style="background-image:url('${m.dataUrl}')"></span></div>`).join(''):'<div class="hint">기본모델을 먼저 올려주세요.</div>';
+  $('#edit-models').innerHTML=state.models.length?state.models.map(m=>`<div class="card" data-emodel="${m.id}"><span class="pick">✓</span><span class="thumb" style="background-image:url('${thumb(m.dataUrl)}')"></span></div>`).join(''):'<div class="hint">기본모델을 먼저 올려주세요.</div>';
   let chosenModel=null;
   $$('#edit-models .card').forEach(c=>c.onclick=()=>{$$('#edit-models .card').forEach(x=>x.classList.remove('sel'));c.classList.add('sel');chosenModel=c.dataset.emodel;});
   renderVersions();
@@ -1624,12 +1673,13 @@ function wire(){
   });
 
   const sync=(id,vid,hid,fn)=>{const el=$('#'+id);el.addEventListener('input',()=>{$('#'+vid).textContent=el.value;if(hid)$('#'+hid).textContent=fn(el.value);refreshJSON();});};
-  sync('balance','balance-v','balance-h',balanceHint);sync('sheer','sheer-v','sheer-h',sheerHint);
+  sync('balance','balance-v','balance-h',balHintFor);sync('matperf','matperf-v','matperf-h',matPerfHint);sync('sheer','sheer-v','sheer-h',sheerHint);
   renderGenPose();{const gp=$('#gen-pose');if(gp)gp.addEventListener('click',e=>{const b=e.target.closest('[data-gpose]');if(!b)return;state.pose=b.dataset.gpose;renderGenPose();refreshJSON();});}
   sync('colorbal','colorbal-v','colorbal-h',colorBalHint);sync('refmix','refmix-v','refmix-h',refmixHint);sync('volume','volume-v','volume-h',volumeHint);
   $('#balance-h').textContent=balanceHint(35);$('#sheer-h').textContent=sheerHint(20);
-  $('#colorbal-h').textContent=colorBalHint(50);$('#refmix-h').textContent=refmixHint(50);$('#volume-h').textContent=volumeHint(50);
-  ['#c-zipper','#c-placket'].forEach(id=>{const el=$(id);if(el)el.addEventListener('change',()=>refreshJSON());});
+  $('#colorbal-h').textContent=colorBalHint(50);$('#matperf-h').textContent=matPerfHint(50);
+  renderCatControls(($('#cat-parent')||{}).value||'OUTERWEAR');
+  $('#cat-controls').addEventListener('click',e=>{const ss=e.target.closest('[data-ctl]');if(ss){const id=ss.dataset.ctl,v=ss.dataset.ctlv;state.ctl[id]=(state.ctl[id]===v)?'':v;renderCatControls($('#cat-parent').value);refreshJSON();return;}const dd=e.target.closest('[data-ctld]');if(dd){const v=dd.dataset.ctld;state.ctlDetails.has(v)?state.ctlDetails.delete(v):state.ctlDetails.add(v);renderCatControls($('#cat-parent').value);refreshJSON();return;}});
 
   $('#season').addEventListener('change',renderPicks);
   $('#cat-parent').addEventListener('change',()=>applyCategory(true));
