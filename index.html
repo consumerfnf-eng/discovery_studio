@@ -70,7 +70,7 @@ textarea.mono{font-family:var(--mono);font-size:11px;line-height:1.5}
 .cards.lg{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
 .card{background:var(--white);border:1px solid var(--line);border-radius:12px;overflow:hidden;position:relative;transition:.15s}
 .card:hover{border-color:var(--sand);box-shadow:var(--shadow)}
-.card .thumb{aspect-ratio:3/4;background:var(--line-2) center/cover no-repeat;display:block;cursor:pointer}
+.card .thumb{aspect-ratio:3/4;background:var(--line-2) center/contain no-repeat;display:block;cursor:pointer}
 .card.sw .thumb{aspect-ratio:1/1}
 .card .meta{padding:7px 9px}
 .card .nm{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -100,7 +100,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;heigh
 input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--pine);border:2px solid var(--white);cursor:pointer}
 .slider-hint{font-size:11px;color:var(--ink-45);margin-top:3px}
 .preview{aspect-ratio:3/4;background:var(--line-2);border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;position:relative}
-.preview img{width:100%;height:100%;object-fit:cover;display:block}
+.preview img{width:100%;height:100%;object-fit:contain;display:block}
 .preview .ph{color:var(--ink-45);font-size:12.5px;text-align:center;padding:20px}
 .preview.multi{aspect-ratio:auto;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px;background:transparent}
 .preview.multi img{width:100%;aspect-ratio:3/4;border-radius:10px}
@@ -189,7 +189,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 .acard{background:var(--white);border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;position:relative;transition:.12s}
 .acard:hover{border-color:var(--sand);box-shadow:var(--shadow)}
 .acard.sel{outline:2px solid var(--pine);outline-offset:-2px}
-.acard .thumb{aspect-ratio:3/4;background:var(--line-2) center/cover no-repeat;display:block}
+.acard .thumb{aspect-ratio:3/4;background:var(--line-2) center/contain no-repeat;display:block}
 .acard .meta{padding:8px 10px}
 .acard .br{font-size:9px;letter-spacing:.08em;color:var(--sand);text-transform:uppercase;font-weight:600}
 .acard .nm{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1263,7 +1263,9 @@ function openArchive(store){
   $('#arch-done').addEventListener('click',closeModal);
   $('#modal').classList.add('on');
 }
-function closeModal(){$('#modal').classList.remove('on');$('#sheet').classList.remove('wide');renderPicks();}
+function closeModal(){const m=$('#modal');if(m)m.classList.remove('on');const sh=$('#sheet');if(sh)sh.classList.remove('wide');try{renderPicks();}catch(e){}}
+document.addEventListener('click',e=>{if(e.target.closest&&(e.target.closest('#m-close')||e.target.id==='modal'))closeModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){const m=$('#modal');if(m&&m.classList.contains('on'))closeModal();}});
 
 /* ---------- pills ---------- */
 function renderPills(){
