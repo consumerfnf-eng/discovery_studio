@@ -240,6 +240,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
   <section class="view on" id="v-lib">
     <p class="eyebrow">Archive</p>
     <h1 class="title">라이브러리 저장고</h1>
+    <div class="row" style="gap:8px;align-items:center;margin:2px 0 4px"><button class="btn sm" id="btn-cloud-reload">☁ 클라우드에서 다시 불러오기</button><span class="hint" id="cloud-status" style="margin:0"></span></div>
     <p class="sub">시즌별 라인, 레퍼런스, 기본모델, SHELL 원단을 미리 넣어두세요. 생성 탭에서는 아카이브를 스크롤·검색하며 셀렉합니다. 브라우저에 저장되어 다시 열어도 유지됩니다.</p>
     <div class="tabs" id="libtabs">
       <button data-t="lines" class="on">라인 (시즌) <span class="count" id="c-lines">0</span></button>
@@ -1624,7 +1625,8 @@ async function importAll(file){const data=JSON.parse(await file.text());for(cons
 
 /* ---------- wiring ---------- */
 function switchView(v){$$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));$$('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));if(v==='gen')renderPicks();if(v==='gallery')galleryGrid();if(v==='compare')compareSelect();if(v==='settings')loadSettingsUI();}
-function renderAll(){['lines','refs','models','fabrics'].forEach(libGrid);refreshCounts();renderPicks();renderPills();galleryGrid();compareSelect();}
+function bindCloudReload(){const b=$('#btn-cloud-reload');if(b&&!b._b){b._b=1;b.addEventListener('click',reloadCloud);}}
+function renderAll(){bindCloudReload();['lines','refs','models','fabrics'].forEach(libGrid);refreshCounts();renderPicks();renderPills();galleryGrid();compareSelect();}
 function fillSeasonSelects(){$('#season').innerHTML=SEASONS.map(s=>`<option ${s==='27FW'?'selected':''}>${s}</option>`).join('');}
 
 function wire(){
@@ -1742,7 +1744,7 @@ async function boot(){
 async function afterAuthBoot(){
   if(cloudOn())toast('클라우드(Supabase) 연결됨 · 공용 데이터 로드');
   await loadUserCloudSettings(); // 이 계정에 저장된 개인 키/설정을 클라우드에서 불러와 적용(리셋 방지)
-  try{state.lines=await storeAll('lines');state.refs=await storeAll('refs');state.models=await storeAll('models');state.fabrics=await storeAll('fabrics');state.gallery=await storeAll('gallery');}catch(e){toast('클라우드 로드 실패, 로컬 데이터로 표시: '+e.message);state.lines=await allOf('lines');state.refs=await allOf('refs');state.models=await allOf('models');state.fabrics=await allOf('fabrics');state.gallery=await allOf('gallery');}
+  await loadStores();
   state.refs=(state.refs||[]).filter(refVisible); // 시크릿 레퍼는 소유자에게만
   [...(state.lines||[]),...(state.refs||[])].forEach(it=>{if(it&&!it.gcat&&it.name){const g=gcatFromText(it.name);if(g)it.gcat=g;}}); // 카테고리 비면 이름에서 보정
   try{
@@ -1751,7 +1753,34 @@ async function afterAuthBoot(){
     if(!loaded){try{const d=JSON.parse(localStorage.getItem('discovery_sales')||'null');if(d){const rws=(d.rows)||Object.values(d.map||{});indexSales(rws);state.salesRaw=d.raw||''; loaded=true;}}catch(e){}}
     if(!loaded){try{const v=await allOf('sales');const main=(v||[]).find(x=>x.id==='main')||(v||[])[0];if(main){const rws=(main.rows)||Object.values(main.map||{});indexSales(rws);state.salesRaw=main.raw||'';}}catch(e){}}
   }catch(e){}
-  renderAll();loadSettingsUI();updateAuthUI();
+  try{refreshCounts();}catch(e){}
+  try{renderAll();}catch(e){console.error('renderAll 오류(데이터는 로드됨):',e);try{refreshCounts();}catch(_){}['lines','refs','models','fabrics'].forEach(st=>{try{libGrid(st);}catch(_){}});}
+  try{loadSettingsUI();}catch(e){}
+  try{updateAuthUI();}catch(e){}
+}
+// 스토어별 개별 로드(한 테이블 실패가 나머지를 막지 않게) + 로드 결과 진단
+async function loadStores(){
+  const src={};
+  async function ld(st){
+    try{const r=await storeAll(st);src[st]=cloudOn()?'cloud':'local';return r||[];}
+    catch(e){src[st]='실패('+e.message+')→로컬';try{return (await allOf(st))||[];}catch(_){return [];}}
+  }
+  state.lines=await ld('lines');state.refs=await ld('refs');state.models=await ld('models');state.fabrics=await ld('fabrics');state.gallery=await ld('gallery');
+  const line=`라인 ${state.lines.length} · 레퍼 ${state.refs.length} · 모델 ${state.models.length} · 원단 ${state.fabrics.length} · 갤러리 ${state.gallery.length}`;
+  const st=$('#cloud-status');if(st)st.textContent=(cloudOn()?'클라우드 연결됨 · ':'로컬 · ')+line;
+  console.log('[loadStores]',line,src);
+  return line;
+}
+// 강제 재로드(버튼)
+async function reloadCloud(){
+  const st=$('#cloud-status');if(st)st.textContent='불러오는 중…';
+  try{await ensureAuth();}catch(e){}
+  const line=await loadStores();
+  state.refs=(state.refs||[]).filter(refVisible);
+  [...(state.lines||[]),...(state.refs||[])].forEach(it=>{if(it&&!it.gcat&&it.name){const g=gcatFromText(it.name);if(g)it.gcat=g;}});
+  try{refreshCounts();}catch(e){}
+  try{renderAll();}catch(e){console.error(e);}
+  toast('다시 불러옴 · '+line);
 }
 boot();
 </script>
