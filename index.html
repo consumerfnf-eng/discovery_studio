@@ -321,6 +321,12 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
           <div class="grouplabel" style="color:var(--plum);font-weight:600">ADOPT FROM REF — 레퍼런스에서 채용</div>
           <div class="pillrow" id="adopt-pills"></div>
           <div class="hint" id="adopt-hint" style="margin:5px 0 0">레퍼런스는 이미지만으론 약하게 반영돼요 — 'AI 분석'으로 속성을 채우거나, 추가 디렉션에 구조(예: 넥라인을 스카프 랩으로)를 적으면 강하게 반영됩니다.</div>
+          <div id="shoe-ref" style="display:none">
+            <div class="sectlabel" style="margin-top:14px">부위별 밸런스 · 신발</div>
+            <div class="hint" style="margin:2px 0 8px">부위별로 디스커버리 라인에 가깝게(◀) 갈지, 레퍼런스를 따라갈지(▶) 조절합니다.</div>
+            <div class="slider-wrap"><div class="slider-head"><span class="lab">UPPER 밸런스</span><span class="val" id="bal-upper-v">50</span></div><input type="range" id="bal-upper" min="0" max="100" value="50"><div class="row" style="justify-content:space-between;margin-top:3px"><span class="slider-hint" style="margin:0">◀ 디스커버리 라인</span><span class="slider-hint" id="bal-upper-h" style="margin:0;color:var(--pine);font-weight:600"></span><span class="slider-hint" style="margin:0">레퍼런스 ▶</span></div></div>
+            <div class="slider-wrap"><div class="slider-head"><span class="lab">SOLE 밸런스</span><span class="val" id="bal-sole-v">50</span></div><input type="range" id="bal-sole" min="0" max="100" value="50"><div class="row" style="justify-content:space-between;margin-top:3px"><span class="slider-hint" style="margin:0">◀ 디스커버리 라인</span><span class="slider-hint" id="bal-sole-h" style="margin:0;color:var(--pine);font-weight:600"></span><span class="slider-hint" style="margin:0">레퍼런스 ▶</span></div></div>
+          </div>
 
           <div class="slider-wrap">
             <div class="slider-head"><span class="lab">디자인 반영 밸런스</span><span class="val" id="balance-v">35</span></div>
@@ -567,6 +573,21 @@ function ownerId(){return authSession&&authSession.user&&authSession.user.id||nu
 const SECRET_OWNER='jisoo07@fnfcorp.com';
 function authEmail(){return authSession&&authSession.user&&authSession.user.email||'';}
 function canSecret(){return authEmail()===SECRET_OWNER;} // 소전팀 시크릿 방 접근(jisoo07 전용)
+const ACTIVE_CATS=['OUTERWEAR','TOP','PANTS']; // 전체 활성 카테고리
+const DEV_CATS=['SKIRT','DRESS','SHOES'];      // 개발중(jisoo07만 사용)
+function catEnabled(cat){return ACTIVE_CATS.includes(cat)||canSecret();}
+function setupCategoryOptions(){
+  const sel=$('#cat-parent');if(!sel)return;
+  const owner=canSecret();
+  [...sel.options].forEach(o=>{
+    const cat=(o.value||o.textContent).replace(/\s*\(개발중\)\s*$/,'');
+    o.value=cat; // value 고정(라벨 변경이 value를 바꾸지 않게)
+    if(DEV_CATS.includes(cat)){o.disabled=!owner;o.textContent=cat+' (개발중)';}
+    else{o.disabled=false;o.textContent=cat;}
+  });
+  // 비소유자가 개발중 카테고리에 있으면 기본 활성 카테고리로 되돌림
+  if(!owner&&DEV_CATS.includes(sel.value)){sel.value='OUTERWEAR';applyCategory(true);}
+}
 function refVisible(r){return !r.secret||r.owner===authEmail();}
 function bearer(){return authToken()||supaCfg().key;}
 function saveSession(s){authSession=s;try{localStorage.setItem('discovery_auth',JSON.stringify(s));}catch(e){}}
@@ -694,11 +715,13 @@ const CAT_CONTROLS={
    {id:'waist',label:'웨이스트',opts:[['정위치','natural waist'],['하이웨이스트','high waist'],['드롭웨이스트','drop waist'],['밴딩','elastic waist']]}
  ],details:[['슬릿','slit'],['벨트','belt'],['버튼프론트','button front'],['셔링','shirring']]},
  SHOES:{groups:[
-   {id:'type',label:'타입',opts:[['스니커즈','sneakers'],['러너','running shoe'],['청키','chunky dad shoe'],['로퍼','loafer'],['부츠','boots'],['샌들','sandals'],['발레','ballet flat']]},
-   {id:'sole',label:'굽·솔',opts:[['플랫','flat sole'],['로우','low platform'],['미드','mid platform'],['하이','high platform'],['청키힐','chunky heel']]},
-   {id:'toe',label:'토',opts:[['라운드','round toe'],['포인티드','pointed toe'],['스퀘어','square toe']]},
-   {id:'closure',label:'클로저',opts:[['레이스업','lace-up'],['슬립온','slip-on'],['스트랩','strap'],['벨크로','velcro strap'],['지퍼','side zip']]}
- ],details:[['사이드 스트라이프','side stripe'],['로고 히트','heel logo hit'],['트랙 솔','track sole'],['투톤','two-tone colorway']]}
+   {id:'type',label:'타입',opts:[['로우 스니커즈','low sneaker'],['청키 스니커즈','chunky sneaker'],['레트로 러너','retro runner'],['대드슈즈','dad shoe'],['메리제인','mary jane'],['슬립온','slip-on'],['부츠','boot'],['샌들','sandal'],['발레','ballet flat']]},
+   {id:'soleH',label:'솔 높이',opts:[['플랫','flat low-profile sole'],['로우','low sole'],['미드','mid-height sole'],['하이','high stacked sole'],['청키','chunky exaggerated sole']]},
+   {id:'soleU',label:'솔 유닛',opts:[['EVA 폼','soft EVA foam midsole'],['러버컵','rubber cup sole'],['고무 아웃솔','vulcanized rubber outsole'],['플랫폼','flatform platform'],['웨지','wedge'],['트랙 솔','track/tooling sole']]},
+   {id:'upper',label:'어퍼 소재',opts:[['스웨이드+메쉬','suede and mesh mix'],['가죽+메쉬','leather and mesh mix'],['풀그레인 레더','full-grain leather'],['누벅','nubuck suede'],['메쉬 니트','engineered mesh knit'],['캔버스','cotton canvas'],['나일론 퀼팅','quilted nylon'],['텍스타일 믹스','technical textile mix']]},
+   {id:'toe',label:'토',opts:[['라운드','round toe'],['포인티드','pointed toe'],['스퀘어','square toe'],['알몬드','almond toe']]},
+   {id:'lacing',label:'레이싱',opts:[['레이스업','lace-up'],['슬립온','slip-on elastic'],['스트랩','strap'],['벨크로','velcro strap'],['버클','buckle'],['지퍼','side zip']]}
+ ],details:[['미드솔 강조','sculpted midsole'],['아웃솔 트레드','patterned outsole tread'],['텅 패딩','padded tongue'],['힐 카운터','structured heel counter'],['카라 패딩','padded collar'],['컬러 블로킹','color blocking'],['스티칭 강조','contrast stitching'],['트림','contrast trim'],['참·펜던트','charm/pendant'],['사이드 스트라이프','side stripe'],['투톤','two-tone colorway']]}
 };
 function matPerfWord(v){v=+v;return v<20?'a NATURAL-fibre look: cotton/linen/wool feel, fully matte, soft natural drape, visible natural weave, no sheen':v<40?'a mostly natural look with slight structure, matte finish, natural drape':v<60?'a FUNCTIONAL-blend look: tech-cotton or poly blend, clean smooth surface, light structure, subtle low sheen':v<80?'a TECH-blend look: smooth structured fabric, faint water-repellent sheen, crisp hand':'a HIGH-PERFORMANCE technical look: nylon/poly/soft-shell/ripstop, matte-tech to low sheen, water-repellent bonded seams, athletic structure';}
 function matPerfHint(v){v=+v;return v<20?'천연 (코튼·린넨·울)':v<40?'천연 혼방':v<60?'기능성 (텍스코튼·혼방)':v<80?'기능성+ (테크 혼방)':'퍼포먼스 (나일론·폴리 신소재)';}
@@ -773,7 +796,7 @@ const state={
             logoDataUrl:'',logoPos:'bc',logoColor:'dark',logoSize:15,logoDefault:true,brandDNA:DNA_DEFAULT,baseModelPrompt:BASE_MODEL_DEFAULT,genCount:2,supaUrl:'',supaKey:'',supaBucket:'discovery-studio'},
   lines:[],refs:[],models:[],fabrics:[],gallery:[],
   pick:{line:null,refs:new Set(),model:null,fabric:null},
-  brief:{keep:new Set(),replace:new Set(),adopt:new Set(),fabricType:''},
+  brief:{keep:new Set(),replace:new Set(),adopt:new Set(),fabricType:'',shoeBal:{upper:50,sole:50}},
   aiAttrs:{}, jsonDirty:false, galFilter:'all', refSecretView:false, galSelMode:false, galSel:new Set(), pose:'auto', quiltRef:null, ctl:{}, ctlDetails:new Set(),
   libFilter:{lines:{gender:'ALL',gcat:'ALL',season:'ALL'},refs:{gender:'ALL',gcat:'ALL',season:'ALL'}},
   libSelMode:{lines:false,refs:false}, libSel:{lines:new Set(),refs:new Set()},
@@ -793,6 +816,9 @@ function download(du,name){const a=document.createElement('a');a.href=du;a.downl
 
 function sheerText(v){v=+v;return v<12?'completely opaque solid fabric, no transparency':v<38?'subtle sheer accent only at select panels':v<68?'clearly semi-transparent paneling, translucent overlay sections':'strongly sheer see-through fabric, chiffon-like translucent layering';}
 function shimmerText(v){v=+v;return v<12?'a flat matte surface finish, no sheen (this controls surface gloss only, never the color)':v<38?'a soft satin sheen on the fabric surface (gloss only, keep the original color)':v<68?'a glossy lustrous surface sheen, light-reflective finish (surface gloss only — do NOT change the garment color, no silver/metallic tint)':'a high-gloss wet-look lacquered surface sheen (surface shine only — keep the original color, do NOT make it silver or metallic-colored)';}
+function balWord(v){v=+v;return v<20?'taken EXACTLY from the DISCOVERY base line — reproduce this part identically (same shape, proportions and construction) with essentially NO reference influence':v<45?'leaning toward the DISCOVERY base line, with the reference lightly informing the details':v<70?'an EQUAL 50/50 blend — VISIBLY adopt the reference shape and structure for this part; it must read as much from the reference as from the DISCOVERY base line':v<90?'driven MAINLY by the reference for shape and structure; the DISCOVERY base line only contributes brand quality and proportion':'taken EXACTLY from the reference — reproduce the reference for this part identically, with essentially NO DISCOVERY base-line influence';}
+function balWordFor(v){return balWord(v);}
+function shoeBalClauses(J,noun){const sb=J.shoe_balance;if(!sb)return[];const out=[];if(sb.upper!=null)out.push(`UPPER BALANCE — the upper (panels, material, overlays, collar, tongue, lacing area) is ${balWordFor(sb.upper)}.`);if(sb.sole!=null)out.push(`SOLE BALANCE — the sole unit (midsole height and shape, outsole tooling, stack) is ${balWordFor(sb.sole)}.`);return out;}
 function balanceText(b){b=+b;return b<20?'Stay very close to the SOURCE garment: preserve silhouette, length, construction almost exactly. Use references only for subtle colorway and mood, never shape.':b<45?'Keep the SOURCE garment clearly recognizable as the same product family. Let references inform colorway, trims and styling, not the core silhouette.':b<70?'Balance SOURCE design and references evenly: noticeably evolve silhouette and details toward the references while keeping the product family readable.':'Lean strongly on the REFERENCES for silhouette, proportion and detailing. Treat the source garment as a loose starting point within the same category.';}
 function sheerHint(v){v=+v;return v<12?'불투명':v<38?'부분 시스루':v<68?'반투명':'강한 시스루';}
 function shimmerHint(v){v=+v;return v<12?'매트':v<38?'새틴 광':v<68?'글로시':'하이글로스';}
@@ -838,7 +864,8 @@ function computePlan(){
   const refs=pickedRefs();
   const shell=state.fabrics.find(f=>f.id===state.pick.fabric);
   const noun=CATEGORIES[$('#cat-parent').value].noun;
-  const modelMode=model?'image':'idol'; // image(모델 선택=그 얼굴) | idol(미선택=기본 K-pop)
+  const isShoeCat=$('#cat-parent').value==='SHOES';
+  const modelMode=isShoeCat?'product':(model?'image':'idol'); // product(신발=제품컷,모델없음) | image | idol
   const bal=+($('#balance')?$('#balance').value:35);
   const images=[],roles=[];
   const designRole=`${noun} reference — adopt its silhouette, neckline, collar and distinctive design for the ${noun}`;
@@ -848,7 +875,18 @@ function computePlan(){
   const pushShell=()=>{if(shell){images.push(shell.dataUrl);roles.push('a flat FABRIC SWATCH image (material sample, not a garment) — replicate ONLY its weave, texture, finish and sheen across the whole garment shell; do NOT take its colour (garment colour follows the base line and COLOUR BALANCE); never copy its shape');}};
   const designRefs=refs.filter(r=>!r.detail);
   let refLed=false;
-  if(modelMode==='image'){
+  if(modelMode==='product'){
+    // 신발 제품컷 — 모델/사람 없음, 어퍼/솔 부위별 밸런스
+    if(line){
+      const sb=state.brief.shoeBal||{upper:50,sole:50};
+      const upRef=(+sb.upper)>=45, soleRef=(+sb.sole)>=45;
+      let lineRole;
+      if(!upRef&&!soleRef){lineRole=`DISCOVERY base form — source of the ${noun} product design (silhouette, proportions, colorway)`;}
+      else{const parts=[upRef?'the UPPER shape/silhouette is LED BY THE REFERENCE image(s), not this base form':'the UPPER follows this DISCOVERY base form',soleRef?'the SOLE unit is LED BY THE REFERENCE image(s), not this base form':'the SOLE follows this DISCOVERY base form'];lineRole=`DISCOVERY base form — brand identity, proportion baseline and finishing-quality reference (do NOT force this base form's shape onto parts the reference leads): ${parts.join('; ')}`;}
+      images.push(line.dataUrl);roles.push(lineRole);pushList(refs);pushShell();
+    }else if(designRefs.length){const primary=designRefs[0];images.push(primary.dataUrl);roles.push(`PRIMARY ${noun} reference — build the ${noun} ON this shape, silhouette, proportions and colorway (this is the base form)`);pushList(refs.filter(r=>r!==primary));pushShell();}
+    else{pushList(refs);pushShell();}
+  }else if(modelMode==='image'){
     images.push(model.dataUrl);roles.push('THE MODEL to keep and dress — the output MUST show this exact person (face, hair, skin tone, body), wearing the new garment');
     if(line){images.push(line.dataUrl);roles.push(`DISCOVERY base form — source of the ${noun} design, outfit styling, pose and background (its person is NOT used)`);}
     pushList(refs);pushShell();
@@ -904,6 +942,7 @@ function buildDesignJSON(){
     garment:g,
     design_balance:+$('#balance').value/100,
     color_balance:+($('#colorbal')?$('#colorbal').value:50)/100,
+    shoe_balance:(parent==='SHOES'?{...state.brief.shoeBal}:null),
     pose:state.pose||'auto',
     material_perf:+($('#matperf')?$('#matperf').value:50)/100,
     controls:{chips:Object.assign({},state.ctl),details:[...state.ctlDetails]},
@@ -930,9 +969,14 @@ function jsonToPrompt(J,plan){
   const rolesText=plan?rolesToText(plan.roles):'';
   const mode=plan?plan.modelMode:'idol';
   const dna=state.settings.brandDNA?`[DISCOVERY DESIGN DNA] ${state.settings.brandDNA.replace(/\s+/g,' ').trim()}`:'';
-  S.push(`Full-body premium DISCOVERY fashion lookbook photograph for the ${J.target_season||'27FW'} season.`);
+  if(mode==='product')S.push(`Premium DISCOVERY FOOTWEAR PRODUCT photograph for the ${J.target_season||'27FW'} season — a single ${noun} shown as a clean studio product shot. NO person, NO model, NO body parts, NO legs or feet — just the ${noun} itself. Three-quarter side profile on a seamless soft grey-blue studio backdrop, soft diffused lighting, gentle grounding shadow, sharp focus, premium e-commerce/lookbook product photography.`);
+  else S.push(`Full-body premium DISCOVERY fashion lookbook photograph for the ${J.target_season||'27FW'} season.`);
   if(dna)S.push(dna);
-  if(mode==='image'){
+  if(mode==='product'){
+    S.push(`${noun.toUpperCase()} DESIGN — construct the ${noun} from the DISCOVERY base form (image 1) together with the reference image(s), following the part balance below. Render ONLY the footwear as a clean product still — no person.`);
+    adoptClauses(J,noun).forEach(c=>S.push(c));
+    shoeBalClauses(J,noun).forEach(c=>S.push(c));
+  }else if(mode==='image'){
     S.push(`Show the EXACT person from image 1 — keep their face, hair, skin tone and body identical — now wearing a newly designed DISCOVERY ${noun}. Do not change who the person is; this is a dressing/try-on task.`);
     S.push(`${noun.toUpperCase()} DESIGN — construct the new ${noun} from image 2 (the DISCOVERY base form) together with the reference image(s), balanced per DESIGN BALANCE below.`);
     adoptClauses(J,noun).forEach(c=>S.push(c));
@@ -1066,6 +1110,7 @@ async function analyzeFabric(){
 
 /* ---------- generate ---------- */
 async function doGenerate(){
+  {const cp=($('#cat-parent')||{}).value;if(cp&&!catEnabled(cp)){toast('"'+cp+'" 카테고리는 개발중입니다. 현재 OUTERWEAR·TOP·PANTS만 생성 가능합니다.');return;}}
   if(!state.pick.line&&!state.pick.refs.size){toast('베이스 라인 또는 레퍼런스를 선택하세요.');return;}
   const plan=computePlan(),J=currentJSON(),prompt=jsonToPrompt(J,plan);
   const n=Math.max(1,Math.min(4,+($('#gen-n').value||state.settings.genCount||2)));
@@ -1282,11 +1327,18 @@ function applyCategory(reset){
   const parent=$('#cat-parent').value,C=CATEGORIES[parent];
   {const cs=$('#cat-sub');if(cs)cs.innerHTML=(C.subs||[]).map(s=>`<option>${s}</option>`).join('');}
   $('#cat-tag').textContent=`· ${C.noun} 기준`;
+  const shoe=parent==='SHOES';
+  {const sr=$('#shoe-ref');if(sr)sr.style.display=shoe?'block':'none';}
   if(reset){state.ctl={};state.ctlDetails=new Set();}
   renderCatControls(parent);
 
   if(reset){state.brief.keep=new Set(C.keepDefault);state.brief.replace=new Set(C.replaceDefault);state.brief.adopt=new Set(C.adoptDefault);state.aiAttrs={};}
-  renderPills();refreshJSON(true);
+  renderPills();if(shoe)renderShoeBal();refreshJSON(true);
+}
+function renderShoeBal(){
+  const sb=state.brief.shoeBal||(state.brief.shoeBal={upper:50,sole:50});
+  ['upper','sole'].forEach(k=>{const el=$('#bal-'+k);if(!el)return;el.value=sb[k];const v=$('#bal-'+k+'-v');if(v)v.textContent=sb[k];const h=$('#bal-'+k+'-h');if(h)h.textContent=balHintFor(sb[k]);
+    el.oninput=()=>{state.brief.shoeBal[k]=+el.value;const vv=$('#bal-'+k+'-v');if(vv)vv.textContent=el.value;const hh=$('#bal-'+k+'-h');if(hh)hh.textContent=balHintFor(+el.value);refreshJSON(true);};});
 }
 
 /* ---------- gallery ---------- */
@@ -1677,17 +1729,17 @@ function wire(){
     const fp=e.target.closest('[data-fabpill]');if(fp){state.brief.fabricType=state.brief.fabricType===fp.dataset.fabpill?'':fp.dataset.fabpill;renderPills();refreshJSON();return;}
   });
 
-  const sync=(id,vid,hid,fn)=>{const el=$('#'+id);el.addEventListener('input',()=>{$('#'+vid).textContent=el.value;if(hid)$('#'+hid).textContent=fn(el.value);refreshJSON();});};
+  const sync=(id,vid,hid,fn)=>{const el=$('#'+id);if(!el)return;el.addEventListener('input',()=>{const ve=$('#'+vid);if(ve)ve.textContent=el.value;if(hid){const he=$('#'+hid);if(he)he.textContent=fn(el.value);}refreshJSON();});};
   sync('balance','balance-v','balance-h',balHintFor);sync('matperf','matperf-v','matperf-h',matPerfHint);sync('sheer','sheer-v','sheer-h',sheerHint);
   renderGenPose();{const gp=$('#gen-pose');if(gp)gp.addEventListener('click',e=>{const b=e.target.closest('[data-gpose]');if(!b)return;state.pose=b.dataset.gpose;renderGenPose();refreshJSON();});}
   sync('colorbal','colorbal-v','colorbal-h',colorBalHint);sync('refmix','refmix-v','refmix-h',refmixHint);sync('volume','volume-v','volume-h',volumeHint);
-  $('#balance-h').textContent=balanceHint(35);$('#sheer-h').textContent=sheerHint(20);
-  $('#colorbal-h').textContent=colorBalHint(50);$('#matperf-h').textContent=matPerfHint(50);
+  {const setTxt=(id,v)=>{const e=$('#'+id);if(e)e.textContent=v;};setTxt('balance-h',balanceHint(35));setTxt('sheer-h',sheerHint(20));setTxt('colorbal-h',colorBalHint(50));setTxt('matperf-h',matPerfHint(50));}
   renderCatControls(($('#cat-parent')||{}).value||'OUTERWEAR');
   $('#cat-controls').addEventListener('click',e=>{const ss=e.target.closest('[data-ctl]');if(ss){const id=ss.dataset.ctl,v=ss.dataset.ctlv;state.ctl[id]=(state.ctl[id]===v)?'':v;renderCatControls($('#cat-parent').value);refreshJSON();return;}const dd=e.target.closest('[data-ctld]');if(dd){const v=dd.dataset.ctld;state.ctlDetails.has(v)?state.ctlDetails.delete(v):state.ctlDetails.add(v);renderCatControls($('#cat-parent').value);refreshJSON();return;}});
 
   $('#season').addEventListener('change',renderPicks);
   $('#cat-parent').addEventListener('change',()=>applyCategory(true));
+  setupCategoryOptions();
   {const cs=$('#cat-sub');if(cs)cs.addEventListener('change',()=>{refreshJSON();});}
   $('#extra').addEventListener('input',()=>refreshJSON());
   $('#logo-generate').addEventListener('change',()=>refreshJSON(true));
@@ -1766,6 +1818,7 @@ async function afterAuthBoot(){
   try{renderAll();}catch(e){console.error('renderAll 오류(데이터는 로드됨):',e);try{refreshCounts();}catch(_){}['lines','refs','models','fabrics'].forEach(st=>{try{libGrid(st);}catch(_){}});}
   try{loadSettingsUI();}catch(e){}
   try{updateAuthUI();}catch(e){}
+  try{setupCategoryOptions();}catch(e){}
 }
 // 스토어별 개별 로드(한 테이블 실패가 나머지를 막지 않게) + 로드 결과 진단
 async function loadStores(){
