@@ -223,7 +223,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <header>
   <div class="bar">
-    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v3:4</small></small></div>
+    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v4</small></small></div>
     <nav id="nav">
       <button data-v="lib" class="on">라이브러리</button>
       <button data-v="gen">생성</button>
@@ -1134,7 +1134,7 @@ function renderBulkBar(store){
 function thumb(url,w){
   if(!url||typeof url!=='string')return url;
   if(url.indexOf('/storage/v1/object/public/')<0)return url; // data:·외부 URL은 원본 그대로
-  return url.replace('/storage/v1/object/public/','/storage/v1/render/image/public/')+(url.indexOf('?')<0?'?':'&')+'width='+(w||400)+'&quality=55'; // 그리드용 소형 WebP
+  return url.replace('/storage/v1/object/public/','/storage/v1/render/image/public/')+(url.indexOf('?')<0?'?':'&')+'width='+(w||400)+'&resize=contain&quality=55'; // 그리드용 소형 WebP(잘림 방지)
 }
 function libGrid(store){
   const grid=$('#grid-'+store),sw=(store==='fabrics'||store==='models')?'sw':'';
