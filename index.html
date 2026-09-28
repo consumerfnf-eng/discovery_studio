@@ -223,7 +223,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <header>
   <div class="bar">
-    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v4</small></small></div>
+    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v6</small></small></div>
     <nav id="nav">
       <button data-v="lib" class="on">라이브러리</button>
       <button data-v="gen">생성</button>
@@ -655,6 +655,11 @@ async function storePut(s,v){
 }
 async function storeDel(s,id){if(cloudOn()&&CLOUD_STORES.includes(s)){await supaDelete(s,id);delOf(s,id).catch(()=>{});return;}return delOf(s,id);}
 async function toBlob(du){if(/^data:/.test(du))return dataUrlToBlob(du);const r=await fetch(du);return await r.blob();}
+function loadImg(src){return new Promise((res,rej)=>{const im=new Image();if(!/^data:/.test(src))im.crossOrigin='anonymous';im.onload=()=>res(im);im.onerror=()=>rej(new Error('image load 실패'));im.src=src;});}
+async function toApiBlob(src){ // OpenAI가 avif 등 미지원 → 캔버스로 PNG 재인코딩
+  try{const im=await loadImg(src);const w=im.naturalWidth||im.width,h=im.naturalHeight||im.height;if(w&&h){const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(im,0,0);const b=await new Promise(r=>c.toBlob(r,'image/png'));if(b)return b;}}catch(e){}
+  return await toBlob(src); // 폴백(재인코딩 실패 시 원본)
+}
 
 /* ---------- defaults ---------- */
 const DNA_DEFAULT=`Premium Italian down outerwear house. Lightweight yet dimensional construction; sophisticated nylon surface with a subtle glossy or silky finish. Refined rather than sporty quilting; clean high-density stitching; premium volume control; modern feminine silhouette with controlled waist definition when appropriate. Avoid cheap flat quilting, avoid overly tactical outdoor appearance, avoid generic mass-market proportions. QUILTING RULE: diamond quilting must read clean, symmetrical and softly dimensional with consistent stitch tension and premium loft. LOGO RULE: do NOT draw any brand logo, patch, label or lettering on the garment — the surface stays completely blank and unbranded; the DISCOVERY logo is added later in post-production.`;
@@ -1046,7 +1051,7 @@ async function openaiEdit(prompt,imgs,n){
   if(st.size&&st.size!=='auto')fd.append('size',st.size);
   if(st.quality&&st.quality!=='auto')fd.append('quality',st.quality);
   fd.append('n',String(Math.max(1,Math.min(10,n||1))));
-  for(let i=0;i<imgs.length;i++){fd.append('image[]',await toBlob(imgs[i]),`img_${i}.png`);}
+  for(let i=0;i<imgs.length;i++){fd.append('image[]',await toApiBlob(imgs[i]),`img_${i}.png`);}
   const r=await fetch(`${st.base.replace(/\/$/,'')}/images/edits`,{method:'POST',headers:{'Authorization':`Bearer ${key}`},body:fd});
   if(!r.ok){let m=`HTTP ${r.status}`;try{const j=await r.json();m=j.error?.message||m;}catch(e){}throw new Error(m);}
   const j=await r.json();const arr=(j.data||[]).map(d=>d.b64_json).filter(Boolean);if(!arr.length)throw new Error('응답에 이미지가 없습니다.');
