@@ -66,13 +66,13 @@ textarea.mono{font-family:var(--mono);font-size:11px;line-height:1.5}
 .drop{border:1.5px dashed var(--line);border-radius:12px;padding:20px;text-align:center;color:var(--ink-45);background:var(--white);transition:.15s;cursor:pointer}
 .drop:hover,.drop.hot{border-color:var(--pine-l);color:var(--pine);background:#FbFaf5}
 .drop b{color:var(--ink);font-weight:600}
-.cards{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;align-items:flex-start}
-.cards.lg{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
-.card{background:var(--white);border:1px solid var(--line);border-radius:12px;overflow:hidden;position:relative;transition:.15s;width:-moz-fit-content;width:fit-content;max-width:100%}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-top:12px}
+.cards.lg{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+.card{background:var(--white);border:1px solid var(--line);border-radius:12px;overflow:hidden;position:relative;transition:.15s}
 .card:hover{border-color:var(--sand);box-shadow:var(--shadow)}
-.card .thumb{display:block;background:var(--line-2);cursor:pointer;line-height:0;height:280px}
-.card .thumb img{height:100%;width:auto;display:block}
-.card.sw .thumb{height:280px;overflow:hidden}
+.card .thumb{display:flex;align-items:center;justify-content:center;background:var(--line-2);cursor:pointer;height:300px;overflow:hidden}
+.card .thumb img{max-width:100%;max-height:100%;width:auto;height:auto;display:block;margin:auto}
+.card.sw .thumb{height:300px}
 .card .meta{padding:7px 9px}
 .card .nm{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card .tg{font-size:10px;color:var(--ink-45);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
