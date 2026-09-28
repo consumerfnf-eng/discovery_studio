@@ -70,8 +70,8 @@ textarea.mono{font-family:var(--mono);font-size:11px;line-height:1.5}
 .cards.lg{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
 .card{background:var(--white);border:1px solid var(--line);border-radius:12px;overflow:hidden;position:relative;transition:.15s}
 .card:hover{border-color:var(--sand);box-shadow:var(--shadow)}
-.card .thumb{aspect-ratio:3/4;background:var(--line-2) center/cover no-repeat;display:block;cursor:pointer}
-.card.sw .thumb{aspect-ratio:1/1}
+.card .thumb{aspect-ratio:3/4;background:var(--line-2) center/contain no-repeat;display:block;cursor:pointer}
+.card.sw .thumb{aspect-ratio:1/1;background:var(--line-2) center/cover no-repeat}
 .card .meta{padding:7px 9px}
 .card .nm{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card .tg{font-size:10px;color:var(--ink-45);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -189,7 +189,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 .acard{background:var(--white);border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;position:relative;transition:.12s}
 .acard:hover{border-color:var(--sand);box-shadow:var(--shadow)}
 .acard.sel{outline:2px solid var(--pine);outline-offset:-2px}
-.acard .thumb{aspect-ratio:3/4;background:var(--line-2) center/cover no-repeat;display:block}
+.acard .thumb{aspect-ratio:3/4;background:var(--line-2) center/contain no-repeat;display:block}
 .acard .meta{padding:8px 10px}
 .acard .br{font-size:9px;letter-spacing:.08em;color:var(--sand);text-transform:uppercase;font-weight:600}
 .acard .nm{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1137,7 +1137,7 @@ function thumb(url,w){
   return url.replace('/storage/v1/object/public/','/storage/v1/render/image/public/')+(url.indexOf('?')<0?'?':'&')+'width='+(w||400)+'&quality=55'; // 그리드용 소형 WebP
 }
 function libGrid(store){
-  const grid=$('#grid-'+store),sw=store==='fabrics'?'sw':'';
+  const grid=$('#grid-'+store),sw=(store==='fabrics'||store==='models')?'sw':'';
   let items=state[store].slice().sort((a,b)=>b.createdAt-a.createdAt); // 최신순
   const filtered=store==='lines'||store==='refs';
   if(filtered){renderLibChips(store);renderBulkBar(store);items=items.filter(it=>matchFilter(store,it));}
@@ -1190,7 +1190,7 @@ function renderPickBar(store){
     +`<button class="btn sm addarch" data-arch="${store}">＋ 아카이브에서 셀렉</button>`;
 }
 function pickGrid(store){
-  const el=$('#pick-'+store),items=state[store],sw=store==='fabrics'?'sw':'';
+  const el=$('#pick-'+store),items=state[store],sw=(store==='fabrics'||store==='models')?'sw':'';
   if(!items.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1;padding:16px">라이브러리에서 먼저 올려주세요.</div>`;return;}
   el.innerHTML=items.map(it=>{const on=store==='models'?state.pick.model===it.id:state.pick.fabric===it.id;
     return`<div class="card ${sw} ${on?'sel':''}" data-pick="${store}" data-id="${it.id}"><span class="pick">✓</span><span class="thumb" style="background-image:url('${thumb(it.dataUrl)}')"></span><div class="meta"><div class="nm">${esc(it.name)}</div><div class="tg">${esc(metaLine(store,it))}</div></div></div>`;}).join('');
@@ -1372,7 +1372,7 @@ function openEdit(gid){
         <div class="slider-wrap"><div class="slider-head"><span class="lab">볼륨 · 충전재</span><span class="val" id="e-volume-v">${editG.volume!=null?editG.volume:50}</span></div><input type="range" id="e-volume" min="0" max="100" value="${editG.volume!=null?editG.volume:50}"><div class="slider-hint" id="e-volume-h"></div></div>
         <button class="btn sm" id="edit-finish-go" style="margin-top:8px">마감 재적용</button>
       </div></div>`;
-  $('#edit-models').innerHTML=state.models.length?state.models.map(m=>`<div class="card" data-emodel="${m.id}"><span class="pick">✓</span><span class="thumb" style="background-image:url('${thumb(m.dataUrl)}')"></span></div>`).join(''):'<div class="hint">기본모델을 먼저 올려주세요.</div>';
+  $('#edit-models').innerHTML=state.models.length?state.models.map(m=>`<div class="card sw" data-emodel="${m.id}"><span class="pick">✓</span><span class="thumb" style="background-image:url('${thumb(m.dataUrl)}')"></span></div>`).join(''):'<div class="hint">기본모델을 먼저 올려주세요.</div>';
   let chosenModel=null;
   $$('#edit-models .card').forEach(c=>c.onclick=()=>{$$('#edit-models .card').forEach(x=>x.classList.remove('sel'));c.classList.add('sel');chosenModel=c.dataset.emodel;});
   renderVersions();
