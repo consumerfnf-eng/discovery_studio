@@ -66,12 +66,13 @@ textarea.mono{font-family:var(--mono);font-size:11px;line-height:1.5}
 .drop{border:1.5px dashed var(--line);border-radius:12px;padding:20px;text-align:center;color:var(--ink-45);background:var(--white);transition:.15s;cursor:pointer}
 .drop:hover,.drop.hot{border-color:var(--pine-l);color:var(--pine);background:#FbFaf5}
 .drop b{color:var(--ink);font-weight:600}
-.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;margin-top:12px}
+.cards{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;align-items:flex-start}
 .cards.lg{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
-.card{background:var(--white);border:1px solid var(--line);border-radius:12px;overflow:hidden;position:relative;transition:.15s}
+.card{background:var(--white);border:1px solid var(--line);border-radius:12px;overflow:hidden;position:relative;transition:.15s;width:-moz-fit-content;width:fit-content;max-width:100%}
 .card:hover{border-color:var(--sand);box-shadow:var(--shadow)}
-.card .thumb{aspect-ratio:3/4;background:var(--line-2) center/contain no-repeat;display:block;cursor:pointer}
-.card.sw .thumb{aspect-ratio:1/1}
+.card .thumb{display:block;background:var(--line-2);cursor:pointer;line-height:0;height:280px}
+.card .thumb img{height:100%;width:auto;display:block}
+.card.sw .thumb{height:280px;overflow:hidden}
 .card .meta{padding:7px 9px}
 .card .nm{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card .tg{font-size:10px;color:var(--ink-45);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -189,7 +190,8 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 .acard{background:var(--white);border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;position:relative;transition:.12s}
 .acard:hover{border-color:var(--sand);box-shadow:var(--shadow)}
 .acard.sel{outline:2px solid var(--pine);outline-offset:-2px}
-.acard .thumb{aspect-ratio:3/4;background:var(--line-2) center/contain no-repeat;display:block}
+.acard .thumb{display:block;background:var(--line-2);line-height:0}
+.acard .thumb img{width:100%;height:auto;display:block}
 .acard .meta{padding:8px 10px}
 .acard .br{font-size:9px;letter-spacing:.08em;color:var(--sand);text-transform:uppercase;font-weight:600}
 .acard .nm{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1149,7 +1151,7 @@ function libGrid(store){
     const sa=sales.length?`<div class="salerow">`+sales.map(s=>`<span class="saleamt ${(s.rank&&s.rank<=10)?(seasonHalf(s.season)==='SS'?'ss':'fw'):'dim'}">${esc(s.season)}${s.cat?' '+esc(s.cat):''} #${s.rank||'-'} · ${esc(s.amtStr)}</span>`).join('')+`</div>`:'';
     const on=selMode&&state.libSel[store].has(it.id);
     const selbox=selMode?`<span class="selbox ${on?'on':''}">${on?'✓':''}</span>`:'';
-    return`<div class="card ${sw} ${on?'picked':''} ${trendActive(it)?'trend':''}" data-id="${it.id}" data-store="${store}">${rb}${selbox}<button class="x" data-del="${it.id}" data-store="${store}">✕</button><span class="thumb" style="background-image:url('${thumb(it.dataUrl)}')"></span><div class="meta"><div class="nm">${esc(it.name)}</div><div class="tg">${esc(metaLine(store,it))}</div>${hashHTML(it)}${rankHTML(it)}${sa}</div></div>`;
+    return`<div class="card ${sw} ${on?'picked':''} ${trendActive(it)?'trend':''}" data-id="${it.id}" data-store="${store}">${rb}${selbox}<button class="x" data-del="${it.id}" data-store="${store}">✕</button><span class="thumb"><img loading="lazy" src="${thumb(it.dataUrl)}"></span><div class="meta"><div class="nm">${esc(it.name)}</div><div class="tg">${esc(metaLine(store,it))}</div>${hashHTML(it)}${rankHTML(it)}${sa}</div></div>`;
   }).join('');
 }
 async function bulkApply(store){
@@ -1193,7 +1195,7 @@ function pickGrid(store){
   const el=$('#pick-'+store),items=state[store],sw=store==='fabrics'?'sw':'';
   if(!items.length){el.innerHTML=`<div class="empty" style="grid-column:1/-1;padding:16px">라이브러리에서 먼저 올려주세요.</div>`;return;}
   el.innerHTML=items.map(it=>{const on=store==='models'?state.pick.model===it.id:state.pick.fabric===it.id;
-    return`<div class="card ${sw} ${on?'sel':''}" data-pick="${store}" data-id="${it.id}"><span class="pick">✓</span><span class="thumb" style="background-image:url('${thumb(it.dataUrl)}')"></span><div class="meta"><div class="nm">${esc(it.name)}</div><div class="tg">${esc(metaLine(store,it))}</div></div></div>`;}).join('');
+    return`<div class="card ${sw} ${on?'sel':''}" data-pick="${store}" data-id="${it.id}"><span class="pick">✓</span><span class="thumb"><img loading="lazy" src="${thumb(it.dataUrl)}"></span><div class="meta"><div class="nm">${esc(it.name)}</div><div class="tg">${esc(metaLine(store,it))}</div></div></div>`;}).join('');
 }
 function renderPicks(){
   const src=prevSeason($('#season').value);
@@ -1248,7 +1250,7 @@ function openArchive(store){
       const sales=salesFor(it);
       const rb=cardBadges(it,sales);
       const sa=sales.length?`<div class="salerow">`+sales.map(s=>`<span class="saleamt ${(s.rank&&s.rank<=10)?(seasonHalf(s.season)==='SS'?'ss':'fw'):'dim'}">${esc(s.season)}${s.cat?' '+esc(s.cat):''} #${s.rank||'-'} · ${esc(s.amtStr)}</span>`).join('')+`</div>`:'';
-      return`<div class="acard ${on?'sel':''} ${trendActive(it)?'trend':''}" data-aid="${it.id}">${rb}<span class="pick">✓</span><span class="thumb" style="background-image:url('${thumb(it.dataUrl)}')"></span><div class="meta"><div class="br">${trendActive(it)?'[TREND] ':''}DISCOVERY${it.season?' · '+esc(it.season):''}</div><div class="nm">${esc(it.name)}</div><div class="tg">${esc(metaLine(store,it))}</div>${hashHTML(it)}${rankHTML(it)}${sa}</div></div>`;
+      return`<div class="acard ${on?'sel':''} ${trendActive(it)?'trend':''}" data-aid="${it.id}">${rb}<span class="pick">✓</span><span class="thumb"><img loading="lazy" src="${thumb(it.dataUrl)}"></span><div class="meta"><div class="br">${trendActive(it)?'[TREND] ':''}DISCOVERY${it.season?' · '+esc(it.season):''}</div><div class="nm">${esc(it.name)}</div><div class="tg">${esc(metaLine(store,it))}</div>${hashHTML(it)}${rankHTML(it)}${sa}</div></div>`;
     }).join('');
   }
   chips();render();
@@ -1311,7 +1313,7 @@ function galleryGrid(){
     const selbox=state.galSelMode?`<span class="selbox ${sel?'on':''}">${sel?'✓':''}</span>`:'';
     const delBtn=mine?`<button class="x" data-galdel="${g.id}">✕</button>`:'';
     const badge=state.galSelMode?'':(!mine?`<span class="galbadge shared">↗ 공유받음</span>`:'');
-    return`<div class="card ${sel?'picked':''}" data-gid="${g.id}">${selbox}${delBtn}${badge}<span class="thumb" style="background-image:url('${thumb(showLogo&&g.logoUrl?g.logoUrl:g.dataUrl)}')"></span><div class="meta"><div class="nm${(mine&&sharedN)?' sharedname':''}"${(mine&&sharedN)?` title="공유중 ${sharedN}명"`:''}>${esc(g.name)}</div><div class="tg">${tg}</div></div></div>`;}).join('');
+    return`<div class="card ${sel?'picked':''}" data-gid="${g.id}">${selbox}${delBtn}${badge}<span class="thumb"><img loading="lazy" src="${thumb(showLogo&&g.logoUrl?g.logoUrl:g.dataUrl)}"></span><div class="meta"><div class="nm${(mine&&sharedN)?' sharedname':''}"${(mine&&sharedN)?` title="공유중 ${sharedN}명"`:''}>${esc(g.name)}</div><div class="tg">${tg}</div></div></div>`;}).join('');
 }
 
 /* ---------- compare ---------- */
@@ -1372,7 +1374,7 @@ function openEdit(gid){
         <div class="slider-wrap"><div class="slider-head"><span class="lab">볼륨 · 충전재</span><span class="val" id="e-volume-v">${editG.volume!=null?editG.volume:50}</span></div><input type="range" id="e-volume" min="0" max="100" value="${editG.volume!=null?editG.volume:50}"><div class="slider-hint" id="e-volume-h"></div></div>
         <button class="btn sm" id="edit-finish-go" style="margin-top:8px">마감 재적용</button>
       </div></div>`;
-  $('#edit-models').innerHTML=state.models.length?state.models.map(m=>`<div class="card" data-emodel="${m.id}"><span class="pick">✓</span><span class="thumb" style="background-image:url('${thumb(m.dataUrl)}')"></span></div>`).join(''):'<div class="hint">기본모델을 먼저 올려주세요.</div>';
+  $('#edit-models').innerHTML=state.models.length?state.models.map(m=>`<div class="card" data-emodel="${m.id}"><span class="pick">✓</span><span class="thumb"><img loading="lazy" src="${thumb(m.dataUrl)}"></span></div>`).join(''):'<div class="hint">기본모델을 먼저 올려주세요.</div>';
   let chosenModel=null;
   $$('#edit-models .card').forEach(c=>c.onclick=()=>{$$('#edit-models .card').forEach(x=>x.classList.remove('sel'));c.classList.add('sel');chosenModel=c.dataset.emodel;});
   renderVersions();
