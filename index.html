@@ -114,6 +114,9 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 .cmp .caphead .s{font-size:11px;color:var(--ink-45);letter-spacing:.1em;text-transform:uppercase}
 .cmp .frame{aspect-ratio:3/4;border-radius:12px;overflow:hidden;background:var(--line-2)}
 .cmp .frame img{width:100%;height:100%;object-fit:cover}
+.cmp .frame.zoom{cursor:zoom-in}
+.cc-strip{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cc-thumb{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:zoom-in;background:var(--line-2)}
 .difftable{width:100%;border-collapse:collapse;margin-top:10px;font-size:12.5px}
 .difftable td{padding:7px 10px;border-bottom:1px solid var(--line-2);vertical-align:top}
 .difftable td:first-child{color:var(--ink-45);width:118px;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
@@ -223,7 +226,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <header>
   <div class="bar">
-    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v11-commute</small></small></div>
+    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v12-commute</small></small></div>
     <nav id="nav">
       <button data-v="lib" class="on">라이브러리</button>
       <button data-v="gen">생성</button>
@@ -1478,7 +1481,7 @@ function renderCompareCommute(g){
   const ccN=nameFrom(g.ccIds,g.ccNames,'cmt_cc'),ptN=nameFrom(g.ptIds,g.ptNames,'cmt_pt');
   const ccImgs=(g.ccIds||[]).map(id=>(state.cmt_cc||[]).find(x=>x.id===id)).filter(Boolean);
   const ptImgs=(g.ptIds||[]).map(id=>(state.cmt_pt||[]).find(x=>x.id===id)).filter(Boolean);
-  const strip=arr=>arr.length?`<div class="row" style="gap:6px;flex-wrap:wrap">`+arr.map(it=>`<img src="${thumb(it.dataUrl,120)}" style="width:56px;height:72px;object-fit:cover;border-radius:6px;border:1px solid var(--line)">`).join('')+`</div>`:'<span class="hint" style="margin:0">이미지 없음(삭제)</span>';
+  const strip=arr=>arr.length?`<div class="cc-strip">`+arr.map(it=>`<img class="cc-thumb" src="${thumb(it.dataUrl,400)}" data-full="${it.dataUrl}" title="${esc(it.name||'')}">`).join('')+`</div>`:'<span class="hint" style="margin:0">이미지 없음(삭제)</span>';
   const bal=g.balance!=null?g.balance:50;
   box.innerHTML=`
     <div class="cmp">
@@ -1488,7 +1491,7 @@ function renderCompareCommute(g){
           <div class="hint" style="margin:10px 0 4px;color:var(--pine);font-weight:600">PERFORMANCE & TECH</div>${strip(ptImgs)}
         </div></div>
       <div><div class="caphead"><span class="t">${esc(g.name)}</span><span class="s">${esc(g.season)} · Generated</span></div>
-        <div class="frame"><img src="${g.logoUrl||g.dataUrl}"></div></div>
+        <div class="frame zoom" data-full="${g.logoUrl||g.dataUrl}"><img src="${g.logoUrl||g.dataUrl}"></div></div>
     </div>
     <table class="difftable">
       <tr><td>모드</td><td><b>COMMUTE</b> · 구김 없는 클린 라인</td></tr>
@@ -1499,6 +1502,8 @@ function renderCompareCommute(g){
     <div class="row" style="margin-top:14px"><button class="btn sm ghost" id="cmp-json">분석 JSON 보기</button></div>
     <div id="cmp-json-out" style="margin-top:10px"></div>`;
   const jb=$('#cmp-json');if(jb)jb.onclick=()=>{const o=$('#cmp-json-out');o.innerHTML=o.innerHTML?'':`<div class="promptbox" style="max-height:280px;font-family:var(--mono);color:var(--ink)">${esc(JSON.stringify(g.designJSON||{},null,2))}</div>`;};
+  box.querySelectorAll('.cc-thumb').forEach(im=>im.onclick=()=>openLightbox(im.dataset.full));
+  {const fr=box.querySelector('.frame.zoom');if(fr)fr.onclick=()=>openLightbox(fr.dataset.full);}
 }
 function renderCompare(gid){
   const box=$('#cmp-body');if(!gid){box.innerHTML='';return;}
