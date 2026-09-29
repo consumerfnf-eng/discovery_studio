@@ -226,7 +226,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <header>
   <div class="bar">
-    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v12-commute</small></small></div>
+    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v14</small></small></div>
     <nav id="nav">
       <button data-v="lib" class="on">라이브러리</button>
       <button data-v="gen">생성</button>
@@ -362,7 +362,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
           <div class="slider-wrap">
             <div class="slider-head"><span class="lab">컬러 밸런스</span><span class="val" id="colorbal-v">50</span></div>
             <input type="range" id="colorbal" min="0" max="100" value="50">
-            <div class="row" style="justify-content:space-between;margin-top:3px"><span class="slider-hint" style="margin:0">◀ 디스커버리 컬러</span><span class="slider-hint" id="colorbal-h" style="margin:0;color:var(--pine);font-weight:600"></span><span class="slider-hint" style="margin:0">레퍼런스 컬러 ▶</span></div>
+            <div class="row" style="justify-content:space-between;margin-top:3px"><span class="slider-hint" id="colorbal-l" style="margin:0">◀ 디스커버리 컬러</span><span class="slider-hint" id="colorbal-h" style="margin:0;color:var(--pine);font-weight:600"></span><span class="slider-hint" id="colorbal-r" style="margin:0">레퍼런스 컬러 ▶</span></div>
           </div>
           <div class="slider-wrap" id="refmix-wrap" style="display:none">
             <div class="slider-head"><span class="lab">레퍼런스 믹스 (1↔2)</span><span class="val" id="refmix-v">50</span></div>
@@ -867,7 +867,8 @@ function sheerHint(v){v=+v;return v<12?'불투명':v<38?'부분 시스루':v<68?
 function shimmerHint(v){v=+v;return v<12?'매트':v<38?'새틴 광':v<68?'글로시':'하이글로스';}
 function balanceHint(b){b=+b;return b<20?'원형 강하게 유지':b<45?'라인 우선':b<70?'균형':'레퍼런스 주도';}
 function colorBalWord(v){v=+v;return v<20?'COLOURWAY — use the DISCOVERY base line colour exactly; do NOT take colour from the references':v<40?'COLOURWAY — a DISCOVERY-family tone: keep the base line hue with only subtle variation':v<60?'COLOURWAY — propose a NEW seasonal colourway, neither the base line nor the reference colour — a fresh premium tone':v<80?'COLOURWAY — lean toward the reference colours with slight adjustment':'COLOURWAY — use the reference colours as-is';}
-function colorBalHint(v){v=+v;return v<20?'디스커버리 컬러':v<40?'디스커버리 유사':v<60?'NEW 컬러':v<80?'레퍼 유사':'레퍼런스 컬러';}
+function colorBalHint(v){v=+v;if(state.commute)return v<20?'CLASSIC&CASUAL 컬러':v<40?'CC 유사':v<60?'NEW 컬러':v<80?'PT 유사':'PERFORMANCE&TECH 컬러';return v<20?'디스커버리 컬러':v<40?'디스커버리 유사':v<60?'NEW 컬러':v<80?'레퍼 유사':'레퍼런스 컬러';}
+function colorBalWordCommute(v){v=+v;return v<20?'COLOURWAY — use the CLASSIC & CASUAL reference colours exactly as the outfit colour story':v<40?'COLOURWAY — a CLASSIC & CASUAL-leaning tone with only slight variation':v<60?'COLOURWAY — propose a NEW cohesive commute colourway (not copied from either reference group) — a fresh premium urban palette':v<80?'COLOURWAY — lean toward the PERFORMANCE & TECH reference colours with slight adjustment':'COLOURWAY — use the PERFORMANCE & TECH reference colours as-is';}
 function refmixHint(v){v=+v;return v<20?'1번 강하게':v<45?'1번 우선':v<70?'균형':v<90?'2번 우선':'2번 강하게';}
 function refmixText(v){v=+v;return v<20?'weight the FIRST reference strongly for design':v<45?'favour the FIRST reference':v<70?'blend both references evenly':v<90?'favour the SECOND reference':'weight the SECOND reference strongly for design';}
 function zipperText(z){return z==='waterproof'?'CLOSURE — a waterproof laminated zipper: welded/taped seam-sealed zip with a matte tonal tape and minimal exposed teeth, like a technical shell (as in the reference)':z==='stormflap'?'CLOSURE — a center-front zipper hidden behind an overlapping storm placket/flap (the zip is covered by a fabric ribbon flap)':z==='exposed'?'CLOSURE — a clean EXPOSED front zipper: visible teeth, tonal tape, no covering flap':'';}
@@ -1036,6 +1037,7 @@ function jsonToPrompt(J,plan){
     if(mode==='image')S.push('Show the EXACT person from image 1 — keep face, hair, skin tone and body identical — now wearing a newly designed DISCOVERY commute outfit. This is a dressing/try-on task.');
     else if(state.settings.baseModelPrompt)S.push(`SUBJECT / MODEL — ${state.settings.baseModelPrompt.trim()}`);
     S.push('STYLE FUSION — fuse CLASSIC heritage tailoring and CASUAL everyday ease (the heritage mood, from the CLASSIC/CASUAL references) with PERFORMANCE technical outerwear function and TECH modern materials & hardware (the adopted design, from the PERFORMANCE/TECH references). Blend them into ONE cohesive, premium urban city-commute outfit, balanced per DESIGN BALANCE below.');
+    S.push('HARDWARE & TRIMS (PERFORMANCE) — all closures, snaps, buttons, zip pulls and trims must read as FUNCTIONAL PERFORMANCE hardware: exposed matte SILVER or gunmetal metal with a FLAT, MINIMAL, technical finish, clearly VISIBLE and crisply defined. NEVER hidden/covered plackets, NEVER tone-on-tone fabric-covered snaps, NEVER puffy, domed or bulbous buttons. Keep detailing clean, sharp and minimal — technical sportswear precision, not soft heritage tailoring.');
     adoptClauses(J,noun).forEach(c=>S.push(c));
     if(mode==='idol')S.push('Dress the described model in this outfit. Soft cool grey-blue seamless studio backdrop, soft diffused lighting and a gentle natural shadow, full-length editorial pose.');
   }else if(mode==='product'){
@@ -1079,7 +1081,7 @@ function jsonToPrompt(J,plan){
      if(n>=2)S.push('REFERENCE MIX — '+refmixText(bv)+' (reference 1 = first selected image, reference 2 = second).');
      else if(hasLine)S.push('DESIGN BALANCE — '+balanceText(bv));
      else if(n===1)S.push('REFERENCE ADOPTION — '+(bv<25?'use the reference loosely, only as light inspiration for this new garment':bv<60?'moderately follow the reference silhouette and details':bv<85?'closely follow the reference design':'reproduce the reference design very closely as the base'));}}
-  if(J.color_balance!=null)S.push(colorBalWord(J.color_balance*100));
+  if(J.color_balance!=null)S.push(commute?colorBalWordCommute(J.color_balance*100):colorBalWord(J.color_balance*100));
   {const _noun=(J.category&&J.category.noun)||'garment',_mm=(J.garment&&J.garment.material)||{};
    if(J.controls){const cd=Object.keys(J.controls.chips||{}).map(k=>J.controls.chips[k]).filter(Boolean).concat(J.controls.details||[]);if(cd.length)S.push('DESIGN DIRECTIVES — apply exactly to the '+_noun+': '+cd.join('; ')+'.');}
    if(J.material_perf!=null){const pv=J.material_perf*100,hay=[_mm.fabric_type,_mm.surface,J.notes].filter(Boolean).join(' ');if(_mm.shell_ref||/gore-?tex|고어텍스/i.test(hay))S.push('MATERIAL HAND-FEEL — nudge the fabric drape and finish slightly toward '+matPerfWord(pv)+'; the shell fabric identity still comes from the fabric reference.');else S.push('MATERIAL CHARACTER — render the fabric as '+matPerfWord(pv)+'.');}}
@@ -1341,6 +1343,7 @@ function applyCommuteMode(on){
   // 라이브러리 탭 전환: 커뮤트면 라인·레퍼 숨기고 CLASSIC&CASUAL/PERFORMANCE&TECH 노출
   $$('.normal-tab').forEach(t=>t.style.display=on?'none':'');
   $$('.cmt-tab').forEach(t=>t.style.display=on?'':'none');
+  {const cl=$('#colorbal-l'),cr=$('#colorbal-r');if(cl)cl.textContent=on?'◀ CLASSIC & CASUAL':'◀ 디스커버리 컬러';if(cr)cr.textContent=on?'PERFORMANCE & TECH ▶':'레퍼런스 컬러 ▶';const ch=$('#colorbal-h');if(ch)ch.textContent=colorBalHint(+($('#colorbal')?$('#colorbal').value:50));}
   const firstT=on?'cmt_cc':'lines';
   $$('#libtabs button').forEach(x=>x.classList.toggle('on',x.dataset.t===firstT));
   $$('.libpane').forEach(pp=>pp.style.display='none');const fp=$('#lib-'+firstT);if(fp)fp.style.display='block';
