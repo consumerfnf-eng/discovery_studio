@@ -223,7 +223,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <header>
   <div class="bar">
-    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v9-commute</small></small></div>
+    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v10-commute</small></small></div>
     <nav id="nav">
       <button data-v="lib" class="on">라이브러리</button>
       <button data-v="gen">생성</button>
@@ -1099,7 +1099,7 @@ function jsonToPrompt(J,plan){
   return S.join(' ');
 }
 function rolesToText(roles){return roles.map((r,i)=>`image ${i+1}: ${r}`).join('. ');}
-function updatePromptPrev(){const plan=computePlan();$('#promptprev').textContent=jsonToPrompt(currentJSON(),plan);$('#btn-gen').disabled=!(state.pick.line||state.pick.refs.size);}
+function updatePromptPrev(){const plan=computePlan();$('#promptprev').textContent=jsonToPrompt(currentJSON(),plan);const ok=state.commute?COMMUTE_SLOTS.some(k=>state.pick.cmt[k]&&state.pick.cmt[k].size):(state.pick.line||state.pick.refs.size);$('#btn-gen').disabled=!ok;}
 
 /* ---------- OpenAI ---------- */
 // API 키에서 보이지 않는 문자(공백·제로폭·NBSP·줄바꿈·비ASCII)를 제거 — 헤더 오류(non ISO-8859-1) 방지
