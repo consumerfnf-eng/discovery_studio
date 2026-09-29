@@ -223,7 +223,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <header>
   <div class="bar">
-    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v6</small></small></div>
+    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v9-commute</small></small></div>
     <nav id="nav">
       <button data-v="lib" class="on">라이브러리</button>
       <button data-v="gen">생성</button>
@@ -243,8 +243,10 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     <div class="row" style="gap:8px;align-items:center;margin:2px 0 4px"><button class="btn sm" id="btn-cloud-reload">☁ 클라우드에서 다시 불러오기</button><span class="hint" id="cloud-status" style="margin:0"></span></div>
     <p class="sub">시즌별 라인, 레퍼런스, 기본모델, SHELL 원단을 미리 넣어두세요. 생성 탭에서는 아카이브를 스크롤·검색하며 셀렉합니다. 브라우저에 저장되어 다시 열어도 유지됩니다.</p>
     <div class="tabs" id="libtabs">
-      <button data-t="lines" class="on">라인 (시즌) <span class="count" id="c-lines">0</span></button>
-      <button data-t="refs">레퍼런스 <span class="count" id="c-refs">0</span></button>
+      <button data-t="lines" class="on normal-tab">라인 (시즌) <span class="count" id="c-lines">0</span></button>
+      <button data-t="refs" class="normal-tab">레퍼런스 <span class="count" id="c-refs">0</span></button>
+      <button data-t="cmt_cc" class="cmt-tab" style="display:none">CLASSIC & CASUAL <span class="count" id="c-cmt_cc">0</span></button>
+      <button data-t="cmt_pt" class="cmt-tab" style="display:none">PERFORMANCE & TECH <span class="count" id="c-cmt_pt">0</span></button>
       <button data-t="models">기본모델 <span class="count" id="c-models">0</span></button>
       <button data-t="fabrics">SHELL 원단 <span class="count" id="c-fabrics">0</span></button>
     </div>
@@ -276,6 +278,18 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
         <div id="grid-fabrics" class="cards"></div>
       </div>
     </div>
+    <div id="lib-cmt_cc" class="libpane" style="display:none">
+      <div class="panel">
+        <div class="drop" data-store="cmt_cc"><b>CLASSIC &amp; CASUAL 이미지 올리기</b><br><span style="font-size:12px">헤리티지·데일리 무드 레퍼런스 · 여러 장 · 클릭·드래그·Ctrl+V</span></div>
+        <div id="grid-cmt_cc" class="cards lg"></div>
+      </div>
+    </div>
+    <div id="lib-cmt_pt" class="libpane" style="display:none">
+      <div class="panel">
+        <div class="drop" data-store="cmt_pt"><b>PERFORMANCE &amp; TECH 이미지 올리기</b><br><span style="font-size:12px">기능·테크 요소 레퍼런스 · 여러 장 · 클릭·드래그·Ctrl+V</span></div>
+        <div id="grid-cmt_pt" class="cards lg"></div>
+      </div>
+    </div>
   </section>
 
   <!-- ============ GENERATE ============ -->
@@ -290,10 +304,19 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
             <div style="flex:1"><label class="fld">타깃 시즌 (기획)</label><select id="season" class="inp"></select></div>
             <div style="flex:1.4"><label class="fld">카테고리</label><select id="cat-parent" class="inp"><option>OUTERWEAR</option><option>TOP</option><option>PANTS</option><option>SKIRT</option><option>DRESS</option><option>SHOES</option></select></div>
           </div>
+          <div id="normal-pickers">
           <div class="sectlabel">1 · 베이스 라인 <span id="prevlabel" class="chip pine"></span> <span class="hint" style="margin:0">— 모델·포즈·나머지 스타일링을 유지할 원본</span></div>
           <div id="pick-lines" class="pickbar"></div>
           <div class="sectlabel">2 · 레퍼런스 <span class="hint" style="margin:0">— 선택 카테고리 디자인을 채용 (여러 장)</span></div>
           <div id="pick-refs" class="pickbar"></div>
+          </div>
+          <div id="commute-pickers" style="display:none">
+            <div class="hint" style="margin:0 0 6px;color:var(--pine);font-weight:600">COMMUTE 모드 · CLASSIC·CASUAL(무드) × PERFORMANCE·TECH(기능)을 믹스</div>
+            <div class="sectlabel">1 · CLASSIC &amp; CASUAL <span class="hint" style="margin:0">— 헤리티지·데일리 무드 (커뮤트 라이브러리에서 셀렉)</span></div>
+            <div id="pick-cmt_cc" class="pickbar"></div>
+            <div class="sectlabel">2 · PERFORMANCE &amp; TECH <span class="hint" style="margin:0">— 기능·테크 요소 채용 (커뮤트 라이브러리에서 셀렉)</span></div>
+            <div id="pick-cmt_pt" class="pickbar"></div>
+          </div>
           <div class="grid2" style="gap:18px">
             <div><div class="sectlabel">3 · 모델</div>
               <div class="hint" style="margin:0 0 8px">모델을 누르면 <b>그 얼굴</b>로, 안 누르면 <b>기본 K-pop 모델</b>로 생성됩니다. 아래 포즈를 함께 고르면 그 포즈로.</div>
@@ -491,6 +514,13 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
         <div class="row"><button class="btn sm" id="btn-export">내보내기</button><button class="btn sm" id="btn-exportds">학습셋만 내보내기</button><button class="btn sm" id="btn-import">가져오기</button></div>
       </div>
     </div>
+    <div style="margin-top:18px;padding-top:10px;border-top:1px dashed var(--line);opacity:.9">
+      <div class="row" style="justify-content:space-between;align-items:center;gap:10px">
+        <div style="font-size:11.5px;color:var(--ink-45)">Discovery Commute 모드 <span id="cmt-state" style="color:var(--ink-70)"></span></div>
+        <div class="row" style="gap:6px"><input id="cmt-pw" type="password" class="inp" style="width:130px;padding:5px 8px;font-size:11.5px" placeholder="암호"><button class="btn sm" id="btn-cmt-toggle" style="font-size:11.5px;padding:5px 10px">활성화</button></div>
+      </div>
+      <div class="hint" id="cmt-hint" style="margin:4px 0 0;font-size:10.5px">라인/레퍼 대신 CLASSIC·CASUAL × PERFORMANCE·TECH 슬롯으로 생성(별도 저장). 모델·원단은 공용.</div>
+    </div>
   </section>
 </main>
 
@@ -514,7 +544,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
    ============================================================ */
 
 /* ---------- storage ---------- */
-const STORES=['settings','lines','refs','models','fabrics','gallery','sales'];
+const STORES=['settings','lines','refs','models','fabrics','gallery','sales','cmt_cc','cmt_pt','cmt_gallery'];
 let db=null,memMode=false;
 const mem={settings:new Map(),lines:new Map(),refs:new Map(),models:new Map(),fabrics:new Map(),gallery:new Map(),sales:new Map()};
 function openDB(){return new Promise(res=>{try{
@@ -537,7 +567,10 @@ async function getOf(s,id){if(memMode)return mem[s].get(id)||null;return new Pro
 const SUPABASE_URL='https://batnckyzqsaszaoyiwsk.supabase.co';        // 회사 공용
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJhdG5ja3l6cXNhc3phb3lpd3NrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcyMTM0NDYsImV4cCI6MjEwMjc4OTQ0Nn0.jiZe4AfXEsyvVM7x5OhC_01hy8L0JC23Oi13G4di12Y';   // anon public
 const SUPABASE_BUCKET='discovery-studio';
-const CLOUD_STORES=['lines','refs','models','fabrics','gallery','sales']; // settings는 개인 로컬 유지
+const CLOUD_STORES=['lines','refs','models','fabrics','gallery','sales','cmt_cc','cmt_pt','cmt_gallery']; // settings는 개인 로컬 유지
+const COMMUTE_PW='cst2026!';
+const COMMUTE_SLOTS=['cmt_cc','cmt_pt'];
+const SLOT_LABEL={cmt_cc:'CLASSIC & CASUAL',cmt_pt:'PERFORMANCE & TECH'};
 const TABLE_PREFIX='disco_'; // Discovery 전용 테이블 네임스페이스(Duvetica 저장공간과 분리)
 const tbl=(t)=>TABLE_PREFIX+t;
 function supaCfg(){return{url:(SUPABASE_URL||state.settings.supaUrl||'').replace(/\/$/,''),key:SUPABASE_ANON_KEY||state.settings.supaKey||'',bucket:SUPABASE_BUCKET||state.settings.supaBucket||'discovery-studio'};}
@@ -800,7 +833,9 @@ const state={
   settings:{id:'main',apiKey:'',model:'gpt-image-2',size:'1024x1536',quality:'high',vision:'gpt-4o-mini',base:'https://api.openai.com/v1',
             logoDataUrl:'',logoPos:'bc',logoColor:'dark',logoSize:15,logoDefault:true,brandDNA:DNA_DEFAULT,baseModelPrompt:BASE_MODEL_DEFAULT,genCount:2,supaUrl:'',supaKey:'',supaBucket:'discovery-studio'},
   lines:[],refs:[],models:[],fabrics:[],gallery:[],
-  pick:{line:null,refs:new Set(),model:null,fabric:null},
+  pick:{line:null,refs:new Set(),model:null,fabric:null,cmt:{cmt_cc:new Set(),cmt_pt:new Set()}},
+  cmt_cc:[],cmt_pt:[],cmt_gallery:[],
+  commute:false,
   brief:{keep:new Set(),replace:new Set(),adopt:new Set(),fabricType:'',shoeBal:{upper:50,sole:50}},
   aiAttrs:{}, jsonDirty:false, galFilter:'all', refSecretView:false, galSelMode:false, galSel:new Set(), pose:'auto', quiltRef:null, ctl:{}, ctlDetails:new Set(),
   libFilter:{lines:{gender:'ALL',gcat:'ALL',season:'ALL'},refs:{gender:'ALL',gcat:'ALL',season:'ALL'}},
@@ -864,6 +899,20 @@ function renderGenPose(){const el=$('#gen-pose');if(!el)return;el.innerHTML=POSE
 
 /* ---------- plan (images + roles) ---------- */
 function computePlan(){
+  if(state.commute){
+    const model=state.models.find(m=>m.id===state.pick.model);
+    const shell=state.fabrics.find(f=>f.id===state.pick.fabric);
+    const pk=state.pick.cmt;const g=(k)=>(state[k]||[]).filter(x=>pk[k]&&pk[k].has(x.id));
+    const cc=g('cmt_cc'),pt=g('cmt_pt');
+    const modelMode=model?'image':'idol';const images=[],roles=[];
+    if(modelMode==='image'){images.push(model.dataUrl);roles.push('THE MODEL to keep and dress — the output MUST show this exact person (face, hair, skin tone, body), wearing the new commute outfit');}
+    cc.forEach(r=>{images.push(r.dataUrl);roles.push('CLASSIC & CASUAL reference — the heritage/daily base mood: refined tailored commute silhouette blended with relaxed everyday ease');});
+    pt.forEach(r=>{images.push(r.dataUrl);roles.push('PERFORMANCE & TECH reference — adopt technical outerwear function, sporty construction, modern technical fabric and hardware');});
+    if(shell){images.push(shell.dataUrl);roles.push('a flat FABRIC SWATCH image (material sample) — replicate ONLY its weave, texture, finish and sheen across the shell; do NOT take its colour or shape');}
+    const _lo=!!($('#logo-generate')&&$('#logo-generate').checked);
+    if(_lo&&state.settings.logoDataUrl){images.push(state.settings.logoDataUrl);roles.push('DISCOVERY LOGO reference — reproduce ONLY this mark on the wearer left chest; ignore its background/box');}
+    return{commute:true,line:null,model,shell,refs:[],images,roles,noun:'commute outfit',modelMode,hasModel:modelMode==='image',refLed:false,balance:+($('#balance')?$('#balance').value:50)};
+  }
   const line=state.lines.find(l=>l.id===state.pick.line);
   const model=state.models.find(m=>m.id===state.pick.model);
   const refs=pickedRefs();
@@ -947,6 +996,7 @@ function buildDesignJSON(){
     garment:g,
     design_balance:+$('#balance').value/100,
     color_balance:+($('#colorbal')?$('#colorbal').value:50)/100,
+    commute:!!state.commute,
     shoe_balance:(parent==='SHOES'?{...state.brief.shoeBal}:null),
     pose:state.pose||'auto',
     material_perf:+($('#matperf')?$('#matperf').value:50)/100,
@@ -974,10 +1024,18 @@ function jsonToPrompt(J,plan){
   const rolesText=plan?rolesToText(plan.roles):'';
   const mode=plan?plan.modelMode:'idol';
   const dna=state.settings.brandDNA?`[DISCOVERY DESIGN DNA] ${state.settings.brandDNA.replace(/\s+/g,' ').trim()}`:'';
-  if(mode==='product')S.push(`Premium DISCOVERY FOOTWEAR PRODUCT photograph for the ${J.target_season||'27FW'} season — a single ${noun} shown as a clean studio product shot. NO person, NO model, NO body parts, NO legs or feet — just the ${noun} itself. Three-quarter side profile on a seamless soft grey-blue studio backdrop, soft diffused lighting, gentle grounding shadow, sharp focus, premium e-commerce/lookbook product photography.`);
+  const commute=!!(plan&&plan.commute);
+  if(commute)S.push(`Premium DISCOVERY COMMUTE lookbook photograph for the ${J.target_season||'27FW'} season — a modern, refined urban city-commute outfit.`);
+  else if(mode==='product')S.push(`Premium DISCOVERY FOOTWEAR PRODUCT photograph for the ${J.target_season||'27FW'} season — a single ${noun} shown as a clean studio product shot. NO person, NO model, NO body parts, NO legs or feet — just the ${noun} itself. Three-quarter side profile on a seamless soft grey-blue studio backdrop, soft diffused lighting, gentle grounding shadow, sharp focus, premium e-commerce/lookbook product photography.`);
   else S.push(`Full-body premium DISCOVERY fashion lookbook photograph for the ${J.target_season||'27FW'} season.`);
   if(dna)S.push(dna);
-  if(mode==='product'){
+  if(commute){
+    if(mode==='image')S.push('Show the EXACT person from image 1 — keep face, hair, skin tone and body identical — now wearing a newly designed DISCOVERY commute outfit. This is a dressing/try-on task.');
+    else if(state.settings.baseModelPrompt)S.push(`SUBJECT / MODEL — ${state.settings.baseModelPrompt.trim()}`);
+    S.push('STYLE FUSION — fuse CLASSIC heritage tailoring and CASUAL everyday ease (the heritage mood, from the CLASSIC/CASUAL references) with PERFORMANCE technical outerwear function and TECH modern materials & hardware (the adopted design, from the PERFORMANCE/TECH references). Blend them into ONE cohesive, premium urban city-commute outfit, balanced per DESIGN BALANCE below.');
+    adoptClauses(J,noun).forEach(c=>S.push(c));
+    if(mode==='idol')S.push('Dress the described model in this outfit. Soft cool grey-blue seamless studio backdrop, soft diffused lighting and a gentle natural shadow, full-length editorial pose.');
+  }else if(mode==='product'){
     S.push(`${noun.toUpperCase()} DESIGN — construct the ${noun} from the DISCOVERY base form (image 1) together with the reference image(s), following the part balance below. Render ONLY the footwear as a clean product still — no person.`);
     adoptClauses(J,noun).forEach(c=>S.push(c));
     shoeBalClauses(J,noun).forEach(c=>S.push(c));
@@ -1037,6 +1095,7 @@ function jsonToPrompt(J,plan){
   if(rolesText)S.push(`IMAGE ROLES — ${rolesText}.`);
   S.push('FUR RULE — if the base or reference garment already has a fur collar, fur hood-trim or fur placket, keep ONLY that existing fur exactly as-is; do NOT add a second, additional or different fur collar/trim, and never layer new fur over existing fur. Add fur only when the garment has none AND it is explicitly requested.');
   S.push('Soft COOL GREY-BLUE seamless studio backdrop, soft diffused directional studio lighting with a gentle natural drop shadow and even, true-to-fabric colour; calm premium editorial lookbook mood, photorealistic, sharp premium detail.');
+  S.push('CLEAN LINES — the entire garment must have clean, crisp, WRINKLE-FREE lines and smooth tailored surfaces; no creasing, wrinkling or rumpling anywhere.');
   return S.join(' ');
 }
 function rolesToText(roles){return roles.map((r,i)=>`image ${i+1}: ${r}`).join('. ');}
@@ -1115,8 +1174,11 @@ async function analyzeFabric(){
 
 /* ---------- generate ---------- */
 async function doGenerate(){
+  if(state.commute){const c=state.pick.cmt;if(!COMMUTE_SLOTS.some(k=>c[k]&&c[k].size)){toast('CLASSIC & CASUAL 또는 PERFORMANCE & TECH에서 최소 하나를 선택하세요.');return;}}
+  else{
   {const cp=($('#cat-parent')||{}).value;if(cp&&!catEnabled(cp)){toast('"'+cp+'" 카테고리는 개발중입니다. 현재 OUTERWEAR·TOP·PANTS만 생성 가능합니다.');return;}}
   if(!state.pick.line&&!state.pick.refs.size){toast('베이스 라인 또는 레퍼런스를 선택하세요.');return;}
+  }
   const plan=computePlan(),J=currentJSON(),prompt=jsonToPrompt(J,plan);
   const n=Math.max(1,Math.min(4,+($('#gen-n').value||state.settings.genCount||2)));
   const pv=$('#gen-preview');pv.classList.remove('multi');pv.innerHTML=`<div class="load"><div class="spinner"></div><span>생성 중… ${n}장</span></div>`;$('#btn-gen').disabled=true;
@@ -1223,7 +1285,7 @@ function renderLibChips(store){
   el.innerHTML=secretUI+chipGroup(store,'gender','성별',GENDER_OPTS,f.gender)+chipGroup(store,'gcat','카테고리',GCAT_OPTS,f.gcat)+chipGroup(store,'season','시즌',seasons,f.season);
   if(store==='refs'&&canSecret()){const pb=$('#lib-refs-pub'),sb=$('#lib-refs-sec');if(pb)pb.onclick=()=>{state.refSecretView=false;libGrid('refs');};if(sb)sb.onclick=()=>{state.refSecretView=true;libGrid('refs');};}
 }
-function refreshCounts(){['lines','refs','models','fabrics'].forEach(s=>$('#c-'+s).textContent=state[s].length);}
+function refreshCounts(){['lines','refs','models','fabrics','cmt_cc','cmt_pt'].forEach(s=>{const e=$('#c-'+s);if(e)e.textContent=(state[s]||[]).length;});}
 
 /* ---------- generate picks (bars + inline) ---------- */
 function galAsRef(g){return{id:'gal_'+g.id,name:g.name,dataUrl:(g.logoUrl||g.dataUrl),gcat:(g.category&&g.category.parent)||g.gcat||'',detail:false,_gallery:true};}
@@ -1245,7 +1307,43 @@ function pickGrid(store){
   el.innerHTML=items.map(it=>{const on=store==='models'?state.pick.model===it.id:state.pick.fabric===it.id;
     return`<div class="card ${sw} ${on?'sel':''}" data-pick="${store}" data-id="${it.id}"><span class="pick">✓</span><span class="thumb" style="background-image:url('${thumb(it.dataUrl)}')"></span><div class="meta"><div class="nm">${esc(it.name)}</div><div class="tg">${esc(metaLine(store,it))}</div></div></div>`;}).join('');
 }
+function renderCommutePicks(){
+  COMMUTE_SLOTS.forEach(store=>{const bar=$('#pick-'+store);if(!bar)return;const sset=state.pick.cmt[store]||new Set();
+    const sel=(state[store]||[]).filter(x=>sset.has(x.id));
+    bar.innerHTML=sel.map(it=>`<div class="thumbchip"><img src="${thumb(it.dataUrl,120)}"><span>${esc(it.name||SLOT_LABEL[store])}</span><button data-cmtunpick="${store}" data-uid="${it.id}">✕</button></div>`).join('')
+      +`<button class="btn sm addarch" data-cmtarch="${store}">＋ 라이브러리에서 셀렉</button>`;
+  });
+}
+function openCommuteArchive(store){
+  let q='';$('#sheet').classList.add('wide');$('#m-title').textContent=SLOT_LABEL[store]+' 라이브러리';
+  $('#m-body').innerHTML=`<div class="arch-tools"><input id="carch-q" class="arch-search" placeholder="이름 검색"><span id="carch-count" class="arch-count"></span><div style="flex:1"></div><button class="btn sm primary" id="carch-done">선택 완료</button></div><div class="arch-grid" id="carch-grid"></div>`;
+  const gridEl=$('#carch-grid'),countEl=$('#carch-count'),sset=state.pick.cmt[store];
+  function list(){let items=(state[store]||[]).slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));if(q){const t=q.toLowerCase();items=items.filter(it=>((it.name||'')).toLowerCase().includes(t));}return items;}
+  function render(){const items=list();countEl.textContent=items.length+' items';
+    if(!items.length){gridEl.innerHTML='<div class="empty" style="grid-column:1/-1">라이브러리가 비어 있어요 — 라이브러리 탭('+SLOT_LABEL[store]+')에서 먼저 이미지를 올려주세요.</div>';return;}
+    gridEl.innerHTML=items.map(it=>{const on=sset.has(it.id);return `<div class="acard ${on?'sel':''}" data-caid="${it.id}"><span class="pick">✓</span><span class="thumb" style="background-image:url('${thumb(it.dataUrl)}')"></span><div class="meta"><div class="nm">${esc(it.name||SLOT_LABEL[store])}</div></div></div>`;}).join('');
+  }
+  render();
+  $('#carch-q').addEventListener('input',e=>{q=e.target.value;render();});
+  gridEl.addEventListener('click',e=>{const c=e.target.closest('[data-caid]');if(!c)return;const id=c.dataset.caid;sset.has(id)?sset.delete(id):sset.add(id);render();renderCommutePicks();try{refreshJSON();}catch(_){}});
+  $('#carch-done').addEventListener('click',closeModal);
+  $('#modal').classList.add('on');
+}
+async function loadCommuteStores(){for(const st of [...COMMUTE_SLOTS,'cmt_gallery']){try{state[st]=await storeAll(st);}catch(e){try{state[st]=await allOf(st);}catch(_){state[st]=[];}}}}
+function applyCommuteMode(on){
+  state.commute=!!on;try{localStorage.setItem('discovery_commute',on?'1':'');}catch(e){}
+  const np=$('#normal-pickers'),cp=$('#commute-pickers');if(np)np.style.display=on?'none':'';if(cp)cp.style.display=on?'block':'none';
+  const stt=$('#cmt-state');if(stt)stt.textContent=on?'· 켜짐':'· 꺼짐';const btn=$('#btn-cmt-toggle');if(btn)btn.textContent=on?'비활성화':'활성화';
+  // 라이브러리 탭 전환: 커뮤트면 라인·레퍼 숨기고 CLASSIC&CASUAL/PERFORMANCE&TECH 노출
+  $$('.normal-tab').forEach(t=>t.style.display=on?'none':'');
+  $$('.cmt-tab').forEach(t=>t.style.display=on?'':'none');
+  const firstT=on?'cmt_cc':'lines';
+  $$('#libtabs button').forEach(x=>x.classList.toggle('on',x.dataset.t===firstT));
+  $$('.libpane').forEach(pp=>pp.style.display='none');const fp=$('#lib-'+firstT);if(fp)fp.style.display='block';
+  if(on){loadCommuteStores().then(()=>{try{libGrid('cmt_cc');libGrid('cmt_pt');}catch(e){}renderCommutePicks();try{refreshCounts();}catch(e){}try{refreshJSON();}catch(e){}});}else{try{refreshJSON();}catch(e){}}
+}
 function renderPicks(){
+  if(state.commute)renderCommutePicks();
   const src=prevSeason($('#season').value);
   $('#prevlabel').textContent=src?`${src} 라인`:'시즌 확인';
   renderPickBar('lines');renderPickBar('refs');pickGrid('models');pickGrid('fabrics');
@@ -1615,6 +1713,11 @@ async function importRefsCsv(file,store){
 async function handleFiles(files,store){
   const _csv=[...files].find(f=>/\.csv$/i.test(f.name||'')||(f.type||'').indexOf('csv')>=0);
   if(_csv){await importRefsCsv(_csv,store==='lines'?'lines':'refs');return;}
+  if(COMMUTE_SLOTS.includes(store)){
+    const arr=[...files].filter(f=>f.type.startsWith('image/'));
+    for(const f of arr){let du=await fileToDataUrl(f);du=await resizeDataUrl(du,1024);const it={id:uid(),name:(parseName(f.name).name)||SLOT_LABEL[store],dataUrl:du,createdAt:Date.now()};state[store].push(it);await storePut(store,it);}
+    libGrid(store);refreshCounts();renderCommutePicks();toast(SLOT_LABEL[store]+' '+arr.length+'장 추가');return;
+  }
   if(store==='__logo'){let du=await fileToDataUrl(files[0]);du=await resizeDataUrl(du,600);state.settings.logoDataUrl=du;await putOf('settings',state.settings);renderLogoPrev();toast('로고 저장됨');return;}
   if(store==='__quilt'){const f=[...files].find(x=>x.type.startsWith('image/'));if(!f)return;let du=await fileToDataUrl(f);du=await resizeDataUrl(du,1024);state.quiltRef={dataUrl:du};renderQuiltPrev();$('#quilt-hint').textContent='이미지 넣음 · \'AI 퀼팅 분석\'을 누르면 패턴을 읽어 반영합니다. 색은 미사용.';refreshJSON();toast('퀼팅 이미지 추가');return;}
   if(store==='__gallery'){
@@ -1745,6 +1848,15 @@ function wire(){
   $('#season').addEventListener('change',renderPicks);
   $('#cat-parent').addEventListener('change',()=>applyCategory(true));
   setupCategoryOptions();
+  {const cb=$('#btn-cmt-toggle');if(cb)cb.addEventListener('click',()=>{
+    if(state.commute){applyCommuteMode(false);toast('Commute 모드 꺼짐');return;}
+    const pw=(($('#cmt-pw')||{}).value)||'';if(pw!==COMMUTE_PW){toast('암호가 올바르지 않습니다');return;}
+    applyCommuteMode(true);const pe=$('#cmt-pw');if(pe)pe.value='';toast('Commute 모드 켜짐');
+  });}
+  document.addEventListener('click',e=>{
+    const ar=e.target.closest&&e.target.closest('[data-cmtarch]');if(ar){openCommuteArchive(ar.dataset.cmtarch);return;}
+    const un=e.target.closest&&e.target.closest('[data-cmtunpick]');if(un){const st=un.dataset.cmtunpick,id=un.dataset.uid;if(state.pick.cmt[st])state.pick.cmt[st].delete(id);renderCommutePicks();try{refreshJSON();}catch(_){}return;}
+  });
   {const cs=$('#cat-sub');if(cs)cs.addEventListener('change',()=>{refreshJSON();});}
   $('#extra').addEventListener('input',()=>refreshJSON());
   $('#logo-generate').addEventListener('change',()=>refreshJSON(true));
@@ -1824,6 +1936,7 @@ async function afterAuthBoot(){
   try{loadSettingsUI();}catch(e){}
   try{updateAuthUI();}catch(e){}
   try{setupCategoryOptions();}catch(e){}
+  try{if(localStorage.getItem('discovery_commute'))applyCommuteMode(true);}catch(e){}
 }
 // 스토어별 개별 로드(한 테이블 실패가 나머지를 막지 않게) + 로드 결과 진단
 async function loadStores(){
