@@ -226,7 +226,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <header>
   <div class="bar">
-    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v16-cody</small></small></div>
+    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v18-cody</small></small></div>
     <nav id="nav">
       <button data-v="lib" class="on">라이브러리</button>
       <button data-v="gen">생성</button>
@@ -326,8 +326,8 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
             <div id="pick-cmt_cc" class="pickbar"></div>
             <div class="sectlabel">2 · PERFORMANCE &amp; TECH <span class="hint" style="margin:0">— 기능·테크 요소 채용 (커뮤트 라이브러리에서 셀렉)</span></div>
             <div id="pick-cmt_pt" class="pickbar"></div>
-            <div class="sectlabel">3 · 코디(STYLING) <span class="hint" style="margin:0">— 생성 컬러에 맞춰 저장된 코디를 자동 적용 (클래식 코디)</span></div>
-            <div class="row" style="gap:10px;align-items:center;margin-top:4px"><select id="cmt-cody-color" class="inp" style="max-width:240px"><option value="">코디 자동/없음</option></select><span class="hint" id="cmt-cody-hint" style="margin:0"></span></div>
+            <div class="sectlabel">3 · 코디(STYLING) <span class="hint" style="margin:0">— 저장된 코디를 <b>자동 적용</b> · 레이어링 구조를 가져와 생성 컬러에 맞춰 톤온톤으로 코디</span></div>
+            <div class="hint" id="cmt-cody-hint" style="margin:2px 0 0"></div>
           </div>
           <div class="grid2" style="gap:18px">
             <div><div class="sectlabel">3 · 모델</div>
@@ -694,9 +694,17 @@ async function storeAll(s){
   }
   return allOf(s);
 }
+let _cmtTblWarned=false;
 async function storePut(s,v){
   if(s==='gallery'&&ownerId()&&!v.owner)v.owner=ownerId(); // 저장 시 소유자 각인
-  if(cloudOn()&&CLOUD_STORES.includes(s)){const up=await uploadImages(s,v);await supaUpsert(s,{id:up.id,data:up});Object.assign(v,up);putOf(s,up).catch(()=>{});return up;}
+  if(cloudOn()&&CLOUD_STORES.includes(s)){
+    try{const up=await uploadImages(s,v);await supaUpsert(s,{id:up.id,data:up});Object.assign(v,up);putOf(s,up).catch(()=>{});return up;}
+    catch(e){ // 클라우드 저장 실패(예: 테이블 미생성)→로컬 저장으로 폴백, 앱은 계속 동작
+      if(/PGRST205|Could not find the table|404/.test(e.message||'')&&/^cmt_/.test(s)&&!_cmtTblWarned){_cmtTblWarned=true;toast('커뮤트 테이블(disco_'+s+')이 아직 없어 로컬에만 저장됩니다. Supabase에서 discovery_commute_tables.sql을 실행하면 공유·영구저장됩니다.');}
+      try{await putOf(s,v);}catch(_){}
+      return v;
+    }
+  }
   return putOf(s,v);
 }
 async function storeDel(s,id){if(cloudOn()&&CLOUD_STORES.includes(s)){await supaDelete(s,id);delOf(s,id).catch(()=>{});return;}return delOf(s,id);}
@@ -923,12 +931,11 @@ function computePlan(){
     cc.forEach(r=>{images.push(r.dataUrl);roles.push('CLASSIC & CASUAL reference — the heritage/daily base mood: refined tailored commute silhouette blended with relaxed everyday ease');});
     pt.forEach(r=>{images.push(r.dataUrl);roles.push('PERFORMANCE & TECH reference — adopt technical outerwear function, sporty construction, modern technical fabric and hardware');});
     if(shell){images.push(shell.dataUrl);roles.push('a flat FABRIC SWATCH image (material sample) — replicate ONLY its weave, texture, finish and sheen across the shell; do NOT take its colour or shape');}
-    const codyColor=(($('#cmt-cody-color')||{}).value)||'';
-    let codyRefs=[];if(codyColor){codyRefs=(state.cmt_cody||[]).filter(c=>c.color===codyColor).slice(0,2);}
+    const codyRefs=(state.cmt_cody||[]).slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,2); // 저장 코디 자동 적용(최신순 최대2)
     codyRefs.forEach(r=>{images.push(r.dataUrl);roles.push('STYLING / CODI reference — coordinate the FULL commute look (inner collared shirt, mid-layer half-zip, tailored trousers or shorts, accessories) after this styling; the newly designed main garment stays the hero, everything else styled to match');});
     const _lo=!!($('#logo-generate')&&$('#logo-generate').checked);
     if(_lo&&state.settings.logoDataUrl){images.push(state.settings.logoDataUrl);roles.push('DISCOVERY LOGO reference — reproduce ONLY this mark on the wearer left chest; ignore its background/box');}
-    return{commute:true,line:null,model,shell,refs:[],ccRefs:cc,ptRefs:pt,codyColor,codyRefs,images,roles,noun:'commute outfit',modelMode,hasModel:modelMode==='image',refLed:false,balance:+($('#balance')?$('#balance').value:50)};
+    return{commute:true,line:null,model,shell,refs:[],ccRefs:cc,ptRefs:pt,codyRefs,images,roles,noun:'commute outfit',modelMode,hasModel:modelMode==='image',refLed:false,balance:+($('#balance')?$('#balance').value:50)};
   }
   const line=state.lines.find(l=>l.id===state.pick.line);
   const model=state.models.find(m=>m.id===state.pick.model);
@@ -1014,7 +1021,6 @@ function buildDesignJSON(){
     design_balance:+$('#balance').value/100,
     color_balance:+($('#colorbal')?$('#colorbal').value:50)/100,
     commute:!!state.commute,
-    cody_color:(($('#cmt-cody-color')||{}).value)||'',
     shoe_balance:(parent==='SHOES'?{...state.brief.shoeBal}:null),
     pose:state.pose||'auto',
     material_perf:+($('#matperf')?$('#matperf').value:50)/100,
@@ -1054,9 +1060,8 @@ function jsonToPrompt(J,plan){
     S.push('HARDWARE & TRIMS (PERFORMANCE) — all closures, snaps, buttons, zip pulls and trims must read as FUNCTIONAL PERFORMANCE hardware: exposed matte SILVER or gunmetal metal with a FLAT, MINIMAL, technical finish, clearly VISIBLE and crisply defined. NEVER hidden/covered plackets, NEVER tone-on-tone fabric-covered snaps, NEVER puffy, domed or bulbous buttons. Keep detailing clean, sharp and minimal — technical sportswear precision, not soft heritage tailoring.');
     if((plan.ccRefs||[]).length>=2)S.push('MULTIPLE CLASSIC & CASUAL references — BLEND them evenly into ONE coherent base: merge their shared silhouette, proportion, collar/lapel and overall mood. Do not copy only one; take the strongest common traits from all of them.');
     if((plan.ptRefs||[]).length>=2)S.push('MULTIPLE PERFORMANCE & TECH references — BLEND them evenly: combine their technical features, hardware, seams, pockets and material cues from all of them into one cohesive technical layer. Do not pick only one.');
-    {const ck={beige:'beige/tan',navy:'navy',black:'black',grey:'grey',olive:'khaki/olive',brown:'brown',white:'white/ivory',blue:'blue',burgundy:'burgundy'}[J.cody_color||'']||'';
-     if(plan.codyRefs&&plan.codyRefs.length)S.push('STYLING / CODI — style the COMPLETE classic commute outfit to match the STYLING reference image(s): layer a crisp inner collared shirt, a mid-layer half-zip, and tailored trousers or shorts that COORDINATE with the main garment'+(ck?(', harmonised to a '+ck+' colourway to suit the main piece'):'')+'. Refined, classic, put-together commute styling — clean and intentional, never sloppy.');
-     else S.push('STYLING — build a refined CLASSIC commute look around the main garment: a neat inner collared shirt, an optional mid-layer half-zip, and clean tailored bottoms, all colour-coordinated and put-together.');}
+    if(plan.codyRefs&&plan.codyRefs.length)S.push('STYLING / CODI — take the LAYERING STRUCTURE and styling from the CODI reference image(s): WHICH pieces are worn and HOW they are layered (e.g. an inner collared shirt peeking at collar/hem/cuffs, a mid-layer half-zip, tailored trousers or shorts, a belt). Apply this same put-together layering to the newly designed main garment, which stays the hero. IMPORTANT — automatically RE-COLOUR the layered pieces so they COORDINATE with the main garment final colour: use a harmonious TONE-ON-TONE or tastefully complementary palette; do NOT blindly copy the reference colours when they clash with the main garment. Refined, classic, intentional commute styling — never sloppy.');
+    else S.push('STYLING — build a refined CLASSIC commute look around the main garment: a neat inner collared shirt, an optional mid-layer half-zip, and clean tailored bottoms — all TONE-COORDINATED with the main garment colour (tone-on-tone or tastefully complementary) and put-together.');
     adoptClauses(J,noun).forEach(c=>S.push(c));
     if(mode==='idol')S.push('Dress the described model in this outfit. Soft cool grey-blue seamless studio backdrop, soft diffused lighting and a gentle natural shadow, full-length editorial pose.');
   }else if(mode==='product'){
@@ -1356,7 +1361,7 @@ function openCommuteArchive(store){
 }
 async function loadCommuteStores(){for(const st of [...COMMUTE_SLOTS,'cmt_cody','cmt_gallery']){try{state[st]=await storeAll(st);}catch(e){try{state[st]=await allOf(st);}catch(_){state[st]=[];}}}}
 function fillCodyColorSelect(){const sel=$('#cmt-cody-color');if(!sel)return;const cur=sel.value;sel.innerHTML='<option value="">코디 자동/없음</option>'+COORD_COLORS.map(c=>`<option value="${c[1]}">${c[0]}</option>`).join('');sel.value=cur;}
-function updateCodyHint(){const sel=$('#cmt-cody-color'),h=$('#cmt-cody-hint');if(!h)return;const v=sel?sel.value:'';if(!v){h.textContent=(state.cmt_cody||[]).length?'컬러를 고르면 그 컬러 코디가 적용됩니다':'코디 라이브러리에 먼저 코디를 올리고 컬러를 지정하세요';return;}const n=(state.cmt_cody||[]).filter(c=>c.color===v).length;h.textContent=n?`이 컬러 코디 ${n}개 적용`:'이 컬러로 지정된 코디가 없어요 (코디 탭에서 컬러 지정)';}
+function updateCodyHint(){const h=$('#cmt-cody-hint');if(!h)return;const n=(state.cmt_cody||[]).length;h.textContent=n?`저장된 코디 ${n}개 중 최신 코디를 자동 적용 (레이어링 구조 + 톤온톤)`:'코디 탭에 클래식 코디를 올리면 생성 시 자동으로 레이어링해 줍니다 (없으면 기본 클래식 코디)';}
 function applyCommuteMode(on){
   state.commute=!!on;try{localStorage.setItem('discovery_commute',on?'1':'');}catch(e){}
   const np=$('#normal-pickers'),cp=$('#commute-pickers');if(np)np.style.display=on?'none':'';if(cp)cp.style.display=on?'block':'none';
