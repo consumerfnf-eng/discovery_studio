@@ -223,7 +223,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <header>
   <div class="bar">
-    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v10-commute</small></small></div>
+    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v11-commute</small></small></div>
     <nav id="nav">
       <button data-v="lib" class="on">라이브러리</button>
       <button data-v="gen">생성</button>
@@ -911,7 +911,7 @@ function computePlan(){
     if(shell){images.push(shell.dataUrl);roles.push('a flat FABRIC SWATCH image (material sample) — replicate ONLY its weave, texture, finish and sheen across the shell; do NOT take its colour or shape');}
     const _lo=!!($('#logo-generate')&&$('#logo-generate').checked);
     if(_lo&&state.settings.logoDataUrl){images.push(state.settings.logoDataUrl);roles.push('DISCOVERY LOGO reference — reproduce ONLY this mark on the wearer left chest; ignore its background/box');}
-    return{commute:true,line:null,model,shell,refs:[],images,roles,noun:'commute outfit',modelMode,hasModel:modelMode==='image',refLed:false,balance:+($('#balance')?$('#balance').value:50)};
+    return{commute:true,line:null,model,shell,refs:[],ccRefs:cc,ptRefs:pt,images,roles,noun:'commute outfit',modelMode,hasModel:modelMode==='image',refLed:false,balance:+($('#balance')?$('#balance').value:50)};
   }
   const line=state.lines.find(l=>l.id===state.pick.line);
   const model=state.models.find(m=>m.id===state.pick.model);
@@ -1187,8 +1187,9 @@ async function doGenerate(){
     const logoBaked=!!(J.branding&&J.branding.logo_on); // 생성 단계에서 로고를 이미 그렸으면 후처리 합성 생략(이중로고 방지)
     for(let i=0;i<raws.length;i++){
       const raw=raws[i];const logoUrl=(!logoBaked&&state.settings.logoDefault)?await applyLogo(raw):raw;
-      const _base=plan.line?plan.line.name:((plan.refs.find(r=>!r.detail)||plan.refs[0]||{}).name||'생성');const g={id:uid(),name:`${_base} · ${J.target_season} ${J.category.parent}${raws.length>1?' #'+(i+1):''}`,season:J.target_season,
-        dataUrl:raw,logoUrl,sourceLineId:plan.line?plan.line.id:null,refIds:plan.refs.map(r=>r.id),modelId:plan.model?plan.model.id:null,fabricId:plan.shell?plan.shell.id:null,
+      const ccR=plan.ccRefs||[],ptR=plan.ptRefs||[];
+      const _base=plan.commute?((ccR[0]&&ccR[0].name||'CC')+'×'+(ptR[0]&&ptR[0].name||'PT')):(plan.line?plan.line.name:((plan.refs.find(r=>!r.detail)||plan.refs[0]||{}).name||'생성'));const g={id:uid(),name:`${_base} · ${J.target_season} ${plan.commute?'COMMUTE':J.category.parent}${raws.length>1?' #'+(i+1):''}`,season:J.target_season,
+        dataUrl:raw,logoUrl,sourceLineId:plan.line?plan.line.id:null,refIds:plan.refs.map(r=>r.id),commute:!!plan.commute,ccIds:ccR.map(r=>r.id),ptIds:ptR.map(r=>r.id),ccNames:ccR.map(r=>r.name),ptNames:ptR.map(r=>r.name),modelId:plan.model?plan.model.id:null,fabricId:plan.shell?plan.shell.id:null,
         category:J.category,keep:J.keep,replace:J.replace,adopt:J.adopt_from_ref,
         sheer:+($('#sheer')?$('#sheer').value:20),shimmer:+($('#shimmer')?$('#shimmer').value:25),balance:+$('#balance').value,
         designJSON:J,prompt,extra:J.notes,parentId:null,createdAt:Date.now()+i};
@@ -1292,7 +1293,7 @@ function galAsRef(g){return{id:'gal_'+g.id,name:g.name,dataUrl:(g.logoUrl||g.dat
 function refByAny(id){if(id&&id.indexOf('gal_')===0){const g=state.gallery.find(x=>x.id===id.slice(4));return g?galAsRef(g):null;}return state.refs.find(r=>r.id===id)||null;}
 function pickedRefs(){return [...state.pick.refs].map(refByAny).filter(Boolean);}
 function balHintFor(v){const n=pickedRefs().filter(r=>!r.detail).length,hasLine=!!state.pick.line;if(n>=2)return refmixHint(v);if(!hasLine&&n===1){v=+v;return v<25?'약하게 반영':v<60?'적당히 반영':v<85?'강하게 반영':'거의 그대로';}return balanceHint(v);}
-function refreshBalEnds(){const n=pickedRefs().filter(r=>!r.detail).length,hasLine=!!state.pick.line,L=$('#balance-l'),R=$('#balance-r');if(!L||!R)return;if(n>=2){L.textContent='◀ 1번 레퍼';R.textContent='2번 레퍼 ▶';}else if(hasLine){L.textContent='◀ 디스커버리 라인';R.textContent='레퍼런스 ▶';}else if(n===1){L.textContent='◀ 형태 약하게';R.textContent='레퍼 그대로 ▶';}else{L.textContent='◀ 디스커버리 라인';R.textContent='레퍼런스 ▶';}const h=$('#balance-h');if(h)h.textContent=balHintFor(+($('#balance').value));}
+function refreshBalEnds(){const L=$('#balance-l'),R=$('#balance-r');if(!L||!R)return;if(state.commute){L.textContent='◀ CLASSIC & CASUAL';R.textContent='PERFORMANCE & TECH ▶';const hc=$('#balance-h');if(hc)hc.textContent=balHintFor(+($('#balance').value));return;}const n=pickedRefs().filter(r=>!r.detail).length,hasLine=!!state.pick.line;if(n>=2){L.textContent='◀ 1번 레퍼';R.textContent='2번 레퍼 ▶';}else if(hasLine){L.textContent='◀ 디스커버리 라인';R.textContent='레퍼런스 ▶';}else if(n===1){L.textContent='◀ 형태 약하게';R.textContent='레퍼 그대로 ▶';}else{L.textContent='◀ 디스커버리 라인';R.textContent='레퍼런스 ▶';}const h=$('#balance-h');if(h)h.textContent=balHintFor(+($('#balance').value));}
 function updateRefMix(){const w=$('#refmix-wrap');if(w)w.style.display='none';refreshBalEnds();}
 function updateVolumeVis(){const w=$('#volume-wrap');if(!w)return;const parent=($('#cat-parent')||{}).value,sub=($('#cat-sub')||{}).value||'';w.style.display=(parent==='OUTERWEAR'&&/INSULATION|DOWN/i.test(sub))?'':'none';}
 function renderPickBar(store){
@@ -1461,7 +1462,7 @@ function galleryGrid(){
   $('#gal-filter').innerHTML=['all',...seasons].map(s=>`<button class="togglepill ${state.galFilter===s?'on':''}" data-filter="${s}">${s==='all'?'전체':esc(s)}</button>`).join('');
   if(!items.length){grid.innerHTML=`<div class="empty" style="grid-column:1/-1">아직 생성물이 없습니다. 생성 탭에서 만들어보세요.</div>`;return;}
   const showLogo=$('#showlogo').checked;const me=ownerId();
-  grid.innerHTML=items.map(g=>{const tg=g.uploaded?[esc(g.season),'업로드'].filter(Boolean).join(' · '):`${esc(g.season)}${g.category?' · '+esc(g.category.parent):''} · S${g.sheer}/Sh${g.shimmer}${g.parentId?' · edit':''}`;
+  grid.innerHTML=items.map(g=>{const tg=g.uploaded?[esc(g.season),'업로드'].filter(Boolean).join(' · '):(g.commute?`${esc(g.season)} · COMMUTE · CC${(g.ccIds||[]).length}×PT${(g.ptIds||[]).length}`:`${esc(g.season)}${g.category?' · '+esc(g.category.parent):''} · S${g.sheer}/Sh${g.shimmer}${g.parentId?' · edit':''}`);
     const mine=g.owner===me,sharedN=(g.sharedWith||[]).length,sel=state.galSelMode&&state.galSel.has(g.id);
     const selbox=state.galSelMode?`<span class="selbox ${sel?'on':''}">${sel?'✓':''}</span>`:'';
     const delBtn=mine?`<button class="x" data-galdel="${g.id}">✕</button>`:'';
@@ -1470,10 +1471,40 @@ function galleryGrid(){
 }
 
 /* ---------- compare ---------- */
-function compareSelect(){const sel=$('#cmp-select');const items=state.gallery.filter(g=>g.sourceLineId).sort((a,b)=>b.createdAt-a.createdAt);sel.innerHTML=`<option value="">— 선택 —</option>`+items.map(g=>`<option value="${g.id}">${esc(g.name)}</option>`).join('');}
+function compareSelect(){const sel=$('#cmp-select');const items=state.gallery.filter(g=>g.sourceLineId||g.commute).sort((a,b)=>b.createdAt-a.createdAt);sel.innerHTML=`<option value="">— 선택 —</option>`+items.map(g=>`<option value="${g.id}">${esc(g.name)}</option>`).join('');}
+function renderCompareCommute(g){
+  const box=$('#cmp-body');
+  const nameFrom=(ids,names,store)=>{const out=(ids||[]).map(id=>{const it=(state[store]||[]).find(x=>x.id===id);return it?it.name:null;});return out.map((n,i)=>n||((names||[])[i])||'(삭제됨)');};
+  const ccN=nameFrom(g.ccIds,g.ccNames,'cmt_cc'),ptN=nameFrom(g.ptIds,g.ptNames,'cmt_pt');
+  const ccImgs=(g.ccIds||[]).map(id=>(state.cmt_cc||[]).find(x=>x.id===id)).filter(Boolean);
+  const ptImgs=(g.ptIds||[]).map(id=>(state.cmt_pt||[]).find(x=>x.id===id)).filter(Boolean);
+  const strip=arr=>arr.length?`<div class="row" style="gap:6px;flex-wrap:wrap">`+arr.map(it=>`<img src="${thumb(it.dataUrl,120)}" style="width:56px;height:72px;object-fit:cover;border-radius:6px;border:1px solid var(--line)">`).join('')+`</div>`:'<span class="hint" style="margin:0">이미지 없음(삭제)</span>';
+  const bal=g.balance!=null?g.balance:50;
+  box.innerHTML=`
+    <div class="cmp">
+      <div><div class="caphead"><span class="t">믹스 재료</span><span class="s">CLASSIC & CASUAL × PERFORMANCE & TECH</span></div>
+        <div style="padding:8px;border:1px solid var(--line);border-radius:12px;background:var(--white)">
+          <div class="hint" style="margin:0 0 4px;color:var(--pine);font-weight:600">CLASSIC & CASUAL</div>${strip(ccImgs)}
+          <div class="hint" style="margin:10px 0 4px;color:var(--pine);font-weight:600">PERFORMANCE & TECH</div>${strip(ptImgs)}
+        </div></div>
+      <div><div class="caphead"><span class="t">${esc(g.name)}</span><span class="s">${esc(g.season)} · Generated</span></div>
+        <div class="frame"><img src="${g.logoUrl||g.dataUrl}"></div></div>
+    </div>
+    <table class="difftable">
+      <tr><td>모드</td><td><b>COMMUTE</b> · 구김 없는 클린 라인</td></tr>
+      <tr><td>CLASSIC & CASUAL</td><td>${ccN.length?ccN.map(n=>`<span class="chip">${esc(n)}</span>`).join(''):'—'}</td></tr>
+      <tr><td>PERFORMANCE & TECH</td><td>${ptN.length?ptN.map(n=>`<span class="chip">${esc(n)}</span>`).join(''):'—'}</td></tr>
+      <tr><td>디자인 밸런스</td><td>${bal}/100 <span style="color:var(--ink-45)">(◀ CLASSIC & CASUAL ~ PERFORMANCE & TECH ▶ · ${balanceHint(bal)})</span></td></tr>
+    </table>
+    <div class="row" style="margin-top:14px"><button class="btn sm ghost" id="cmp-json">분석 JSON 보기</button></div>
+    <div id="cmp-json-out" style="margin-top:10px"></div>`;
+  const jb=$('#cmp-json');if(jb)jb.onclick=()=>{const o=$('#cmp-json-out');o.innerHTML=o.innerHTML?'':`<div class="promptbox" style="max-height:280px;font-family:var(--mono);color:var(--ink)">${esc(JSON.stringify(g.designJSON||{},null,2))}</div>`;};
+}
 function renderCompare(gid){
   const box=$('#cmp-body');if(!gid){box.innerHTML='';return;}
-  const g=state.gallery.find(x=>x.id===gid),line=state.lines.find(l=>l.id===g.sourceLineId);
+  const g=state.gallery.find(x=>x.id===gid);if(!g)return;
+  if(g.commute){renderCompareCommute(g);return;}
+  const line=state.lines.find(l=>l.id===g.sourceLineId);
   const refNames=(g.refIds||[]).map(id=>{const r=state.refs.find(x=>x.id===id);return r?r.name:'(삭제됨)';});
   const cat=g.category?`${g.category.parent} / ${g.category.sub}`:'—';
   box.innerHTML=`
