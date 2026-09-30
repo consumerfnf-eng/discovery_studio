@@ -226,7 +226,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <header>
   <div class="bar">
-    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v18-cody</small></small></div>
+    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v20</small></small></div>
     <nav id="nav">
       <button data-v="lib" class="on">라이브러리</button>
       <button data-v="gen">생성</button>
@@ -388,6 +388,10 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
           </div>
           <div id="cat-controls"></div>
 
+          <label class="row" id="fill-wrap" style="font-size:12px;color:var(--ink-70);gap:6px;margin-top:14px;align-items:center">
+            <input type="checkbox" id="fill-on">
+            <span>충전재(패딩·다운) 넣기 <span style="color:var(--ink-45)">— 체크 시 패딩/퀼팅, 해제 시 무패딩 플랫 쉘</span></span>
+          </label>
           <label class="row" id="logogen-wrap" style="font-size:12px;color:var(--ink-70);gap:6px;margin-top:14px;align-items:flex-start">
             <input type="checkbox" id="logo-generate" style="margin-top:2px">
             <span>DISCOVERY 로고 생성에 포함 <span style="color:var(--ink-45)">— 켜면 업로드한 Discovery 로고를 레퍼로 넘겨 착용자 왼가슴에 <b>마크만(네모 박스 없이)</b> 톤온톤으로 그려 넣습니다. 끄면 무지로 생성.</span></span>
@@ -886,7 +890,7 @@ function shimmerHint(v){v=+v;return v<12?'매트':v<38?'새틴 광':v<68?'글로
 function balanceHint(b){b=+b;return b<20?'원형 강하게 유지':b<45?'라인 우선':b<70?'균형':'레퍼런스 주도';}
 function colorBalWord(v){v=+v;return v<20?'COLOURWAY — use the DISCOVERY base line colour exactly; do NOT take colour from the references':v<40?'COLOURWAY — a DISCOVERY-family tone: keep the base line hue with only subtle variation':v<60?'COLOURWAY — propose a NEW seasonal colourway, neither the base line nor the reference colour — a fresh premium tone':v<80?'COLOURWAY — lean toward the reference colours with slight adjustment':'COLOURWAY — use the reference colours as-is';}
 function colorBalHint(v){v=+v;if(state.commute)return v<20?'CLASSIC&CASUAL 컬러':v<40?'CC 유사':v<60?'NEW 컬러':v<80?'PT 유사':'PERFORMANCE&TECH 컬러';return v<20?'디스커버리 컬러':v<40?'디스커버리 유사':v<60?'NEW 컬러':v<80?'레퍼 유사':'레퍼런스 컬러';}
-function colorBalWordCommute(v){v=+v;return v<20?'COLOURWAY — use the CLASSIC & CASUAL reference colours exactly as the outfit colour story':v<40?'COLOURWAY — a CLASSIC & CASUAL-leaning tone with only slight variation':v<60?'COLOURWAY — propose a NEW cohesive commute colourway (not copied from either reference group) — a fresh premium urban palette':v<80?'COLOURWAY — lean toward the PERFORMANCE & TECH reference colours with slight adjustment':'COLOURWAY — use the PERFORMANCE & TECH reference colours as-is';}
+function colorBalWordCommute(v){v=+v;return v<20?'COLOURWAY — colour comes ONLY from the CLASSIC & CASUAL side; do NOT take any colour from the PERFORMANCE & TECH photos':v<40?'COLOURWAY — a CLASSIC & CASUAL-leaning tone, only slight variation; ignore PERFORMANCE & TECH photo colours':v<60?'COLOURWAY — a NEW cohesive commute colourway, NOT copied from either reference group — a fresh premium urban palette':v<80?'COLOURWAY — lean toward the PERFORMANCE & TECH colours with slight adjustment; ignore CLASSIC & CASUAL photo colours':'COLOURWAY — colour comes ONLY from the PERFORMANCE & TECH side; do NOT take colour from the CLASSIC & CASUAL photos';}
 function refmixHint(v){v=+v;return v<20?'1번 강하게':v<45?'1번 우선':v<70?'균형':v<90?'2번 우선':'2번 강하게';}
 function refmixText(v){v=+v;return v<20?'weight the FIRST reference strongly for design':v<45?'favour the FIRST reference':v<70?'blend both references evenly':v<90?'favour the SECOND reference':'weight the SECOND reference strongly for design';}
 function zipperText(z){return z==='waterproof'?'CLOSURE — a waterproof laminated zipper: welded/taped seam-sealed zip with a matte tonal tape and minimal exposed teeth, like a technical shell (as in the reference)':z==='stormflap'?'CLOSURE — a center-front zipper hidden behind an overlapping storm placket/flap (the zip is covered by a fabric ribbon flap)':z==='exposed'?'CLOSURE — a clean EXPOSED front zipper: visible teeth, tonal tape, no covering flap':'';}
@@ -929,7 +933,7 @@ function computePlan(){
     const modelMode=model?'image':'idol';const images=[],roles=[];
     if(modelMode==='image'){images.push(model.dataUrl);roles.push('THE MODEL to keep and dress — the output MUST show this exact person (face, hair, skin tone, body), wearing the new commute outfit');}
     cc.forEach(r=>{images.push(r.dataUrl);roles.push('CLASSIC & CASUAL reference — the heritage/daily base mood: refined tailored commute silhouette blended with relaxed everyday ease');});
-    pt.forEach(r=>{images.push(r.dataUrl);roles.push('PERFORMANCE & TECH reference — adopt technical outerwear function, sporty construction, modern technical fabric and hardware');});
+    pt.forEach(r=>{images.push(r.dataUrl);roles.push('PERFORMANCE & TECH reference — adopt its technical performance function, sporty construction, modern technical fabric and hardware (apply to the main garment category, do NOT force it into an outer jacket)');});
     if(shell){images.push(shell.dataUrl);roles.push('a flat FABRIC SWATCH image (material sample) — replicate ONLY its weave, texture, finish and sheen across the shell; do NOT take its colour or shape');}
     const codyRefs=(state.cmt_cody||[]).slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,2); // 저장 코디 자동 적용(최신순 최대2)
     codyRefs.forEach(r=>{images.push(r.dataUrl);roles.push('STYLING / CODI reference — coordinate the FULL commute look (inner collared shirt, mid-layer half-zip, tailored trousers or shorts, accessories) after this styling; the newly designed main garment stays the hero, everything else styled to match');});
@@ -1021,6 +1025,7 @@ function buildDesignJSON(){
     design_balance:+$('#balance').value/100,
     color_balance:+($('#colorbal')?$('#colorbal').value:50)/100,
     commute:!!state.commute,
+    fill_on:($('#fill-on')?$('#fill-on').checked:false),
     shoe_balance:(parent==='SHOES'?{...state.brief.shoeBal}:null),
     pose:state.pose||'auto',
     material_perf:+($('#matperf')?$('#matperf').value:50)/100,
@@ -1056,12 +1061,22 @@ function jsonToPrompt(J,plan){
   if(commute){
     if(mode==='image')S.push('Show the EXACT person from image 1 — keep face, hair, skin tone and body identical — now wearing a newly designed DISCOVERY commute outfit. This is a dressing/try-on task.');
     else if(state.settings.baseModelPrompt)S.push(`SUBJECT / MODEL — ${state.settings.baseModelPrompt.trim()}`);
-    S.push('STYLE FUSION — fuse CLASSIC heritage tailoring and CASUAL everyday ease (the heritage mood, from the CLASSIC/CASUAL references) with PERFORMANCE technical outerwear function and TECH modern materials & hardware (the adopted design, from the PERFORMANCE/TECH references). Blend them into ONE cohesive, premium urban city-commute outfit, balanced per DESIGN BALANCE below.');
+    const _isTop=/top/i.test(cat.parent||'')||noun==='top', _isOuter=/outer/i.test(cat.parent||'')||noun==='outerwear';
+    S.push('MAIN GARMENT — the newly DESIGNED HERO piece is a '+((cat.parent||noun)||'garment').toUpperCase()+' ('+noun+'). It MUST be the main, clearly visible garment and the focus of the image'+(_isTop?' — worn as the OUTERMOST visible top; do NOT cover it with a jacket, coat or heavy outer layer':(_isOuter?' — worn as the outer layer':''))+'.');
+    S.push('STYLE FUSION — fuse CLASSIC heritage tailoring and CASUAL everyday ease (from the CLASSIC & CASUAL references) with PERFORMANCE technical function and TECH modern materials & hardware (from the PERFORMANCE & TECH references), applied to the '+noun+'. Blend into ONE cohesive, premium urban commute look, balanced per DESIGN BALANCE below. Do NOT turn the '+noun+' into a different category.');
+    S.push('COLOUR SOURCE — treat ALL reference images as DESIGN / silhouette / detail guides, NOT colour swatches. The final colourway is decided ONLY by the COLOUR BALANCE setting below — do NOT copy the colours of the reference photos.');
     S.push('HARDWARE & TRIMS (PERFORMANCE) — all closures, snaps, buttons, zip pulls and trims must read as FUNCTIONAL PERFORMANCE hardware: exposed matte SILVER or gunmetal metal with a FLAT, MINIMAL, technical finish, clearly VISIBLE and crisply defined. NEVER hidden/covered plackets, NEVER tone-on-tone fabric-covered snaps, NEVER puffy, domed or bulbous buttons. Keep detailing clean, sharp and minimal — technical sportswear precision, not soft heritage tailoring.');
     if((plan.ccRefs||[]).length>=2)S.push('MULTIPLE CLASSIC & CASUAL references — BLEND them evenly into ONE coherent base: merge their shared silhouette, proportion, collar/lapel and overall mood. Do not copy only one; take the strongest common traits from all of them.');
     if((plan.ptRefs||[]).length>=2)S.push('MULTIPLE PERFORMANCE & TECH references — BLEND them evenly: combine their technical features, hardware, seams, pockets and material cues from all of them into one cohesive technical layer. Do not pick only one.');
-    if(plan.codyRefs&&plan.codyRefs.length)S.push('STYLING / CODI — take the LAYERING STRUCTURE and styling from the CODI reference image(s): WHICH pieces are worn and HOW they are layered (e.g. an inner collared shirt peeking at collar/hem/cuffs, a mid-layer half-zip, tailored trousers or shorts, a belt). Apply this same put-together layering to the newly designed main garment, which stays the hero. IMPORTANT — automatically RE-COLOUR the layered pieces so they COORDINATE with the main garment final colour: use a harmonious TONE-ON-TONE or tastefully complementary palette; do NOT blindly copy the reference colours when they clash with the main garment. Refined, classic, intentional commute styling — never sloppy.');
-    else S.push('STYLING — build a refined CLASSIC commute look around the main garment: a neat inner collared shirt, an optional mid-layer half-zip, and clean tailored bottoms — all TONE-COORDINATED with the main garment colour (tone-on-tone or tastefully complementary) and put-together.');
+    if(plan.codyRefs&&plan.codyRefs.length){
+      if(_isOuter)S.push('STYLING / CODI — take the LAYERING STRUCTURE and styling from the CODI reference image(s): which pieces are worn and how they are layered (inner shirt at collar/hem/cuffs, a mid-layer, tailored trousers/shorts, a belt). Apply this put-together layering with the hero '+noun+' as the outer layer. RE-COLOUR the layered pieces to COORDINATE with the main garment colour (TONE-ON-TONE or tastefully complementary); do NOT copy reference colours when they clash. Refined, classic commute styling.');
+      else S.push('STYLING / CODI ('+noun+') — take ONLY the inner-base and bottoms styling from the CODI reference (e.g. a shirt shown at collar/hem/cuffs, clean tailored trousers or shorts, a belt). The hero '+noun+' is the OUTERMOST garment: do NOT add any jacket, coat, blazer or outer layer over it, and do NOT put the '+noun+' underneath another piece. RE-COLOUR the styled pieces to COORDINATE (TONE-ON-TONE or complementary) with the '+noun+' colour; do NOT copy reference colours when they clash. Refined, classic commute styling.');
+    }
+    else{
+      if(_isOuter)S.push('STYLING — build a refined CLASSIC commute look with the '+noun+' as the outer layer: a neat inner shirt, an optional mid-layer, and clean tailored bottoms — all TONE-COORDINATED with the '+noun+' colour and put-together.');
+      else S.push('STYLING ('+noun+') — build a refined CLASSIC commute look with the hero '+noun+' as the OUTERMOST piece: only a neat inner base (shirt shown at collar/hem/cuffs) and clean tailored bottoms, TONE-COORDINATED with the '+noun+' colour. Do NOT add any jacket, coat or outer layer over the '+noun+'.');
+    }
+    if(!_isOuter)S.push('LAYERING LIMIT — keep styling minimal so the hero '+noun+' stays dominant: at most a light base underneath; do NOT add a bulky jacket or coat OVER the hero '+noun+', and never let an outer layer become the main visible garment.');
     adoptClauses(J,noun).forEach(c=>S.push(c));
     if(mode==='idol')S.push('Dress the described model in this outfit. Soft cool grey-blue seamless studio backdrop, soft diffused lighting and a gentle natural shadow, full-length editorial pose.');
   }else if(mode==='product'){
@@ -1111,8 +1126,10 @@ function jsonToPrompt(J,plan){
    if(J.material_perf!=null){const pv=J.material_perf*100,hay=[_mm.fabric_type,_mm.surface,J.notes].filter(Boolean).join(' ');if(_mm.shell_ref||/gore-?tex|고어텍스/i.test(hay))S.push('MATERIAL HAND-FEEL — nudge the fabric drape and finish slightly toward '+matPerfWord(pv)+'; the shell fabric identity still comes from the fabric reference.');else S.push('MATERIAL CHARACTER — render the fabric as '+matPerfWord(pv)+'.');}}
   if(J.pose&&J.pose!=='auto'&&POSE_PROMPTS[J.pose])S.push('MODEL POSE — '+POSE_PROMPTS[J.pose]);
   {const cz=g.closure_zip?zipperText(g.closure_zip):'';if(cz)S.push(cz);const cp=g.front_placket?placketText(g.front_placket):'';if(cp)S.push(cp);}
-  if(g.fill_volume!=null)S.push('DOWN FILL VOLUME — '+volumeText(g.fill_volume*100)+'. SHELL / FILL SHOW-THROUGH follows the Sheer setting: a thinner shell reveals more baffle and fill relief, a thicker shell reads flatter and more opaque.');
-  S.push('MATERIAL QUALITY — every DISCOVERY material and component is PREMIUM QUALITY: high-grade shell fabric, premium lofty down/fill, refined tonal hardware and clean high-density finishing; luxury-level make, never cheap, flimsy, stiff, plasticky or mass-market.');
+  if(J.fill_on)S.push('INSULATION — this piece IS insulated: include tasteful down/padded fill and clean quilting appropriate to the design.');
+  else S.push('NO INSULATION / NO PADDING — the garment is a clean FLAT shell: NO down fill, NO padded or quilted baffles, NO puffy volume, even if brand DNA references down. Keep it lightweight, flat and unpadded.');
+  if(J.fill_on&&g.fill_volume!=null)S.push('DOWN FILL VOLUME — '+volumeText(g.fill_volume*100)+'. SHELL / FILL SHOW-THROUGH follows the Sheer setting: a thinner shell reveals more baffle and fill relief, a thicker shell reads flatter and more opaque.');
+  S.push('MATERIAL QUALITY — every DISCOVERY material and component is PREMIUM QUALITY: high-grade shell fabric, premium materials, refined tonal hardware and clean high-density finishing; luxury-level make, never cheap, flimsy, stiff, plasticky or mass-market.');
   const b=J.branding||{};
   if(b.logo_on){
     S.push(logoRule(b.logo_type));
