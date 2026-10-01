@@ -231,7 +231,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <header>
   <div class="bar">
-    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v24-dxdna</small></small></div>
+    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v25-dxdna</small></small></div>
     <nav id="nav">
       <button data-v="lib" class="on">라이브러리</button>
       <button data-v="gen">생성</button>
@@ -591,7 +591,7 @@ const SUPABASE_BUCKET='discovery-studio';
 const CLOUD_STORES=['lines','refs','models','fabrics','gallery','sales','cmt_cc','cmt_pt','cmt_cody','cmt_gallery']; // settings는 개인 로컬 유지
 const COORD_COLORS=[['베이지','beige'],['네이비','navy'],['블랙','black'],['그레이','grey'],['카키·올리브','olive'],['브라운','brown'],['화이트','white'],['블루','blue'],['버건디','burgundy']];
 const COMMUTE_PW='cst2026!';
-const DX_PALETTE=[['LPS','#DEBAC4'],['BLS','#A5C2D5'],['IVL','#B7ABC8'],['TQL','#264D58'],['BLL','#9FCADB'],['LPL','#EBC0CE'],['MTS','#9FC5B8'],['LDS','#A1A4CF'],['BDD','#5C2733'],['CRL','#F7A794'],['IVS','#D4CFC2'],['BES','#B9AC97'],['NBS','#D4B198'],['BGL','#A69B83'],['BGS','#978D65'],['SAD','#87796A'],['BRD','#5E442E'],['DWS','#493A2F'],['CGS','#685E61'],['IVM','#F5EEE4'],['MGL','#D1CED4'],['MGS','#9996A7'],['MGD','#565661'],['MDS','#434449'],['GRL','#D4D8DE'],['GRD','#5E5E67'],['DGS','#443F46'],['CGD','#3E3A42'],['NYL','#4E5862'],['DGL','#3C4550'],['DNS','#262F3A'],['WHS','#F2EEE7'],['BKS','#2B2C31'],['SAS','#A08D7A'],['INS','#1B344F'],['WID','#472F34'],['NYD','#253445'],['KAS','#585740'],['CRD','#F4EDE4']];
+const DX_PALETTE=[['그린페일','#D0E0D6'],['블루라이트','#AEB1C0'],['레드다크','#782A39'],['핑크페일','#EFC4D5'],['핑크라이트','#E89DA4'],['블루미드','#3850A0'],['퍼플다크','#41354D'],['스카이','#79B5DB'],['틸','#76A7AB'],['블루그레이','#718191'],['블루딥','#4C6A92'],['틸딥','#325E64'],['세이지','#788768'],['그린','#3D7245'],['올리브다크','#4A5335'],['브라운미드','#9B7D65'],['카멜','#836A4C'],['브라운','#703A18'],['브라운다크','#463025'],['레드액센트','#DA3D58'],['레드액센트2','#CD212A'],['화이트','#FFFFFF'],['오프화이트','#F2F0EB'],['아이보리','#EEEDEA'],['페일그레이','#E7E9E7'],['베이지페일','#E0D5C6'],['로즈베이지','#E4CCC6'],['쿨그레이','#CACCCB'],['그레이지','#C2B8A9'],['베이지라이트','#ABA798'],['모브베이지','#A5958F'],['그레이라이트','#979799'],['그레이','#939597'],['그레이미드','#625D5D'],['차콜라이트','#4E545B'],['차콜','#4F5054'],['브라운차콜','#382E2D'],['블랙','#2F2D30'],['네이비','#223A5E'],['네이비딥','#2E344A'],['네이비다크','#22334C'],['네이비잉크','#102341'],['크림','#F5EDD6'],['샌드','#D2C1A5'],['카멜라이트','#C2A28B'],['토프','#B59981'],['베이지','#AF9483']];
 function dxColorName(code){const f=DX_PALETTE.find(x=>x[0]===code);return f?code+' ('+f[1]+')':'';}
 const COMMUTE_SLOTS=['cmt_cc','cmt_pt'];
 const SLOT_LABEL={cmt_cc:'CLASSIC & CASUAL',cmt_pt:'PERFORMANCE & TECH'};
