@@ -233,7 +233,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <header>
   <div class="bar">
-    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v31-cmtlogo</small></small></div>
+    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v35-dxcmt</small></small></div>
     <nav id="nav">
       <button data-v="lib" class="on">라이브러리</button>
       <button data-v="gen">생성</button>
@@ -355,6 +355,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
       </div>
       <div>
         <div class="panel" style="position:sticky;top:82px">
+          <div id="brief-normal" style="display:none">
           <div class="sectlabel">유지 · 교체 · 채용 <span class="hint" id="cat-tag" style="margin:0"></span></div>
           <div class="grouplabel" style="color:var(--pine);font-weight:600;margin-top:0">PRESERVE — 베이스에서 유지</div>
           <div class="pillrow" id="keep-pills"></div>
@@ -363,6 +364,12 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
           <div class="grouplabel" style="color:var(--plum);font-weight:600">ADOPT FROM REF — 레퍼런스에서 채용</div>
           <div class="pillrow" id="adopt-pills"></div>
           <div class="hint" id="adopt-hint" style="margin:5px 0 0">레퍼런스는 이미지만으론 약하게 반영돼요 — 'AI 분석'으로 속성을 채우거나, 추가 디렉션에 구조(예: 넥라인을 스카프 랩으로)를 적으면 강하게 반영됩니다.</div>
+          </div>
+          <div id="brief-commute">
+            <div class="sectlabel" style="margin-top:0">메인 컬러 · 시즌 팔레트 <span class="hint" id="cmtcolor-sel" style="margin:0;font-weight:400;color:var(--ink-45)"></span></div>
+            <div class="hint" style="margin:2px 0 8px">생성물 <b>메인 컬러</b>를 시즌 팔레트에서 직접 고릅니다. 모델·얼굴·헤어·포즈·배경과 유지·채용 항목은 <b>자동으로</b> 처리돼요. (<b>미선택 시 아래 컬러 밸런스 기준</b>으로 생성)</div>
+            <div class="dxchips" id="cmtcolor-chips"></div>
+          </div>
           <div id="shoe-ref" style="display:none">
             <div class="sectlabel" style="margin-top:14px">부위별 밸런스 · 신발</div>
             <div class="hint" style="margin:2px 0 8px">부위별로 디스커버리 라인에 가깝게(◀) 갈지, 레퍼런스를 따라갈지(▶) 조절합니다.</div>
@@ -401,7 +408,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
           </label>
           <label class="row" id="logogen-wrap" style="font-size:12px;color:var(--ink-70);gap:6px;margin-top:14px;align-items:flex-start">
             <input type="checkbox" id="logo-generate" style="margin-top:2px">
-            <span>DISCOVERY 로고 생성에 포함 <span style="color:var(--ink-45)">— 켜면 업로드한 Discovery 로고를 레퍼로 넘겨 착용자 왼가슴에 <b>마크만(네모 박스 없이)</b> 톤온톤으로 그려 넣습니다. 끄면 무지로 생성.</span></span>
+            <span>DISCOVERY 로고 생성에 포함 <span style="color:var(--ink-45)">— <b>커뮤트 모드</b>: 켜면 <b>DISCOVERY COMMUTE ∞ 2단 락업</b>을 카테고리별 위치에 톤온톤으로 넣습니다(기본 켜짐). <b>일반 모드</b>: 켜면 업로드한 Discovery 로고를 왼가슴에 마크만 그려 넣습니다. 끄면 무지로 생성.</span></span>
           </label>
 
           <div style="margin-top:16px"><label class="fld">추가 디렉션 (선택)</label>
@@ -956,7 +963,7 @@ const state={
   lines:[],refs:[],models:[],fabrics:[],gallery:[],
   pick:{line:null,refs:new Set(),model:null,fabric:null,cmt:{cmt_cc:new Set(),cmt_pt:new Set()}},
   cmt_cc:[],cmt_pt:[],cmt_cody:[],cmt_gallery:[],
-  commute:false,
+  commute:false, cmtColor:'',
   brief:{keep:new Set(),replace:new Set(),adopt:new Set(),fabricType:'',shoeBal:{upper:50,sole:50}},
   aiAttrs:{}, jsonDirty:false, galFilter:'all', refSecretView:false, galSelMode:false, galSel:new Set(), pose:'auto', quiltRef:null, ctl:{}, ctlDetails:new Set(),
   libFilter:{lines:{gender:'ALL',gcat:'ALL',season:'ALL'},refs:{gender:'ALL',gcat:'ALL',season:'ALL'}},
@@ -1121,6 +1128,7 @@ function buildDesignJSON(){
     design_balance:+$('#balance').value/100,
     color_balance:+($('#colorbal')?$('#colorbal').value:50)/100,
     commute:!!state.commute,
+    cmt_color:(state.cmtColor||''),
     fill_on:($('#fill-on')?$('#fill-on').checked:false),
     shoe_balance:(parent==='SHOES'?{...state.brief.shoeBal}:null),
     pose:state.pose||'auto',
@@ -1216,7 +1224,8 @@ function jsonToPrompt(J,plan){
      if(n>=2)S.push('REFERENCE MIX — '+refmixText(bv)+' (reference 1 = first selected image, reference 2 = second).');
      else if(hasLine)S.push('DESIGN BALANCE — '+balanceText(bv));
      else if(n===1)S.push('REFERENCE ADOPTION — '+(bv<25?'use the reference loosely, only as light inspiration for this new garment':bv<60?'moderately follow the reference silhouette and details':bv<85?'closely follow the reference design':'reproduce the reference design very closely as the base'));}}
-  if(J.color_balance!=null)S.push(commute?colorBalWordCommute(J.color_balance*100):colorBalWord(J.color_balance*100));
+  if(J.cmt_color)S.push('MAIN GARMENT COLOUR — the primary colour of the '+noun+' must be '+dxColorName(J.cmt_color)+'. Render the main garment in this exact solid tone (any patterned panel keeps its pattern). Coordinate the styled layers tone-on-tone or tastefully complementary; the reference photos are DESIGN guides, NOT colour swatches, so do NOT copy their colours.');
+  else if(J.color_balance!=null)S.push(commute?colorBalWordCommute(J.color_balance*100):colorBalWord(J.color_balance*100));
   {const _noun=(J.category&&J.category.noun)||'garment',_mm=(J.garment&&J.garment.material)||{};
    if(J.controls){const cd=Object.keys(J.controls.chips||{}).map(k=>J.controls.chips[k]).filter(Boolean).concat(J.controls.details||[]);if(cd.length)S.push('DESIGN DIRECTIVES — apply exactly to the '+_noun+': '+cd.join('; ')+'.');}
    if(J.material_perf!=null){const pv=J.material_perf*100,hay=[_mm.fabric_type,_mm.surface,J.notes].filter(Boolean).join(' ');if(_mm.shell_ref||/gore-?tex|고어텍스/i.test(hay))S.push('MATERIAL HAND-FEEL — nudge the fabric drape and finish slightly toward '+matPerfWord(pv)+'; the shell fabric identity still comes from the fabric reference.');else S.push('MATERIAL CHARACTER — render the fabric as '+matPerfWord(pv)+'.');}}
@@ -1228,8 +1237,12 @@ function jsonToPrompt(J,plan){
   S.push('MATERIAL QUALITY — every DISCOVERY material and component is PREMIUM QUALITY: high-grade shell fabric, premium materials, refined tonal hardware and clean high-density finishing; luxury-level make, never cheap, flimsy, stiff, plasticky or mass-market.');
   const b=J.branding||{};
   if(commute){
-    S.push(commuteLogoRule(J.category&&J.category.parent,J.category&&J.category.sub));
-    S.push('Aside from this single DISCOVERY COMMUTE ∞ signature (plus an optional hidden inner mark), keep every other surface of the garment clean and unbranded — no other logo, lettering, woven label or emblem anywhere, and NO "DISCOVERY" or "DISCOVERY EXPEDITION" wordmark on the body or at the bottom of the image.');
+    if(b.logo_on){
+      S.push(commuteLogoRule(J.category&&J.category.parent,J.category&&J.category.sub));
+      S.push('Aside from this single DISCOVERY COMMUTE ∞ signature (plus an optional hidden inner mark), keep every other surface of the garment clean and unbranded — no other logo, lettering, woven label or emblem anywhere, and NO "DISCOVERY" or "DISCOVERY EXPEDITION" wordmark on the body or at the bottom of the image.');
+    }else{
+      S.push('BRANDING — keep the garment surface COMPLETELY CLEAN and unbranded: NO logo, NO lettering, NO "DISCOVERY" or "DISCOVERY COMMUTE" wordmark or mark anywhere on the garment or in the image.');
+    }
   }else if(b.logo_on){
     S.push(logoRule(b.logo_type));
     S.push(`Aside from this single DISCOVERY chest mark, keep every other surface of the garment clean and unbranded — no other logo, lettering, woven label or emblem anywhere.`);
@@ -1479,9 +1492,15 @@ function openCommuteArchive(store){
 async function loadCommuteStores(){for(const st of [...COMMUTE_SLOTS,'cmt_cody','cmt_gallery']){try{state[st]=await storeAll(st);}catch(e){try{state[st]=await allOf(st);}catch(_){state[st]=[];}}}}
 function fillCodyColorSelect(){const sel=$('#cmt-cody-color');if(!sel)return;const cur=sel.value;sel.innerHTML='<option value="">코디 자동/없음</option>'+COORD_COLORS.map(c=>`<option value="${c[1]}">${c[0]}</option>`).join('');sel.value=cur;}
 function updateCodyHint(){const h=$('#cmt-cody-hint');if(!h)return;const n=(state.cmt_cody||[]).length;h.textContent=n?`저장된 코디 ${n}개 중 최신 코디를 자동 적용 (레이어링 구조 + 톤온톤)`:'코디 탭에 클래식 코디를 올리면 생성 시 자동으로 레이어링해 줍니다 (없으면 기본 클래식 코디)';}
+function renderCmtColorChips(){const el=$('#cmtcolor-chips');if(!el)return;const cur=state.cmtColor||'';
+  el.innerHTML='<span class="dxchip none '+(cur===''?'on':'')+'" data-cmtcol=""><span class="sw"></span>자동(밸런스)</span>'+dxPalette().map(c=>'<span class="dxchip '+(cur===c[1]?'on':'')+'" data-cmtcol="'+c[1]+'" title="'+esc(c[0])+' '+c[1]+'"><span class="sw" style="background:'+c[1]+'"></span>'+esc(c[0])+'</span>').join('');
+  const se=$('#cmtcolor-sel');if(se)se.textContent=cur?('· '+dxColorName(cur)):'· 자동(컬러 밸런스)';}
 function applyCommuteMode(on){
   state.commute=!!on;try{localStorage.setItem('discovery_commute',on?'1':'');}catch(e){}
+  if(on){const lg=$('#logo-generate');if(lg&&!lg.checked){lg.checked=true;}}
   const np=$('#normal-pickers'),cp=$('#commute-pickers');if(np)np.style.display=on?'none':'';if(cp)cp.style.display=on?'block':'none';
+  {const bn=$('#brief-normal'),bc=$('#brief-commute');if(bn)bn.style.display='none';if(bc)bc.style.display='';}
+  try{renderCmtColorChips();}catch(e){}
   const stt=$('#cmt-state');if(stt)stt.textContent=on?'· 켜짐':'· 꺼짐';const btn=$('#btn-cmt-toggle');if(btn)btn.textContent=on?'비활성화':'활성화';
   // 라이브러리 탭 전환: 커뮤트면 라인·레퍼 숨기고 CLASSIC&CASUAL/PERFORMANCE&TECH 노출
   $$('.normal-tab').forEach(t=>t.style.display=on?'none':'');
@@ -1566,6 +1585,7 @@ function closeModal(){const m=$('#modal');if(m)m.classList.remove('on');const sh
 document.addEventListener('click',e=>{if(e.target.closest&&(e.target.closest('#m-close')||e.target.id==='modal'))closeModal();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){const m=$('#modal');if(m&&m.classList.contains('on'))closeModal();}});
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='cat-parent'){try{applyCategory(true);}catch(_){}}});
+document.addEventListener('click',e=>{const c=e.target.closest&&e.target.closest('#cmtcolor-chips [data-cmtcol]');if(!c)return;state.cmtColor=c.dataset.cmtcol||'';renderCmtColorChips();try{refreshJSON();}catch(_){}});
 document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closest('#cat-controls [data-ctl],#cat-controls [data-ctld]');if(!el)return;if(el.dataset.ctl!==undefined&&el.dataset.ctlv!==undefined){const id=el.dataset.ctl,v=el.dataset.ctlv;state.ctl[id]=(state.ctl[id]===v)?'':v;}else if(el.dataset.ctld!==undefined){const v=el.dataset.ctld;state.ctlDetails.has(v)?state.ctlDetails.delete(v):state.ctlDetails.add(v);}try{renderCatControls($('#cat-parent').value);refreshJSON();}catch(_){}});
 
 /* ---------- pills ---------- */
@@ -1706,6 +1726,8 @@ function openEdit(gid){
         <button class="btn sm" id="edit-cody-go" style="margin-top:8px">코디 &amp; 디테일 수정 생성</button>
 ${state.commute?`<div class="sectlabel">DX COMMUTE DNA</div>
         <div class="hint" style="margin:2px 0 8px">모델·옷 형태는 유지하고 <b>DISCOVERY NEW COMMUTE DNA</b>를 2차로 입힙니다 — 실버 부자재(지퍼·탭·트림) · 마그네틱 히든스냅+버튼 · 모듈/탈부착 · Explorer 2-way 칼라 · Sculpted 유틸리티 포켓 · 안감 포인트(겉이 캐주얼하면 안감은 포멀, 겉이 포멀하면 안감에 액센트). 아래에서 <b>겉감·안감을 지정 팔레트 컬러 또는 등록 패턴</b>으로 돌려볼 수 있어요. (패턴은 <b>설정 &gt; DX 패턴 스와치</b>에서 추가)</div>
+        <div class="fld" style="margin-top:4px">COMMENT · 추가 수정 지시 (선택)</div>
+        <input id="dx-comment" class="inp" placeholder="예: 칼라를 조금 더 세우기 · 지퍼 풀러 크게 · 밑단 밴딩 추가 · 소매 살짝 롱하게">
         ${dxPalettes().length?`<div class="fld" style="margin-top:4px;display:flex;align-items:center;gap:8px">시즌 팔레트 <select id="dx-season" class="inp" style="width:auto;display:inline-block;padding:3px 8px;font-size:12px">${dxPalettes().map(p=>`<option value="${esc(p.season)}" ${p.season===activeSeason()?'selected':''}>${esc(p.season)} (${p.pal.length}색)</option>`).join('')}</select></div>`:''}
         <div class="fld" style="margin-top:8px;display:flex;align-items:center;gap:8px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin:0"><input type="checkbox" id="dx-shell-on"> 겉감(shell) 변경</label><span id="dx-shell-sel" style="color:var(--ink-45);font-weight:400"></span></div><div class="dxchips" id="dx-shell-chips"></div><div class="dxchips" id="dx-shell-pats" style="margin-top:4px"></div>
         <div class="fld" style="margin-top:10px;display:flex;align-items:center;gap:8px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin:0"><input type="checkbox" id="dx-lining-on"> 안감(lining) 포인트</label><span id="dx-lining-sel" style="color:var(--ink-45);font-weight:400"></span></div><div class="dxchips" id="dx-lining-chips"></div><div class="dxchips" id="dx-lining-pats" style="margin-top:4px"></div>
@@ -1751,7 +1773,8 @@ ${state.commute?`<div class="sectlabel">DX COMMUTE DNA</div>
     const shP=(state.dxOn.shell&&state.dxPat.shell)?state.dxPat.shell:'';const liP=(state.dxOn.lining&&state.dxPat.lining)?state.dxPat.lining:'';
     if(state.dxOn.shell&&!sh&&!shP){toast('겉감 컬러 또는 패턴을 선택하세요.');return;}
     if(state.dxOn.lining&&!li&&!liP){toast('안감 컬러 또는 패턴을 선택하세요.');return;}
-    runEdit('dxdna',{shell:sh,lining:li,shellPat:shP,liningPat:liP});};}
+    const cmt=(($('#dx-comment')&&$('#dx-comment').value)||'').trim();
+    runEdit('dxdna',{shell:sh,lining:li,shellPat:shP,liningPat:liP,comment:cmt});};}
   $('#edit-finish-go').onclick=()=>runEdit('finish',{sheer:+$('#e-sheer').value,shimmer:+$('#e-shimmer').value,volume:+$('#e-volume').value});
   $('#edit-dl').onclick=()=>{const cur=state.gallery.find(g=>g.id===editShown);download(cur.logoUrl||cur.dataUrl,cur.name+'.png');};
   $('#edit-prev').onclick=()=>{const cur=state.gallery.find(g=>g.id===editShown)||editG;openLightbox(cur.logoUrl||cur.dataUrl);};
@@ -1772,7 +1795,8 @@ async function runEdit(kind,opt){
     else if(sc)prompt+=' SHELL COLOUR — recolour the OUTER shell to '+sc+' as a solid refined commute tone, UNLESS the garment is patterned/printed — if it is patterned, KEEP the existing pattern and do NOT force a solid recolour.';
     if(lIdx)prompt+=' LINING PATTERN — the '+ORD[lIdx]+' provided image is a FABRIC PATTERN swatch; set the INNER LINING to this pattern, revealed ONLY where a lining naturally shows and kept PERFECTLY SYMMETRICAL left-to-right: the under-collar / collar stand (both sides equally) and the inner front facing down BOTH sides of the open placket; add a cuff reveal only if the cuff is genuinely folded, and then equally on both sleeves. Keep it a small-area accent, do NOT apply it to one side only or to a sleeve with no real turn-back, and do NOT put this pattern on the outer shell.';
     else if(lc)prompt+=' LINING COLOUR — this garment HAS an inner lining; render it clearly in '+lc+'. Reveal the lining ONLY where it naturally and visibly shows on THIS garment, and keep the LEFT and RIGHT sides PERFECTLY SYMMETRICAL and identical: primarily the under-collar / collar stand (equally on both sides) and the inner front facing running down BOTH sides of the open placket. Include a cuff reveal ONLY if the cuff is genuinely folded or turned back, and then do it EQUALLY on both sleeves. Do NOT add lining colour to a sleeve, cuff or side that has no real turn-back, do NOT apply it to one side only, and do NOT recolour the outer shell. It should read as a clean, even, deliberate accent in '+lc+' (clearly that colour, not a faint sliver, not patchy or random), while staying small in area. Do NOT line patterned areas — keep any pattern.';
-    if(sc||lc||sIdx||lIdx)prompt+=' Keep all other colours within a refined muted commute palette.';}
+    if(sc||lc||sIdx||lIdx)prompt+=' Keep all other colours within a refined muted commute palette.';
+    if(opt.comment)prompt+=' ADDITIONAL USER DIRECTION — also apply this specific change: '+opt.comment+'. Apply it together with the DNA details above, changing only what this direction asks and keeping the model, pose, background and everything else unchanged.';}
   else prompt=`Keep the garment design, silhouette and model identical. Re-render only the surface finish and padding — fabric sheer: ${sheerText(opt.sheer)}; surface: ${shimmerText(opt.shimmer)}; down fill volume: ${volumeText(opt.volume)}. Keep the original color. PRESERVE the DISCOVERY chest logo EXACTLY — do NOT remove, move, distort or re-draw it.`;
   prompt+=' Do NOT render any brand name, wordmark, caption or lettering anywhere in the image or background (no "DISCOVERY" / "DISCOVERY EXPEDITION" text); the only allowed mark is the small chest logo if already present.';
   const prev=$('#edit-prev');prev.innerHTML=`<div class="load"><div class="spinner"></div><span>수정 중…</span></div>`;
@@ -2014,7 +2038,7 @@ async function exportDataset(){const rows=state.gallery.filter(g=>g.designJSON).
 async function importAll(file){const data=JSON.parse(await file.text());for(const store of['lines','refs','models','fabrics','gallery']){if(Array.isArray(data[store]))for(const it of data[store]){state[store].push(it);await storePut(store,it);}}if(data.settings){Object.assign(state.settings,data.settings);state.settings.id='main';await putOf('settings',state.settings);}renderAll();loadSettingsUI();toast('가져오기 완료');}
 
 /* ---------- wiring ---------- */
-function switchView(v){$$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));$$('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));if(v==='gen')renderPicks();if(v==='gallery')galleryGrid();if(v==='compare')compareSelect();if(v==='settings')loadSettingsUI();}
+function switchView(v){$$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));$$('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));if(v==='gen'){renderPicks();try{renderCmtColorChips();}catch(e){}}if(v==='gallery')galleryGrid();if(v==='compare')compareSelect();if(v==='settings')loadSettingsUI();}
 function bindCloudReload(){const b=$('#btn-cloud-reload');if(b&&!b._b){b._b=1;b.addEventListener('click',reloadCloud);}}
 function renderAll(){bindCloudReload();['lines','refs','models','fabrics'].forEach(libGrid);refreshCounts();renderPicks();renderPills();galleryGrid();compareSelect();}
 function fillSeasonSelects(){$('#season').innerHTML=SEASONS.map(s=>`<option ${s==='27FW'?'selected':''}>${s}</option>`).join('');}
@@ -2169,6 +2193,7 @@ async function afterAuthBoot(){
   try{updateAuthUI();}catch(e){}
   try{setupCategoryOptions();}catch(e){}
   try{if(localStorage.getItem('discovery_commute'))applyCommuteMode(true);}catch(e){}
+  try{renderCmtColorChips();}catch(e){}
 }
 // 스토어별 개별 로드(한 테이블 실패가 나머지를 막지 않게) + 로드 결과 진단
 async function loadStores(){
