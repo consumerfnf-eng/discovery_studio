@@ -181,6 +181,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 .dxchip .sw{width:14px;height:14px;border-radius:50%;border:1px solid rgba(0,0,0,.12)}
 .dxchip.on{border-color:var(--pine);color:var(--pine);font-weight:700;box-shadow:0 0 0 1px var(--pine) inset}
 .dxchip.none .sw{background:repeating-linear-gradient(45deg,#eee,#eee 3px,#fff 3px,#fff 6px)}
+.dxchips.dxdim{opacity:.4;pointer-events:none;filter:grayscale(.6)}
 .thumbchip span{font-size:12px;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .thumbchip button{border:none;background:none;color:var(--alert);cursor:pointer;font-size:12px;padding:0 2px}
 .addarch{border-style:dashed}
@@ -231,7 +232,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <header>
   <div class="bar">
-    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v25-dxdna</small></small></div>
+    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v27-pal</small></small></div>
     <nav id="nav">
       <button data-v="lib" class="on">라이브러리</button>
       <button data-v="gen">생성</button>
@@ -501,6 +502,16 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
       <div class="hint">레퍼런스가 없어도 항상 프롬프트 앞단에 적용됩니다. 필요 시 편집하세요.</div>
     </div>
     <div class="panel" style="margin-top:16px">
+      <div class="sectlabel">시즌 생성 컬러 팔레트 · DX COMMUTE DNA 칼라칩</div>
+      <div class="hint" style="margin-top:4px">매 시즌 컬러표(예: <b>DISCOVERY_27FW_TrendMatched.xls</b>)를 올리면 <b>DX COMMUTE DNA 2차 수정</b>의 겉감·안감 칼라칩이 이 색들로 교체됩니다. <b>HEX</b> 컬럼은 필수, <b>계열·명도</b>(이름) 컬럼이 있으면 칩 라벨로 씁니다. (.xls=HTML표 / .csv 지원)</div>
+      <div class="row" style="margin-top:10px;align-items:center;gap:10px">
+        <label class="btn sm" style="cursor:pointer;margin:0">팔레트 파일 선택<input type="file" id="s-dxpal-file" accept=".xls,.xlsx,.csv,.html,.htm" style="display:none"></label>
+        <span class="chip" id="s-dxpal-count">기본 팔레트 사용 중</span>
+        <button class="btn sm" id="s-dxpal-reset" style="margin-left:auto">기본값으로 초기화</button>
+      </div>
+      <div class="dxchips" id="s-dxpal-prev" style="margin-top:10px"></div>
+    </div>
+    <div class="panel" style="margin-top:16px">
       <div class="row" style="justify-content:space-between"><div class="sectlabel" style="margin:0">공용 저장 · Supabase</div><span id="cloud-status" class="chip">로컬 전용</span></div>
       <div class="hint" style="margin-top:4px">채우면 라이브러리·갤러리가 클라우드에 저장되어 <b>어느 기기에서 열어도 동일</b>하게 뜹니다. 회사 공용은 배포 파일 상단 상수(SUPABASE_URL/KEY)에 직접 넣는 걸 권장합니다. (OpenAI 키·로고는 클라우드에 올리지 않습니다.)</div>
       <div class="row" style="margin-top:12px">
@@ -592,7 +603,31 @@ const CLOUD_STORES=['lines','refs','models','fabrics','gallery','sales','cmt_cc'
 const COORD_COLORS=[['베이지','beige'],['네이비','navy'],['블랙','black'],['그레이','grey'],['카키·올리브','olive'],['브라운','brown'],['화이트','white'],['블루','blue'],['버건디','burgundy']];
 const COMMUTE_PW='cst2026!';
 const DX_PALETTE=[['그린페일','#D0E0D6'],['블루라이트','#AEB1C0'],['레드다크','#782A39'],['핑크페일','#EFC4D5'],['핑크라이트','#E89DA4'],['블루미드','#3850A0'],['퍼플다크','#41354D'],['스카이','#79B5DB'],['틸','#76A7AB'],['블루그레이','#718191'],['블루딥','#4C6A92'],['틸딥','#325E64'],['세이지','#788768'],['그린','#3D7245'],['올리브다크','#4A5335'],['브라운미드','#9B7D65'],['카멜','#836A4C'],['브라운','#703A18'],['브라운다크','#463025'],['레드액센트','#DA3D58'],['레드액센트2','#CD212A'],['화이트','#FFFFFF'],['오프화이트','#F2F0EB'],['아이보리','#EEEDEA'],['페일그레이','#E7E9E7'],['베이지페일','#E0D5C6'],['로즈베이지','#E4CCC6'],['쿨그레이','#CACCCB'],['그레이지','#C2B8A9'],['베이지라이트','#ABA798'],['모브베이지','#A5958F'],['그레이라이트','#979799'],['그레이','#939597'],['그레이미드','#625D5D'],['차콜라이트','#4E545B'],['차콜','#4F5054'],['브라운차콜','#382E2D'],['블랙','#2F2D30'],['네이비','#223A5E'],['네이비딥','#2E344A'],['네이비다크','#22334C'],['네이비잉크','#102341'],['크림','#F5EDD6'],['샌드','#D2C1A5'],['카멜라이트','#C2A28B'],['토프','#B59981'],['베이지','#AF9483']];
-function dxColorName(code){const f=DX_PALETTE.find(x=>x[0]===code);return f?code+' ('+f[1]+')':'';}
+function dxPalette(){return (state.settings&&state.settings.dxPalette&&state.settings.dxPalette.length)?state.settings.dxPalette:DX_PALETTE;}
+function dxColorName(code){if(!code)return '';const f=dxPalette().find(x=>x[1]===code);return f?f[0]+' ('+f[1]+')':code;}
+function isHex6(s){return /^#[0-9a-fA-F]{6}$/.test((s||'').trim());}
+function parseDxPaletteText(text,fname){
+  let rows=[];const isHtml=/<\s*(table|tr|td|th)[ >]/i.test(text);
+  if(isHtml){const doc=new DOMParser().parseFromString(text,'text/html');rows=[...doc.querySelectorAll('tr')].map(tr=>[...tr.querySelectorAll('th,td')].map(td=>td.textContent.replace(/\u00a0/g,' ').trim()));}
+  else{rows=text.split(/\r?\n/).filter(l=>l.trim()).map(l=>l.indexOf('\t')>=0?l.split('\t'):l.split(',')).map(r=>r.map(c=>c.replace(/^"|"$/g,'').trim()));}
+  rows=rows.filter(r=>r&&r.length);
+  if(!rows.length)throw new Error('표를 읽지 못했어요.');
+  const head=rows[0].map(x=>(x||'').toLowerCase());
+  let hexCol=head.findIndex(x=>x.includes('hex'));
+  let nameCol=head.findIndex(x=>x.includes('계열')||x.includes('명도')||x.includes('name')||x.includes('컬러명'));
+  let gradeCol=head.findIndex(x=>x.includes('등급')||x.includes('grade'));
+  const start=(hexCol>=0||rows[0].some(c=>/hex/i.test(c)))?1:0;
+  const out=[],seen=new Set();
+  for(let i=start;i<rows.length;i++){const r=rows[i];if(!r)continue;
+    let hex=hexCol>=0?r[hexCol]:(r.find(c=>isHex6(c))||'');
+    if(!hex)continue;hex=hex.trim();if(!/^#/.test(hex))hex='#'+hex;if(!isHex6(hex))continue;hex=hex.toUpperCase();
+    if(seen.has(hex))continue;seen.add(hex);
+    let nm=nameCol>=0?(r[nameCol]||''):'';nm=nm.replace(/\s+/g,'');
+    out.push([nm||hex,hex]);}
+  if(!out.length)throw new Error('HEX 컬러를 한 개도 찾지 못했어요.');
+  return out;}
+async function applyDxPaletteFile(file){try{const text=await file.text();const pal=parseDxPaletteText(text,file.name);state.settings.dxPalette=pal;await putOf('settings',state.settings);renderDxPalPrev();toast(pal.length+'색 팔레트로 교체됨');}catch(e){toast('팔레트 읽기 실패: '+e.message);}}
+function renderDxPalPrev(){const cnt=$('#s-dxpal-count');const custom=state.settings&&state.settings.dxPalette&&state.settings.dxPalette.length;if(cnt)cnt.textContent=custom?(custom+'색 커스텀 팔레트 적용 중'):'기본 팔레트 사용 중 ('+DX_PALETTE.length+'색)';cnt&&cnt.classList.toggle('pine',!!custom);const pv=$('#s-dxpal-prev');if(pv)pv.innerHTML=dxPalette().map(c=>`<span class="dxchip" title="${c[0]} ${c[1]}"><span class="sw" style="background:${c[1]}"></span>${c[0]}</span>`).join('');}
 const COMMUTE_SLOTS=['cmt_cc','cmt_pt'];
 const SLOT_LABEL={cmt_cc:'CLASSIC & CASUAL',cmt_pt:'PERFORMANCE & TECH'};
 const TABLE_PREFIX='disco_'; // Discovery 전용 테이블 네임스페이스(Duvetica 저장공간과 분리)
@@ -1614,8 +1649,8 @@ function openEdit(gid){
         <button class="btn sm" id="edit-cody-go" style="margin-top:8px">코디 &amp; 디테일 수정 생성</button>
 ${state.commute?`<div class="sectlabel">DX COMMUTE DNA</div>
         <div class="hint" style="margin:2px 0 8px">모델·옷 형태는 유지하고 <b>DISCOVERY NEW COMMUTE DNA</b>를 2차로 입힙니다 — 실버 부자재(지퍼·탭·트림) · 마그네틱 히든스냅+버튼 · 모듈/탈부착 · Explorer 2-way 칼라 · Sculpted 유틸리티 포켓 · 안감 컬러 포인트(겉이 캐주얼하면 안감은 포멀, 겉이 포멀하면 안감에 컬러 액센트). 아래에서 <b>겉감·안감 컬러를 지정 팔레트로</b> 돌려볼 수 있어요. <b>패턴물은 컬러 변경 제외.</b></div>
-        <div class="fld" style="margin-top:4px">겉감 컬러 <span id="dx-shell-sel" style="color:var(--ink-45);font-weight:400"></span></div><div class="dxchips" id="dx-shell-chips"></div>
-        <div class="fld" style="margin-top:10px">안감 컬러(포인트) <span id="dx-lining-sel" style="color:var(--ink-45);font-weight:400"></span></div><div class="dxchips" id="dx-lining-chips"></div>
+        <div class="fld" style="margin-top:4px;display:flex;align-items:center;gap:8px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin:0"><input type="checkbox" id="dx-shell-on"> 겉감(shell) 컬러 변경</label><span id="dx-shell-sel" style="color:var(--ink-45);font-weight:400"></span></div><div class="dxchips" id="dx-shell-chips"></div>
+        <div class="fld" style="margin-top:10px;display:flex;align-items:center;gap:8px"><label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin:0"><input type="checkbox" id="dx-lining-on"> 안감(lining) 컬러 포인트</label><span id="dx-lining-sel" style="color:var(--ink-45);font-weight:400"></span></div><div class="dxchips" id="dx-lining-chips"></div>
         <button class="btn sm primary" id="edit-dxdna-go" style="margin-top:12px">DX COMMUTE DNA 적용</button>`:''}
         <div class="sectlabel">마감 재조절</div>
         <div class="slider-wrap" style="margin-top:6px"><div class="slider-head"><span class="lab">Sheer</span><span class="val" id="e-sheer-v">${editG.sheer}</span></div><input type="range" id="e-sheer" min="0" max="100" value="${editG.sheer}"></div>
@@ -1633,15 +1668,17 @@ ${state.commute?`<div class="sectlabel">DX COMMUTE DNA</div>
   $('#e-volume-h').textContent=volumeHint($('#e-volume').value);
   $('#edit-model-go').onclick=()=>{if(!chosenModel){toast('모델을 선택하세요.');return;}runEdit('model',{modelId:chosenModel});};
   $('#edit-cody-go').onclick=()=>{const t=$('#edit-cody').value.trim();if(!t){toast('변경 내용을 입력하세요.');return;}runEdit('cody',{text:t});};
-  state.dxSel={shell:'',lining:''};
+  state.dxSel={shell:'',lining:''};state.dxOn={shell:false,lining:false};
   function dxChipRow(kind){const el=$('#dx-'+kind+'-chips');if(!el)return;const cur=state.dxSel[kind];
-    el.innerHTML=`<span class="dxchip none ${cur===''?'on':''}" data-dx="${kind}" data-code=""><span class="sw"></span>자동/유지</span>`+DX_PALETTE.map(c=>`<span class="dxchip ${cur===c[0]?'on':''}" data-dx="${kind}" data-code="${c[0]}" title="${c[0]} ${c[1]}"><span class="sw" style="background:${c[1]}"></span>${c[0]}</span>`).join('');
-    const se=$('#dx-'+kind+'-sel');if(se)se.textContent=cur?('· '+dxColorName(cur)):'· 자동/유지';}
+    el.classList.toggle('dxdim',!state.dxOn[kind]);
+    el.innerHTML=`<span class="dxchip none ${cur===''?'on':''}" data-dx="${kind}" data-code=""><span class="sw"></span>자동/유지</span>`+dxPalette().map(c=>`<span class="dxchip ${cur===c[1]?'on':''}" data-dx="${kind}" data-code="${c[1]}" title="${c[0]} ${c[1]}"><span class="sw" style="background:${c[1]}"></span>${c[0]}</span>`).join('');
+    const se=$('#dx-'+kind+'-sel');if(se)se.textContent=!state.dxOn[kind]?'· 변경 안 함':(cur?('· '+dxColorName(cur)):'· 컬러를 선택하세요');}
   function renderDxChips(){dxChipRow('shell');dxChipRow('lining');}
   if(state.commute){renderDxChips();
-    ['shell','lining'].forEach(k=>{const box=$('#dx-'+k+'-chips');if(box)box.addEventListener('click',e=>{const c=e.target.closest('[data-dx]');if(!c)return;state.dxSel[c.dataset.dx]=c.dataset.code||'';renderDxChips();});});
+    ['shell','lining'].forEach(k=>{const box=$('#dx-'+k+'-chips');if(box)box.addEventListener('click',e=>{if(!state.dxOn[k])return;const c=e.target.closest('[data-dx]');if(!c)return;state.dxSel[c.dataset.dx]=c.dataset.code||'';renderDxChips();});
+      const cb=$('#dx-'+k+'-on');if(cb)cb.addEventListener('change',e=>{state.dxOn[k]=e.target.checked;renderDxChips();});});
   }
-  {const db=$('#edit-dxdna-go');if(db)db.onclick=()=>runEdit('dxdna',{shell:state.dxSel.shell||'',lining:state.dxSel.lining||''});}
+  {const db=$('#edit-dxdna-go');if(db)db.onclick=()=>{const sh=(state.dxOn.shell&&state.dxSel.shell)?state.dxSel.shell:'';const li=(state.dxOn.lining&&state.dxSel.lining)?state.dxSel.lining:'';if(state.dxOn.shell&&!state.dxSel.shell){toast('겉감 컬러를 선택하세요.');return;}if(state.dxOn.lining&&!state.dxSel.lining){toast('안감 컬러를 선택하세요.');return;}runEdit('dxdna',{shell:sh,lining:li});};}
   $('#edit-finish-go').onclick=()=>runEdit('finish',{sheer:+$('#e-sheer').value,shimmer:+$('#e-shimmer').value,volume:+$('#e-volume').value});
   $('#edit-dl').onclick=()=>{const cur=state.gallery.find(g=>g.id===editShown);download(cur.logoUrl||cur.dataUrl,cur.name+'.png');};
   $('#edit-prev').onclick=()=>{const cur=state.gallery.find(g=>g.id===editShown)||editG;openLightbox(cur.logoUrl||cur.dataUrl);};
@@ -1655,7 +1692,7 @@ async function runEdit(kind,opt){
   if(kind==='model'){const m=state.models.find(x=>x.id===opt.modelId);imgs.push(m.dataUrl);prompt='Keep the garment in the first image EXACTLY the same (identical design, color, construction). The output MUST depict the exact person from the SECOND image — their face, hair, skin tone and body — replacing the first image model entirely. Only the pose may follow the first image. Clean studio lighting, neutral background. PRESERVE the DISCOVERY chest logo from the first image EXACTLY — same position, size, print style and spelling; do NOT remove, move, distort or re-draw it.';}
   else if(kind==='cody')prompt=`Edit the image to apply this change: ${opt.text}. This may adjust the DISCOVERY garment's OWN details, length, fit or hardware, OR the coordinating items (other clothing, footwear, accessories). Change ONLY what is requested and keep everything else the same — same model, face, pose, framing, background, colour and overall image quality. PRESERVE the DISCOVERY chest logo EXACTLY — same position, size and print style; do NOT remove, move, distort or alter it.`;
   else if(kind==='dxdna')prompt="Use the uploaded image as the exact base. Keep the model's face, hair, body, pose, expression, skin tone, camera, lighting, background and the garment's CATEGORY, overall silhouette and MAIN COLOUR unchanged. This is a DESIGN-DETAIL refinement applying the DISCOVERY NEW COMMUTE DNA, NOT a replacement garment. Apply these DNA details cleanly and minimally: HARDWARE — silver zipper pulls and zip points, silver tabs and silver trims, matte silver/gunmetal, flat, minimal and clearly visible. CLOSURES — magnetic HIDDEN snaps plus clean buttons as the default closure system. MODULAR — subtle detachable/modular elements as standard (e.g. a detachable collar, hood or pocket), integrated and clean, never bulky. EXPLORER COLLAR — a refined 2-way safari/field collar (open = polished classic, closed = stand neck). SCULPTED UTILITY — pockets and seams that tidy the shoulder/waist/hip proportion. ACTION TAILORING — polished clean front, movement construction at back/inside. LINING ACCENT — reveal a subtle glimpse of inner lining at the collar/placket/cuff/hem: if the outer look is CASUAL the lining reads MORE FORMAL as the point, if the outer is FORMAL the lining carries a refined COLOUR ACCENT; keep it tasteful and small-dose. COLOUR — keep every colour within a refined DISCOVERY NEW COMMUTE commute palette (muted, sophisticated tones); do NOT introduce loud off-palette colours. Do NOT add any brand name, wordmark, caption or lettering anywhere in the image. Preserve the small DISCOVERY chest logo if present. Maintain photorealistic high-end fashion campaign quality.";
-  if(kind==='dxdna'){const sc=opt.shell?dxColorName(opt.shell):'',lc=opt.lining?dxColorName(opt.lining):'';if(sc)prompt+=' SHELL COLOUR — recolour the OUTER shell to '+sc+' as a solid refined commute tone, UNLESS the garment is patterned/printed — if it is patterned, KEEP the existing pattern and do NOT force a solid recolour.';if(lc)prompt+=' LINING COLOUR — set the inner lining to '+lc+' shown as a subtle accent at collar/placket/cuff/hem.';if(sc||lc)prompt+=' Use ONLY these specified palette colours for the parts named; keep all other colours within a refined muted commute palette.';}
+  if(kind==='dxdna'){const sc=opt.shell?dxColorName(opt.shell):'',lc=opt.lining?dxColorName(opt.lining):'';if(sc)prompt+=' SHELL COLOUR — recolour the OUTER shell to '+sc+' as a solid refined commute tone, UNLESS the garment is patterned/printed — if it is patterned, KEEP the existing pattern and do NOT force a solid recolour.';if(lc)prompt+=' LINING COLOUR — this garment HAS an inner lining; render it clearly in '+lc+'. Make the lining genuinely visible as a deliberate colour accent exactly where a lining naturally shows: the under-collar and collar flip, the inner front facing along the open zip/placket, the turned-back cuff, and the inner hem. It should read as a confident, recognisable band of '+lc+' (clearly that colour, not a faint sliver), while staying a small-area accent. Do NOT recolour the outer shell with the lining colour and do NOT line patterned areas — keep any pattern.';if(sc||lc)prompt+=' Use ONLY these specified palette colours for the parts named; keep all other colours within a refined muted commute palette.';}
   else prompt=`Keep the garment design, silhouette and model identical. Re-render only the surface finish and padding — fabric sheer: ${sheerText(opt.sheer)}; surface: ${shimmerText(opt.shimmer)}; down fill volume: ${volumeText(opt.volume)}. Keep the original color. PRESERVE the DISCOVERY chest logo EXACTLY — do NOT remove, move, distort or re-draw it.`;
   prompt+=' Do NOT render any brand name, wordmark, caption or lettering anywhere in the image or background (no "DISCOVERY" / "DISCOVERY EXPEDITION" text); the only allowed mark is the small chest logo if already present.';
   const prev=$('#edit-prev');prev.innerHTML=`<div class="load"><div class="spinner"></div><span>수정 중…</span></div>`;
@@ -1860,7 +1897,7 @@ function loadSettingsUI(){const s=state.settings;
   $('#s-logopos').value=s.logoPos;$('#s-logocolor').value=s.logoColor;$('#s-logosize').value=s.logoSize;$('#s-logodefault').checked=s.logoDefault!==false;$('#s-dna').value=s.brandDNA||'';$('#s-basemodel').value=s.baseModelPrompt||'';$('#s-gencount').value=s.genCount||2;$('#gen-n').value=s.genCount||2;
   $('#s-supaurl').value=SUPABASE_URL||s.supaUrl||'';$('#s-supakey').value=SUPABASE_ANON_KEY||s.supaKey||'';$('#s-supabucket').value=SUPABASE_BUCKET||s.supaBucket||'discovery-studio';
   if(SUPABASE_URL){$('#s-supaurl').disabled=true;$('#s-supakey').placeholder='(배포 상수 사용 중)';}
-  renderCloudStatus();renderLogoPrev();updateKeyDot();updateAuthUI();const se=$('#s-sales');if(se)se.value=state.salesRaw||'';}
+  renderCloudStatus();renderLogoPrev();updateKeyDot();updateAuthUI();renderDxPalPrev();const se=$('#s-sales');if(se)se.value=state.salesRaw||'';}
 function renderCloudStatus(){const el=$('#cloud-status');if(!el)return;const on=cloudOn();el.textContent=on?'클라우드 연결됨':'로컬 전용';el.className='chip'+(on?' pine':'');}
 function renderLogoPrev(){$('#logo-prev').innerHTML=state.settings.logoDataUrl?`<img src="${state.settings.logoDataUrl}" style="max-height:60px;max-width:180px">`:`<span class="hint">이미지 없음 — 워드마크 텍스트로 합성</span>`;}
 function updateKeyDot(){const has=!!state.settings.apiKey;$('#keydot').classList.toggle('ok',has);$('#keylabel').textContent=has?'키 설정됨':'키 미설정';}
@@ -1991,6 +2028,8 @@ function wire(){
   $('#modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal();});
   $('#lightbox').addEventListener('click',()=>$('#lightbox').classList.remove('on'));
   $('#btn-savesettings').addEventListener('click',saveSettings);
+  {const pf=$('#s-dxpal-file');if(pf)pf.addEventListener('change',e=>{const f=e.target.files[0];if(f)applyDxPaletteFile(f);e.target.value='';});
+   const pr=$('#s-dxpal-reset');if(pr)pr.addEventListener('click',async()=>{delete state.settings.dxPalette;await putOf('settings',state.settings);renderDxPalPrev();toast('기본 팔레트로 초기화됨');});}
   $('#btn-cloudtest').addEventListener('click',cloudTest);
   $('#btn-cloudmigrate').addEventListener('click',migrateToCloud);
   $('#btn-sales-apply').addEventListener('click',applySales);
