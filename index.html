@@ -176,6 +176,11 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 .pickbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px}
 .thumbchip{display:flex;align-items:center;gap:7px;background:var(--white);border:1px solid var(--line);border-radius:10px;padding:5px 9px 5px 5px}
 .thumbchip img{width:34px;height:44px;object-fit:cover;border-radius:6px}
+.dxchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.dxchip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:20px;padding:3px 9px 3px 4px;font-size:10.5px;color:var(--ink-70);background:var(--white);cursor:pointer;transition:.12s}
+.dxchip .sw{width:14px;height:14px;border-radius:50%;border:1px solid rgba(0,0,0,.12)}
+.dxchip.on{border-color:var(--pine);color:var(--pine);font-weight:700;box-shadow:0 0 0 1px var(--pine) inset}
+.dxchip.none .sw{background:repeating-linear-gradient(45deg,#eee,#eee 3px,#fff 3px,#fff 6px)}
 .thumbchip span{font-size:12px;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .thumbchip button{border:none;background:none;color:var(--alert);cursor:pointer;font-size:12px;padding:0 2px}
 .addarch{border-style:dashed}
@@ -226,7 +231,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <header>
   <div class="bar">
-    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v23-dxdna</small></small></div>
+    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v24-dxdna</small></small></div>
     <nav id="nav">
       <button data-v="lib" class="on">라이브러리</button>
       <button data-v="gen">생성</button>
@@ -1607,7 +1612,11 @@ function openEdit(gid){
         <button class="btn sm" id="edit-model-go" style="margin-top:8px">선택 모델로 재생성</button>
         <div class="sectlabel">코디 변경 &amp; 디테일 수정</div><input id="edit-cody" class="inp" placeholder="예: 아우터 기장을 엉덩이까지 · 소매 롱하게 · 와이드 데님 코디">
         <button class="btn sm" id="edit-cody-go" style="margin-top:8px">코디 &amp; 디테일 수정 생성</button>
-${state.commute?`<div class="sectlabel">DX COMMUTE DNA</div><div class="hint" style="margin:2px 0 6px">실버 부자재·모듈/탈부착·마그네틱 히든스냅·Explorer 칼라·안감 포인트를 2차로 입힙니다. 겉감/안감 컬러를 지정 팔레트에서 돌려볼 수 있어요 — 패턴물은 컬러 변경 제외.</div><div class="row" style="gap:8px"><div style="flex:1"><label class="fld">겉감 컬러</label><select id="dx-shell" class="inp"></select></div><div style="flex:1"><label class="fld">안감 컬러</label><select id="dx-lining" class="inp"></select></div></div><button class="btn sm primary" id="edit-dxdna-go" style="margin-top:8px">DX COMMUTE DNA 적용</button>`:''}
+${state.commute?`<div class="sectlabel">DX COMMUTE DNA</div>
+        <div class="hint" style="margin:2px 0 8px">모델·옷 형태는 유지하고 <b>DISCOVERY NEW COMMUTE DNA</b>를 2차로 입힙니다 — 실버 부자재(지퍼·탭·트림) · 마그네틱 히든스냅+버튼 · 모듈/탈부착 · Explorer 2-way 칼라 · Sculpted 유틸리티 포켓 · 안감 컬러 포인트(겉이 캐주얼하면 안감은 포멀, 겉이 포멀하면 안감에 컬러 액센트). 아래에서 <b>겉감·안감 컬러를 지정 팔레트로</b> 돌려볼 수 있어요. <b>패턴물은 컬러 변경 제외.</b></div>
+        <div class="fld" style="margin-top:4px">겉감 컬러 <span id="dx-shell-sel" style="color:var(--ink-45);font-weight:400"></span></div><div class="dxchips" id="dx-shell-chips"></div>
+        <div class="fld" style="margin-top:10px">안감 컬러(포인트) <span id="dx-lining-sel" style="color:var(--ink-45);font-weight:400"></span></div><div class="dxchips" id="dx-lining-chips"></div>
+        <button class="btn sm primary" id="edit-dxdna-go" style="margin-top:12px">DX COMMUTE DNA 적용</button>`:''}
         <div class="sectlabel">마감 재조절</div>
         <div class="slider-wrap" style="margin-top:6px"><div class="slider-head"><span class="lab">Sheer</span><span class="val" id="e-sheer-v">${editG.sheer}</span></div><input type="range" id="e-sheer" min="0" max="100" value="${editG.sheer}"></div>
         <div class="slider-wrap"><div class="slider-head"><span class="lab">Shimmer 광택</span><span class="val" id="e-shimmer-v">${editG.shimmer}</span></div><input type="range" id="e-shimmer" min="0" max="100" value="${editG.shimmer}"></div>
@@ -1624,8 +1633,15 @@ ${state.commute?`<div class="sectlabel">DX COMMUTE DNA</div><div class="hint" st
   $('#e-volume-h').textContent=volumeHint($('#e-volume').value);
   $('#edit-model-go').onclick=()=>{if(!chosenModel){toast('모델을 선택하세요.');return;}runEdit('model',{modelId:chosenModel});};
   $('#edit-cody-go').onclick=()=>{const t=$('#edit-cody').value.trim();if(!t){toast('변경 내용을 입력하세요.');return;}runEdit('cody',{text:t});};
-  {const sh=$('#dx-shell'),ln=$('#dx-lining');if(sh&&ln){const opt='<option value="">자동/유지</option>'+DX_PALETTE.map(c=>`<option value="${c[0]}">${c[0]} ${c[1]}</option>`).join('');sh.innerHTML=opt;ln.innerHTML=opt;}}
-  {const db=$('#edit-dxdna-go');if(db)db.onclick=()=>runEdit('dxdna',{shell:(($('#dx-shell')||{}).value)||'',lining:(($('#dx-lining')||{}).value)||''});}
+  state.dxSel={shell:'',lining:''};
+  function dxChipRow(kind){const el=$('#dx-'+kind+'-chips');if(!el)return;const cur=state.dxSel[kind];
+    el.innerHTML=`<span class="dxchip none ${cur===''?'on':''}" data-dx="${kind}" data-code=""><span class="sw"></span>자동/유지</span>`+DX_PALETTE.map(c=>`<span class="dxchip ${cur===c[0]?'on':''}" data-dx="${kind}" data-code="${c[0]}" title="${c[0]} ${c[1]}"><span class="sw" style="background:${c[1]}"></span>${c[0]}</span>`).join('');
+    const se=$('#dx-'+kind+'-sel');if(se)se.textContent=cur?('· '+dxColorName(cur)):'· 자동/유지';}
+  function renderDxChips(){dxChipRow('shell');dxChipRow('lining');}
+  if(state.commute){renderDxChips();
+    ['shell','lining'].forEach(k=>{const box=$('#dx-'+k+'-chips');if(box)box.addEventListener('click',e=>{const c=e.target.closest('[data-dx]');if(!c)return;state.dxSel[c.dataset.dx]=c.dataset.code||'';renderDxChips();});});
+  }
+  {const db=$('#edit-dxdna-go');if(db)db.onclick=()=>runEdit('dxdna',{shell:state.dxSel.shell||'',lining:state.dxSel.lining||''});}
   $('#edit-finish-go').onclick=()=>runEdit('finish',{sheer:+$('#e-sheer').value,shimmer:+$('#e-shimmer').value,volume:+$('#e-volume').value});
   $('#edit-dl').onclick=()=>{const cur=state.gallery.find(g=>g.id===editShown);download(cur.logoUrl||cur.dataUrl,cur.name+'.png');};
   $('#edit-prev').onclick=()=>{const cur=state.gallery.find(g=>g.id===editShown)||editG;openLightbox(cur.logoUrl||cur.dataUrl);};
