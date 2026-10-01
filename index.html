@@ -226,7 +226,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <header>
   <div class="bar">
-    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v21</small></small></div>
+    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v23-dxdna</small></small></div>
     <nav id="nav">
       <button data-v="lib" class="on">라이브러리</button>
       <button data-v="gen">생성</button>
@@ -586,6 +586,8 @@ const SUPABASE_BUCKET='discovery-studio';
 const CLOUD_STORES=['lines','refs','models','fabrics','gallery','sales','cmt_cc','cmt_pt','cmt_cody','cmt_gallery']; // settings는 개인 로컬 유지
 const COORD_COLORS=[['베이지','beige'],['네이비','navy'],['블랙','black'],['그레이','grey'],['카키·올리브','olive'],['브라운','brown'],['화이트','white'],['블루','blue'],['버건디','burgundy']];
 const COMMUTE_PW='cst2026!';
+const DX_PALETTE=[['LPS','#DEBAC4'],['BLS','#A5C2D5'],['IVL','#B7ABC8'],['TQL','#264D58'],['BLL','#9FCADB'],['LPL','#EBC0CE'],['MTS','#9FC5B8'],['LDS','#A1A4CF'],['BDD','#5C2733'],['CRL','#F7A794'],['IVS','#D4CFC2'],['BES','#B9AC97'],['NBS','#D4B198'],['BGL','#A69B83'],['BGS','#978D65'],['SAD','#87796A'],['BRD','#5E442E'],['DWS','#493A2F'],['CGS','#685E61'],['IVM','#F5EEE4'],['MGL','#D1CED4'],['MGS','#9996A7'],['MGD','#565661'],['MDS','#434449'],['GRL','#D4D8DE'],['GRD','#5E5E67'],['DGS','#443F46'],['CGD','#3E3A42'],['NYL','#4E5862'],['DGL','#3C4550'],['DNS','#262F3A'],['WHS','#F2EEE7'],['BKS','#2B2C31'],['SAS','#A08D7A'],['INS','#1B344F'],['WID','#472F34'],['NYD','#253445'],['KAS','#585740'],['CRD','#F4EDE4']];
+function dxColorName(code){const f=DX_PALETTE.find(x=>x[0]===code);return f?code+' ('+f[1]+')':'';}
 const COMMUTE_SLOTS=['cmt_cc','cmt_pt'];
 const SLOT_LABEL={cmt_cc:'CLASSIC & CASUAL',cmt_pt:'PERFORMANCE & TECH'};
 const TABLE_PREFIX='disco_'; // Discovery 전용 테이블 네임스페이스(Duvetica 저장공간과 분리)
@@ -1142,6 +1144,7 @@ function jsonToPrompt(J,plan){
   S.push('FUR RULE — if the base or reference garment already has a fur collar, fur hood-trim or fur placket, keep ONLY that existing fur exactly as-is; do NOT add a second, additional or different fur collar/trim, and never layer new fur over existing fur. Add fur only when the garment has none AND it is explicitly requested.');
   S.push('Soft COOL GREY-BLUE seamless studio backdrop, soft diffused directional studio lighting with a gentle natural drop shadow and even, true-to-fabric colour; calm premium editorial lookbook mood, photorealistic, sharp premium detail.');
   S.push('CLEAN LINES — the entire garment must have clean, crisp, WRINKLE-FREE lines and smooth tailored surfaces; no creasing, wrinkling or rumpling anywhere.');
+  S.push('NO TEXT IN SCENE — do NOT render any brand name, wordmark, caption, watermark or lettering anywhere in the image or background (in particular NO "DISCOVERY" or "DISCOVERY EXPEDITION" text at the bottom). The ONLY permitted mark is the small chest logo when a logo reference is provided.');
   return S.join(' ');
 }
 function rolesToText(roles){return roles.map((r,i)=>`image ${i+1}: ${r}`).join('. ');}
@@ -1604,6 +1607,7 @@ function openEdit(gid){
         <button class="btn sm" id="edit-model-go" style="margin-top:8px">선택 모델로 재생성</button>
         <div class="sectlabel">코디 변경 &amp; 디테일 수정</div><input id="edit-cody" class="inp" placeholder="예: 아우터 기장을 엉덩이까지 · 소매 롱하게 · 와이드 데님 코디">
         <button class="btn sm" id="edit-cody-go" style="margin-top:8px">코디 &amp; 디테일 수정 생성</button>
+${state.commute?`<div class="sectlabel">DX COMMUTE DNA</div><div class="hint" style="margin:2px 0 6px">실버 부자재·모듈/탈부착·마그네틱 히든스냅·Explorer 칼라·안감 포인트를 2차로 입힙니다. 겉감/안감 컬러를 지정 팔레트에서 돌려볼 수 있어요 — 패턴물은 컬러 변경 제외.</div><div class="row" style="gap:8px"><div style="flex:1"><label class="fld">겉감 컬러</label><select id="dx-shell" class="inp"></select></div><div style="flex:1"><label class="fld">안감 컬러</label><select id="dx-lining" class="inp"></select></div></div><button class="btn sm primary" id="edit-dxdna-go" style="margin-top:8px">DX COMMUTE DNA 적용</button>`:''}
         <div class="sectlabel">마감 재조절</div>
         <div class="slider-wrap" style="margin-top:6px"><div class="slider-head"><span class="lab">Sheer</span><span class="val" id="e-sheer-v">${editG.sheer}</span></div><input type="range" id="e-sheer" min="0" max="100" value="${editG.sheer}"></div>
         <div class="slider-wrap"><div class="slider-head"><span class="lab">Shimmer 광택</span><span class="val" id="e-shimmer-v">${editG.shimmer}</span></div><input type="range" id="e-shimmer" min="0" max="100" value="${editG.shimmer}"></div>
@@ -1620,6 +1624,8 @@ function openEdit(gid){
   $('#e-volume-h').textContent=volumeHint($('#e-volume').value);
   $('#edit-model-go').onclick=()=>{if(!chosenModel){toast('모델을 선택하세요.');return;}runEdit('model',{modelId:chosenModel});};
   $('#edit-cody-go').onclick=()=>{const t=$('#edit-cody').value.trim();if(!t){toast('변경 내용을 입력하세요.');return;}runEdit('cody',{text:t});};
+  {const sh=$('#dx-shell'),ln=$('#dx-lining');if(sh&&ln){const opt='<option value="">자동/유지</option>'+DX_PALETTE.map(c=>`<option value="${c[0]}">${c[0]} ${c[1]}</option>`).join('');sh.innerHTML=opt;ln.innerHTML=opt;}}
+  {const db=$('#edit-dxdna-go');if(db)db.onclick=()=>runEdit('dxdna',{shell:(($('#dx-shell')||{}).value)||'',lining:(($('#dx-lining')||{}).value)||''});}
   $('#edit-finish-go').onclick=()=>runEdit('finish',{sheer:+$('#e-sheer').value,shimmer:+$('#e-shimmer').value,volume:+$('#e-volume').value});
   $('#edit-dl').onclick=()=>{const cur=state.gallery.find(g=>g.id===editShown);download(cur.logoUrl||cur.dataUrl,cur.name+'.png');};
   $('#edit-prev').onclick=()=>{const cur=state.gallery.find(g=>g.id===editShown)||editG;openLightbox(cur.logoUrl||cur.dataUrl);};
@@ -1632,11 +1638,14 @@ async function runEdit(kind,opt){
   const cur=state.gallery.find(g=>g.id===editShown)||editG;const curImg=Array.isArray(cur.dataUrl)?cur.dataUrl[0]:cur.dataUrl;let prompt,imgs=[curImg];
   if(kind==='model'){const m=state.models.find(x=>x.id===opt.modelId);imgs.push(m.dataUrl);prompt='Keep the garment in the first image EXACTLY the same (identical design, color, construction). The output MUST depict the exact person from the SECOND image — their face, hair, skin tone and body — replacing the first image model entirely. Only the pose may follow the first image. Clean studio lighting, neutral background. PRESERVE the DISCOVERY chest logo from the first image EXACTLY — same position, size, print style and spelling; do NOT remove, move, distort or re-draw it.';}
   else if(kind==='cody')prompt=`Edit the image to apply this change: ${opt.text}. This may adjust the DISCOVERY garment's OWN details, length, fit or hardware, OR the coordinating items (other clothing, footwear, accessories). Change ONLY what is requested and keep everything else the same — same model, face, pose, framing, background, colour and overall image quality. PRESERVE the DISCOVERY chest logo EXACTLY — same position, size and print style; do NOT remove, move, distort or alter it.`;
+  else if(kind==='dxdna')prompt="Use the uploaded image as the exact base. Keep the model's face, hair, body, pose, expression, skin tone, camera, lighting, background and the garment's CATEGORY, overall silhouette and MAIN COLOUR unchanged. This is a DESIGN-DETAIL refinement applying the DISCOVERY NEW COMMUTE DNA, NOT a replacement garment. Apply these DNA details cleanly and minimally: HARDWARE — silver zipper pulls and zip points, silver tabs and silver trims, matte silver/gunmetal, flat, minimal and clearly visible. CLOSURES — magnetic HIDDEN snaps plus clean buttons as the default closure system. MODULAR — subtle detachable/modular elements as standard (e.g. a detachable collar, hood or pocket), integrated and clean, never bulky. EXPLORER COLLAR — a refined 2-way safari/field collar (open = polished classic, closed = stand neck). SCULPTED UTILITY — pockets and seams that tidy the shoulder/waist/hip proportion. ACTION TAILORING — polished clean front, movement construction at back/inside. LINING ACCENT — reveal a subtle glimpse of inner lining at the collar/placket/cuff/hem: if the outer look is CASUAL the lining reads MORE FORMAL as the point, if the outer is FORMAL the lining carries a refined COLOUR ACCENT; keep it tasteful and small-dose. COLOUR — keep every colour within a refined DISCOVERY NEW COMMUTE commute palette (muted, sophisticated tones); do NOT introduce loud off-palette colours. Do NOT add any brand name, wordmark, caption or lettering anywhere in the image. Preserve the small DISCOVERY chest logo if present. Maintain photorealistic high-end fashion campaign quality.";
+  if(kind==='dxdna'){const sc=opt.shell?dxColorName(opt.shell):'',lc=opt.lining?dxColorName(opt.lining):'';if(sc)prompt+=' SHELL COLOUR — recolour the OUTER shell to '+sc+' as a solid refined commute tone, UNLESS the garment is patterned/printed — if it is patterned, KEEP the existing pattern and do NOT force a solid recolour.';if(lc)prompt+=' LINING COLOUR — set the inner lining to '+lc+' shown as a subtle accent at collar/placket/cuff/hem.';if(sc||lc)prompt+=' Use ONLY these specified palette colours for the parts named; keep all other colours within a refined muted commute palette.';}
   else prompt=`Keep the garment design, silhouette and model identical. Re-render only the surface finish and padding — fabric sheer: ${sheerText(opt.sheer)}; surface: ${shimmerText(opt.shimmer)}; down fill volume: ${volumeText(opt.volume)}. Keep the original color. PRESERVE the DISCOVERY chest logo EXACTLY — do NOT remove, move, distort or re-draw it.`;
+  prompt+=' Do NOT render any brand name, wordmark, caption or lettering anywhere in the image or background (no "DISCOVERY" / "DISCOVERY EXPEDITION" text); the only allowed mark is the small chest logo if already present.';
   const prev=$('#edit-prev');prev.innerHTML=`<div class="load"><div class="spinner"></div><span>수정 중…</span></div>`;
   try{
     const raw=(await openaiEdit(prompt,imgs))[0];const logoUrl=state.settings.logoDefault?await applyLogo(raw):raw;const root=editG.parentId||editG.id;
-    const ng={id:uid(),name:cur.name+' ·'+(kind==='model'?'M':kind==='cody'?'C':'F'),season:cur.season,dataUrl:raw,logoUrl,
+    const ng={id:uid(),name:cur.name+' ·'+(kind==='model'?'M':kind==='cody'?'C':kind==='dxdna'?'DX':'F'),season:cur.season,dataUrl:raw,logoUrl,
       sourceLineId:cur.sourceLineId,refIds:cur.refIds,modelId:kind==='model'?opt.modelId:cur.modelId,fabricId:cur.fabricId,
       category:cur.category,keep:cur.keep,replace:cur.replace,adopt:cur.adopt,
       sheer:kind==='finish'?opt.sheer:cur.sheer,shimmer:kind==='finish'?opt.shimmer:cur.shimmer,volume:kind==='finish'?opt.volume:cur.volume,balance:cur.balance,
