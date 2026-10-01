@@ -233,7 +233,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <header>
   <div class="bar">
-    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v36-logofix</small></small></div>
+    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v37-trendsync</small></small></div>
     <nav id="nav">
       <button data-v="lib" class="on">라이브러리</button>
       <button data-v="gen">생성</button>
@@ -654,18 +654,18 @@ async function applyDxPaletteFile(file,season){season=(season||'').trim();if(!se
   try{const text=await file.text();const pal=parseDxPaletteText(text,file.name);normalizeDxPalettes();
     let arr=state.settings.dxPalettes.filter(p=>p.season!==season);arr.push({season,pal});if(arr.length>2)arr=arr.slice(arr.length-2);
     state.settings.dxPalettes=arr;state.settings.dxPaletteActive=season;
-    await putOf('settings',state.settings);renderDxPalPrev();toast(season+' 팔레트 '+pal.length+'색 저장됨 · 최신 2개 시즌만 유지');
+    await putOf('settings',state.settings);saveTrendCloud();renderDxPalPrev();toast(season+' 팔레트 '+pal.length+'색 저장됨 · 최신 2개 시즌만 유지');
     const si=$('#s-dxpal-season');if(si)si.value='';
   }catch(e){toast('팔레트 읽기 실패: '+e.message);}}
-function setActiveSeason(season){normalizeDxPalettes();if(!dxPalettes().some(p=>p.season===season))return;state.settings.dxPaletteActive=season;putOf('settings',state.settings);renderDxPalPrev();}
-async function delDxSeason(season){normalizeDxPalettes();state.settings.dxPalettes=state.settings.dxPalettes.filter(p=>p.season!==season);if(state.settings.dxPaletteActive===season)state.settings.dxPaletteActive=dxPalettes().length?dxPalettes()[dxPalettes().length-1].season:'';await putOf('settings',state.settings);renderDxPalPrev();toast(season+' 삭제됨');}
+function setActiveSeason(season){normalizeDxPalettes();if(!dxPalettes().some(p=>p.season===season))return;state.settings.dxPaletteActive=season;putOf('settings',state.settings);saveTrendCloud();renderDxPalPrev();}
+async function delDxSeason(season){normalizeDxPalettes();state.settings.dxPalettes=state.settings.dxPalettes.filter(p=>p.season!==season);if(state.settings.dxPaletteActive===season)state.settings.dxPaletteActive=dxPalettes().length?dxPalettes()[dxPalettes().length-1].season:'';await putOf('settings',state.settings);saveTrendCloud();renderDxPalPrev();toast(season+' 삭제됨');}
 function renderDxPalPrev(){normalizeDxPalettes();const ps=dxPalettes();const act=activeSeason();
   const sl=$('#s-dxpal-seasons');if(sl){sl.innerHTML=ps.length?ps.map(p=>`<span class="dxchip ${p.season===act?'on':''}" data-season="${esc(p.season)}" title="클릭=활성 전환">${esc(p.season)} · ${p.pal.length}색 <b data-delseason="${esc(p.season)}" style="margin-left:5px;color:var(--alert);cursor:pointer">✕</b></span>`).join(''):'<span class="hint" style="margin:0">저장된 시즌 없음 — 내장 기본 팔레트 사용 중</span>';}
   const cnt=$('#s-dxpal-count');if(cnt){cnt.textContent=ps.length?('활성: '+act+' ('+dxPalette().length+'색) · 저장 '+ps.length+'/2'):'기본 팔레트 사용 중 ('+DX_PALETTE.length+'색)';cnt.classList.toggle('pine',!!ps.length);}
   const pv=$('#s-dxpal-prev');if(pv)pv.innerHTML=dxPalette().map(c=>`<span class="dxchip" title="${c[0]} ${c[1]}"><span class="sw" style="background:${c[1]}"></span>${c[0]}</span>`).join('');}
 function dxPatterns(){const b=(typeof DX_PATTERNS!=='undefined'?DX_PATTERNS:[]).map((p,i)=>({id:'b'+i,name:p[0],dataUrl:p[1],builtin:true}));const u=(state.settings&&Array.isArray(state.settings.dxPatterns))?state.settings.dxPatterns:[];return b.concat(u);}
-async function applyDxPatternFiles(files){try{let n=0;for(const f of files){if(f.type&&!/^image\//.test(f.type))continue;const du=await resizeDataUrl(await fileToDataUrl(f),768);const nm=((f.name||'pattern').replace(/\.[^.]+$/,'')||'pattern').slice(0,20);if(!state.settings.dxPatterns)state.settings.dxPatterns=[];state.settings.dxPatterns.push({id:uid(),name:nm,dataUrl:du});n++;}await putOf('settings',state.settings);renderDxPatGrid();toast(n+'개 패턴 추가됨');}catch(e){toast('패턴 추가 실패: '+e.message);}}
-async function delDxPattern(id){if(!state.settings.dxPatterns)return;state.settings.dxPatterns=state.settings.dxPatterns.filter(p=>p.id!==id);await putOf('settings',state.settings);renderDxPatGrid();}
+async function applyDxPatternFiles(files){try{let n=0;for(const f of files){if(f.type&&!/^image\//.test(f.type))continue;const du=await resizeDataUrl(await fileToDataUrl(f),768);const nm=((f.name||'pattern').replace(/\.[^.]+$/,'')||'pattern').slice(0,20);if(!state.settings.dxPatterns)state.settings.dxPatterns=[];state.settings.dxPatterns.push({id:uid(),name:nm,dataUrl:du});n++;}await putOf('settings',state.settings);saveTrendCloud();renderDxPatGrid();toast(n+'개 패턴 추가됨');}catch(e){toast('패턴 추가 실패: '+e.message);}}
+async function delDxPattern(id){if(!state.settings.dxPatterns)return;state.settings.dxPatterns=state.settings.dxPatterns.filter(p=>p.id!==id);await putOf('settings',state.settings);saveTrendCloud();renderDxPatGrid();}
 function renderDxPatGrid(){const pats=dxPatterns();const nb=pats.filter(p=>p.builtin).length,nu=pats.length-nb;const cnt=$('#s-dxpat-count');if(cnt)cnt.textContent='패턴 '+pats.length+'개 (기본 '+nb+' · 추가 '+nu+')';const g=$('#s-dxpat-grid');if(!g)return;g.innerHTML=pats.length?pats.map(p=>`<div class="card" style="position:relative"><span class="thumb" style="background-image:url('${thumb(p.dataUrl)}');aspect-ratio:1"></span><div style="font-size:10px;text-align:center;padding:2px 2px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.name)}</div>${p.builtin?'<span style="position:absolute;top:3px;right:3px;font-size:9px;background:var(--line);color:var(--ink-70);padding:0 4px;border-radius:4px">기본</span>':`<button class="btn sm ghost" data-delpat="${p.id}" style="position:absolute;top:3px;right:3px;padding:0 6px;font-size:11px;line-height:1.6">✕</button>`}</div>`).join(''):'<div class="hint">등록된 패턴이 없습니다.</div>';}
 const COMMUTE_SLOTS=['cmt_cc','cmt_pt'];
 const SLOT_LABEL={cmt_cc:'CLASSIC & CASUAL',cmt_pt:'PERFORMANCE & TECH'};
@@ -2022,6 +2022,29 @@ async function loadUserCloudSettings(){
     if(mine){USER_CFG_FIELDS.forEach(k=>{if(mine[k]!=null&&mine[k]!=='')state.settings[k]=k==='apiKey'?cleanKey(mine[k]):mine[k];});}
   }catch(e){/* 테이블 없으면 무시 */}
 }
+/* ── Trend 컬러·패턴: 계정별 저장, 지정 두 계정은 공유 ── */
+const TREND_SHARED_EMAILS=['jin@fnfcorp.com','jisoo07@fnfcorp.com'];
+function trendKey(){const e=(authEmail()||'').toLowerCase();if(TREND_SHARED_EMAILS.includes(e))return 'trend_shared';return 'trend_'+(ownerId()||e||'local');}
+async function saveTrendCloud(){
+  if(!(cloudOn()&&ownerId()))return;
+  const data={dxPalettes:state.settings.dxPalettes||[],dxPatterns:state.settings.dxPatterns||[],dxPaletteActive:state.settings.dxPaletteActive||''};
+  try{await supaUpsert('trend',{id:trendKey(),data});}catch(e){if(!window._trendTblWarned){window._trendTblWarned=true;toast('trend 테이블(disco_trend)이 아직 없어 로컬에만 저장됩니다. Supabase에서 disco_trend_table.sql을 실행하면 계정 간 공유됩니다.');}}
+}
+async function loadTrendCloud(){
+  if(!(cloudOn()&&ownerId()))return;
+  try{
+    await ensureAuth();const c=supaCfg();
+    const r=await fetch(`${c.url}/rest/v1/${tbl('trend')}?id=eq.${encodeURIComponent(trendKey())}&select=data`,{headers:{apikey:c.key,Authorization:`Bearer ${bearer()}`}});
+    if(!r.ok)return;const rows=await r.json();const d=rows[0]&&rows[0].data;
+    if(d){
+      if(Array.isArray(d.dxPalettes))state.settings.dxPalettes=d.dxPalettes;
+      if(Array.isArray(d.dxPatterns))state.settings.dxPatterns=d.dxPatterns;
+      if(d.dxPaletteActive)state.settings.dxPaletteActive=d.dxPaletteActive;
+      try{await putOf('settings',state.settings);}catch(e){}
+      try{renderDxPalPrev();}catch(e){}try{renderDxPatGrid();}catch(e){}try{renderCmtColorChips();}catch(e){}
+    }
+  }catch(e){/* 테이블 없으면 무시 */}
+}
 async function saveSettings(){const s=state.settings;
   s.apiKey=cleanKey($('#s-key').value);s.model=$('#s-model').value.trim()||'gpt-image-1';s.size=$('#s-size').value;s.quality=$('#s-quality').value;s.vision=$('#s-vision').value.trim();s.base=$('#s-base').value.trim()||'https://api.openai.com/v1';
   s.logoPos=$('#s-logopos').value;s.logoColor=$('#s-logocolor').value;s.logoSize=+$('#s-logosize').value||15;s.logoDefault=$('#s-logodefault').checked;s.brandDNA=$('#s-dna').value.trim();s.baseModelPrompt=$('#s-basemodel').value.trim();s.genCount=+$('#s-gencount').value||2;
@@ -2135,7 +2158,7 @@ function wire(){
   $('#btn-savesettings').addEventListener('click',saveSettings);
   {const pf=$('#s-dxpal-file');if(pf)pf.addEventListener('change',e=>{const f=e.target.files[0];const sn=($('#s-dxpal-season')&&$('#s-dxpal-season').value)||'';if(f)applyDxPaletteFile(f,sn);e.target.value='';});
    const sl=$('#s-dxpal-seasons');if(sl)sl.addEventListener('click',e=>{const d=e.target.closest('[data-delseason]');if(d){delDxSeason(d.dataset.delseason);return;}const c=e.target.closest('[data-season]');if(c)setActiveSeason(c.dataset.season);});
-   const pr=$('#s-dxpal-reset');if(pr)pr.addEventListener('click',async()=>{if(!confirm('저장된 모든 시즌 팔레트를 지우고 내장 기본 팔레트로 되돌릴까요?'))return;state.settings.dxPalettes=[];delete state.settings.dxPaletteActive;delete state.settings.dxPalette;await putOf('settings',state.settings);renderDxPalPrev();toast('기본 팔레트로 초기화됨');});
+   const pr=$('#s-dxpal-reset');if(pr)pr.addEventListener('click',async()=>{if(!confirm('저장된 모든 시즌 팔레트를 지우고 내장 기본 팔레트로 되돌릴까요?'))return;state.settings.dxPalettes=[];delete state.settings.dxPaletteActive;delete state.settings.dxPalette;await putOf('settings',state.settings);saveTrendCloud();renderDxPalPrev();toast('기본 팔레트로 초기화됨');});
    const xf=$('#s-dxpat-file');if(xf)xf.addEventListener('change',e=>{if(e.target.files&&e.target.files.length)applyDxPatternFiles([...e.target.files]);e.target.value='';});
    const xg=$('#s-dxpat-grid');if(xg)xg.addEventListener('click',e=>{const b=e.target.closest('[data-delpat]');if(b)delDxPattern(b.dataset.delpat);});}
   $('#btn-cloudtest').addEventListener('click',cloudTest);
@@ -2179,6 +2202,7 @@ async function boot(){
 async function afterAuthBoot(){
   if(cloudOn())toast('클라우드(Supabase) 연결됨 · 공용 데이터 로드');
   await loadUserCloudSettings(); // 이 계정에 저장된 개인 키/설정을 클라우드에서 불러와 적용(리셋 방지)
+  await loadTrendCloud(); // trend 컬러·패턴(계정별/공유)을 클라우드에서 로드
   await loadStores();
   state.refs=(state.refs||[]).filter(refVisible); // 시크릿 레퍼는 소유자에게만
   [...(state.lines||[]),...(state.refs||[])].forEach(it=>{if(it&&!it.gcat&&it.name){const g=gcatFromText(it.name);if(g)it.gcat=g;}}); // 카테고리 비면 이름에서 보정
