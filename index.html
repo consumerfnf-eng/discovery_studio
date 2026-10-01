@@ -233,7 +233,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <header>
   <div class="bar">
-    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v30-patseed</small></small></div>
+    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v31-cmtlogo</small></small></div>
     <nav id="nav">
       <button data-v="lib" class="on">라이브러리</button>
       <button data-v="gen">생성</button>
@@ -802,6 +802,28 @@ function logoRule(type){
   var print=' FORM = FLAT PRINT (프린트): render the mark as a flat tonal screen-print / heat-transfer applied directly onto the fabric — no raised edge, no stitching, no backing plate; it moves and drapes with the fabric like printed ink.';
   return common+((type==='print')?print:patch);
 }
+function commuteLogoRule(parent,sub){
+  sub=(sub||'').toUpperCase();parent=(parent||'').toUpperCase();
+  var place='upper left chest, slightly toward the armhole (never dead-center)',mm='26-32 mm';
+  if(parent==='OUTERWEAR'){
+    if(sub==='COAT'||sub==='PONCHO'){place='primarily INSIDE the back collar (seen when the collar is raised); if an external mark is required, an extremely small tonal lockup near the upper edge of the left pocket or the side seam';mm='18-25 mm';}
+    else if(sub==='WINDBREAKER'){place='upper left chest set slightly toward the armhole rather than the center, integrated into the jacket construction — not a sports-logo position';mm='25-32 mm';}
+    else if(sub==='VEST'){place='upper left chest near the placket/pocket construction, slightly off-center';mm='25-30 mm';}
+    else {place='near the LEFT CHEST POCKET architecture — 8-15 mm above the pocket or aligned to the outer edge of the pocket flap, never centered on the chest';mm='28-35 mm';}
+  }else if(parent==='TOP'){
+    if(sub==='KNIT'||sub==='HOODIE'||sub==='SWEATSHIRT'){place='ONE placement only — either the upper left chest or the center back neck (about 20-30 mm below the neckline)';mm='20-26 mm';}
+    else if(sub==='SHIRT'||sub==='BLOUSE'){place='integrated with the LEFT CHEST POCKET — near its upper outer corner or just above the pocket edge, never centered on the pocket';mm='22-28 mm';}
+    else if(sub==='T-SHIRT'){place='EITHER a micro mark on the upper left chest OR (preferred) the center back neck about 20-30 mm below the neckline — choose ONE, not both';mm='22-30 mm';}
+    else {place='upper left chest, small and discreet — higher and smaller than a conventional sports-polo logo';mm='20-26 mm';}
+  }else if(parent==='PANTS'){
+    if(sub==='CARGO'){place='integrated into the CARGO POCKET architecture — near the outer edge of ONE cargo pocket flap, never centered, and NEVER on the thigh';mm='18-22 mm';}
+    else if(sub==='STRAIGHT'||sub==='WIDE'||sub==='TAPERED'){place='keep the front completely clean — place the full lockup INSIDE the waistband; if an external signature is needed, a tiny tonal micro-mark beside the back welt pocket or side-seam pocket; NEVER on the thigh';mm='15-20 mm';}
+    else {place='near the BACK WAISTBAND, a back pocket edge, or the upper side-pocket seam; NEVER prominently on the thigh';mm='18-24 mm';}
+  }else if(parent==='SKIRT'){place='keep the front clean — a very subtle lockup near the back/inner waistband';mm='16-22 mm';}
+  else if(parent==='DRESS'){place='upper left chest near the seam structure, OR hidden under the collar — keep the sculpted silhouette uninterrupted, NEVER at the waist or center front';mm='20-28 mm';}
+  else if(parent==='SHOES'){place='only a very small tonal infinity ∞ or D mark on the tongue or heel counter — no wordmark across the upper';mm='tiny';}
+  return 'COMMUTE BRANDING — apply the DISCOVERY COMMUTE line identity as a TWO-LINE lockup: first line "DISCOVERY", second line "COMMUTE ∞" with "COMMUTE ∞" about 50-65% the height of "DISCOVERY"; exact spelling "DISCOVERY COMMUTE ∞". Exactly ONE visible external logo on the whole garment (optionally ONE extra HIDDEN mark inside the collar or waistband) — never multiple visible logos. Render it TONE-ON-TONE at very low contrast (roughly 10% from the garment surface), matte finish, as fine tonal embroidery or a subtle matte transfer/deboss — no gloss, no high-contrast or white logo, no reflective ink, no rectangular patch, rubber label, plaque, box, badge or outline around it, no oversized chest branding, no sporty sponsor-style placement. The garment silhouette must always read stronger than the logo; keep the mark on construction areas (pocket edge, seam, collar, cuff, waistband) and never in the dead geometric center unless stated. If the garment has strong tailoring or body-shaping, make the logo even smaller and more hidden. PLACEMENT for this item: '+place+'. Logo width approximately '+mm+' at real garment scale. The mark must read as a refined premium signature, legible only at close range.';
+}
 
 /* ---------- category model ---------- */
 function matDefault(){return{fabric_type:'',surface:'',finish:'',semi_sheer:0.2,shimmer:0.25,shell_ref:false};}
@@ -1205,7 +1227,10 @@ function jsonToPrompt(J,plan){
   if(J.fill_on&&g.fill_volume!=null)S.push('DOWN FILL VOLUME — '+volumeText(g.fill_volume*100)+'. SHELL / FILL SHOW-THROUGH follows the Sheer setting: a thinner shell reveals more baffle and fill relief, a thicker shell reads flatter and more opaque.');
   S.push('MATERIAL QUALITY — every DISCOVERY material and component is PREMIUM QUALITY: high-grade shell fabric, premium materials, refined tonal hardware and clean high-density finishing; luxury-level make, never cheap, flimsy, stiff, plasticky or mass-market.');
   const b=J.branding||{};
-  if(b.logo_on){
+  if(commute){
+    S.push(commuteLogoRule(J.category&&J.category.parent,J.category&&J.category.sub));
+    S.push('Aside from this single DISCOVERY COMMUTE ∞ signature (plus an optional hidden inner mark), keep every other surface of the garment clean and unbranded — no other logo, lettering, woven label or emblem anywhere, and NO "DISCOVERY" or "DISCOVERY EXPEDITION" wordmark on the body or at the bottom of the image.');
+  }else if(b.logo_on){
     S.push(logoRule(b.logo_type));
     S.push(`Aside from this single DISCOVERY chest mark, keep every other surface of the garment clean and unbranded — no other logo, lettering, woven label or emblem anywhere.`);
   }else{
@@ -1216,7 +1241,7 @@ function jsonToPrompt(J,plan){
   S.push('FUR RULE — if the base or reference garment already has a fur collar, fur hood-trim or fur placket, keep ONLY that existing fur exactly as-is; do NOT add a second, additional or different fur collar/trim, and never layer new fur over existing fur. Add fur only when the garment has none AND it is explicitly requested.');
   S.push('Soft COOL GREY-BLUE seamless studio backdrop, soft diffused directional studio lighting with a gentle natural drop shadow and even, true-to-fabric colour; calm premium editorial lookbook mood, photorealistic, sharp premium detail.');
   S.push('CLEAN LINES — the entire garment must have clean, crisp, WRINKLE-FREE lines and smooth tailored surfaces; no creasing, wrinkling or rumpling anywhere.');
-  S.push('NO TEXT IN SCENE — do NOT render any brand name, wordmark, caption, watermark or lettering anywhere in the image or background (in particular NO "DISCOVERY" or "DISCOVERY EXPEDITION" text at the bottom). The ONLY permitted mark is the small chest logo when a logo reference is provided.');
+  S.push('NO TEXT IN SCENE — do NOT render any brand name, caption, watermark or lettering in the background or at the bottom of the image (in particular NO "DISCOVERY" or "DISCOVERY EXPEDITION" text at the bottom).'+(commute?' The ONLY permitted lettering is the small tone-on-tone DISCOVERY COMMUTE ∞ garment lockup described above, applied directly onto the garment itself.':' The ONLY permitted mark is the small chest logo when a logo reference is provided.'));
   return S.join(' ');
 }
 function rolesToText(roles){return roles.map((r,i)=>`image ${i+1}: ${r}`).join('. ');}
@@ -1305,7 +1330,7 @@ async function doGenerate(){
   const pv=$('#gen-preview');pv.classList.remove('multi');pv.innerHTML=`<div class="load"><div class="spinner"></div><span>생성 중… ${n}장</span></div>`;$('#btn-gen').disabled=true;
   try{
     const raws=await openaiEdit(prompt,plan.images,n);const items=[];
-    const logoBaked=!!(J.branding&&J.branding.logo_on); // 생성 단계에서 로고를 이미 그렸으면 후처리 합성 생략(이중로고 방지)
+    const logoBaked=!!(J.branding&&J.branding.logo_on)||!!plan.commute; // 로고를 생성단계에서 그렸거나(이중 방지) 커뮤트면 하단 DISCOVERY 글씨 후처리 생략
     for(let i=0;i<raws.length;i++){
       const raw=raws[i];const logoUrl=(!logoBaked&&state.settings.logoDefault)?await applyLogo(raw):raw;
       const ccR=plan.ccRefs||[],ptR=plan.ptRefs||[];
@@ -1752,7 +1777,7 @@ async function runEdit(kind,opt){
   prompt+=' Do NOT render any brand name, wordmark, caption or lettering anywhere in the image or background (no "DISCOVERY" / "DISCOVERY EXPEDITION" text); the only allowed mark is the small chest logo if already present.';
   const prev=$('#edit-prev');prev.innerHTML=`<div class="load"><div class="spinner"></div><span>수정 중…</span></div>`;
   try{
-    const raw=(await openaiEdit(prompt,imgs))[0];const logoUrl=state.settings.logoDefault?await applyLogo(raw):raw;const root=editG.parentId||editG.id;
+    const raw=(await openaiEdit(prompt,imgs))[0];const logoUrl=(!state.commute&&state.settings.logoDefault)?await applyLogo(raw):raw;const root=editG.parentId||editG.id;
     const ng={id:uid(),name:cur.name+' ·'+(kind==='model'?'M':kind==='cody'?'C':kind==='dxdna'?'DX':'F'),season:cur.season,dataUrl:raw,logoUrl,
       sourceLineId:cur.sourceLineId,refIds:cur.refIds,modelId:kind==='model'?opt.modelId:cur.modelId,fabricId:cur.fabricId,
       category:cur.category,keep:cur.keep,replace:cur.replace,adopt:cur.adopt,
