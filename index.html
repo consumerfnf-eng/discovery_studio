@@ -117,6 +117,8 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 .cmp .frame.zoom{cursor:zoom-in}
 .cc-strip{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .cc-thumb{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:zoom-in;background:var(--line-2)}
+.cc-strip.q4{grid-template-columns:repeat(auto-fill,minmax(84px,1fr))}
+.cc-thumb.sm{aspect-ratio:3/4}
 .difftable{width:100%;border-collapse:collapse;margin-top:10px;font-size:12.5px}
 .difftable td{padding:7px 10px;border-bottom:1px solid var(--line-2);vertical-align:top}
 .difftable td:first-child{color:var(--ink-45);width:118px;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
@@ -233,7 +235,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <header>
   <div class="bar">
-    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v37-trendsync</small></small></div>
+    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 v39-cmpmix</small></small></div>
     <nav id="nav">
       <button data-v="lib" class="on">라이브러리</button>
       <button data-v="gen">생성</button>
@@ -627,7 +629,7 @@ const DX_PATTERNS=[["차콜체크","data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAA
 function normalizeDxPalettes(){const s=state.settings;if(!s)return;if(!Array.isArray(s.dxPalettes))s.dxPalettes=[];if((!s.dxPalettes.length)&&Array.isArray(s.dxPalette)&&s.dxPalette.length){s.dxPalettes=[{season:'현재',pal:s.dxPalette}];s.dxPaletteActive='현재';}if(s.dxPalette)delete s.dxPalette;if(s.dxPalettes.length>2)s.dxPalettes=s.dxPalettes.slice(s.dxPalettes.length-2);}
 function dxPalettes(){return (state.settings&&Array.isArray(state.settings.dxPalettes))?state.settings.dxPalettes:[];}
 function activeSeason(){const ps=dxPalettes();if(!ps.length)return '';const a=state.settings.dxPaletteActive;return ps.some(p=>p.season===a)?a:ps[ps.length-1].season;}
-function dxPalette(){const ps=dxPalettes();if(!ps.length)return DX_PALETTE;const a=activeSeason();const f=ps.find(p=>p.season===a);return (f&&Array.isArray(f.pal)&&f.pal.length)?f.pal:DX_PALETTE;}
+function dxPalette(){const ps=dxPalettes();if(!ps.length)return [];const a=activeSeason();const f=ps.find(p=>p.season===a);return (f&&Array.isArray(f.pal)&&f.pal.length)?f.pal:[];}
 function dxColorName(code){if(!code)return '';const f=dxPalette().find(x=>x[1]===code);return f?f[0]+' ('+f[1]+')':code;}
 function isHex6(s){return /^#[0-9a-fA-F]{6}$/.test((s||'').trim());}
 function parseDxPaletteText(text,fname){
@@ -661,7 +663,7 @@ function setActiveSeason(season){normalizeDxPalettes();if(!dxPalettes().some(p=>
 async function delDxSeason(season){normalizeDxPalettes();state.settings.dxPalettes=state.settings.dxPalettes.filter(p=>p.season!==season);if(state.settings.dxPaletteActive===season)state.settings.dxPaletteActive=dxPalettes().length?dxPalettes()[dxPalettes().length-1].season:'';await putOf('settings',state.settings);saveTrendCloud();renderDxPalPrev();toast(season+' 삭제됨');}
 function renderDxPalPrev(){normalizeDxPalettes();const ps=dxPalettes();const act=activeSeason();
   const sl=$('#s-dxpal-seasons');if(sl){sl.innerHTML=ps.length?ps.map(p=>`<span class="dxchip ${p.season===act?'on':''}" data-season="${esc(p.season)}" title="클릭=활성 전환">${esc(p.season)} · ${p.pal.length}색 <b data-delseason="${esc(p.season)}" style="margin-left:5px;color:var(--alert);cursor:pointer">✕</b></span>`).join(''):'<span class="hint" style="margin:0">저장된 시즌 없음 — 내장 기본 팔레트 사용 중</span>';}
-  const cnt=$('#s-dxpal-count');if(cnt){cnt.textContent=ps.length?('활성: '+act+' ('+dxPalette().length+'색) · 저장 '+ps.length+'/2'):'기본 팔레트 사용 중 ('+DX_PALETTE.length+'색)';cnt.classList.toggle('pine',!!ps.length);}
+  const cnt=$('#s-dxpal-count');if(cnt){cnt.textContent=ps.length?('활성: '+act+' ('+dxPalette().length+'색) · 저장 '+ps.length+'/2'):'시즌 팔레트 없음 — 파일을 올리세요';cnt.classList.toggle('pine',!!ps.length);}
   const pv=$('#s-dxpal-prev');if(pv)pv.innerHTML=dxPalette().map(c=>`<span class="dxchip" title="${c[0]} ${c[1]}"><span class="sw" style="background:${c[1]}"></span>${c[0]}</span>`).join('');}
 function dxPatterns(){const b=(typeof DX_PATTERNS!=='undefined'?DX_PATTERNS:[]).map((p,i)=>({id:'b'+i,name:p[0],dataUrl:p[1],builtin:true}));const u=(state.settings&&Array.isArray(state.settings.dxPatterns))?state.settings.dxPatterns:[];return b.concat(u);}
 async function applyDxPatternFiles(files){try{let n=0;for(const f of files){if(f.type&&!/^image\//.test(f.type))continue;const du=await resizeDataUrl(await fileToDataUrl(f),768);const nm=((f.name||'pattern').replace(/\.[^.]+$/,'')||'pattern').slice(0,20);if(!state.settings.dxPatterns)state.settings.dxPatterns=[];state.settings.dxPatterns.push({id:uid(),name:nm,dataUrl:du});n++;}await putOf('settings',state.settings);saveTrendCloud();renderDxPatGrid();toast(n+'개 패턴 추가됨');}catch(e){toast('패턴 추가 실패: '+e.message);}}
@@ -1493,7 +1495,8 @@ async function loadCommuteStores(){for(const st of [...COMMUTE_SLOTS,'cmt_cody',
 function fillCodyColorSelect(){const sel=$('#cmt-cody-color');if(!sel)return;const cur=sel.value;sel.innerHTML='<option value="">코디 자동/없음</option>'+COORD_COLORS.map(c=>`<option value="${c[1]}">${c[0]}</option>`).join('');sel.value=cur;}
 function updateCodyHint(){const h=$('#cmt-cody-hint');if(!h)return;const n=(state.cmt_cody||[]).length;h.textContent=n?`저장된 코디 ${n}개 중 최신 코디를 자동 적용 (레이어링 구조 + 톤온톤)`:'코디 탭에 클래식 코디를 올리면 생성 시 자동으로 레이어링해 줍니다 (없으면 기본 클래식 코디)';}
 function renderCmtColorChips(){const el=$('#cmtcolor-chips');if(!el)return;const cur=state.cmtColor||'';
-  el.innerHTML='<span class="dxchip none '+(cur===''?'on':'')+'" data-cmtcol=""><span class="sw"></span>자동(밸런스)</span>'+dxPalette().map(c=>'<span class="dxchip '+(cur===c[1]?'on':'')+'" data-cmtcol="'+c[1]+'" title="'+esc(c[0])+' '+c[1]+'"><span class="sw" style="background:'+c[1]+'"></span>'+esc(c[0])+'</span>').join('');
+  const pal=dxPalette();
+  el.innerHTML='<span class="dxchip none '+(cur===''?'on':'')+'" data-cmtcol=""><span class="sw"></span>자동(밸런스)</span>'+pal.map(c=>'<span class="dxchip '+(cur===c[1]?'on':'')+'" data-cmtcol="'+c[1]+'" title="'+esc(c[0])+' '+c[1]+'"><span class="sw" style="background:'+c[1]+'"></span>'+esc(c[0])+'</span>').join('')+(pal.length?'':'<span class="hint" style="margin:0 0 0 6px">시즌 팔레트 없음 — 설정 &gt; 시즌 생성 컬러 팔레트에서 추가</span>');
   const se=$('#cmtcolor-sel');if(se)se.textContent=cur?('· '+dxColorName(cur)):'· 자동(컬러 밸런스)';}
 function applyCommuteMode(on){
   state.commute=!!on;try{localStorage.setItem('discovery_commute',on?'1':'');}catch(e){}
@@ -1679,12 +1682,16 @@ function renderCompare(gid){
   const line=state.lines.find(l=>l.id===g.sourceLineId);
   const refNames=(g.refIds||[]).map(id=>{const r=state.refs.find(x=>x.id===id);return r?r.name:'(삭제됨)';});
   const cat=g.category?`${g.category.parent} / ${g.category.sub}`:'—';
+  const refImgs=(g.refIds||[]).map(id=>state.refs.find(x=>x.id===id)).filter(Boolean);
+  const modelIt=g.modelId?state.models.find(m=>m.id===g.modelId):null;
+  const fabIt=g.fabricId?state.fabrics.find(f=>f.id===g.fabricId):null;
+  const cstrip=arr=>arr.length?'<div class="cc-strip q4">'+arr.map(it=>`<img class="cc-thumb sm" src="${thumb(it.dataUrl,300)}" data-full="${it.dataUrl}" title="${esc(it.name||'')}">`).join('')+'</div>':'<span class="hint" style="margin:0">없음</span>';
   box.innerHTML=`
     <div class="cmp">
       <div><div class="caphead"><span class="t">${line?esc(line.name):'원본 없음'}</span><span class="s">${line?esc(line.season):''} · Source</span></div>
-        <div class="frame">${line?`<img src="${line.dataUrl}">`:'<div class="empty" style="height:100%">원본 라인이 삭제됨</div>'}</div></div>
+        <div class="frame${line?' zoom':''}"${line?` data-full="${line.dataUrl}"`:''}>${line?`<img src="${line.dataUrl}">`:'<div class="empty" style="height:100%">원본 라인이 삭제됨</div>'}</div></div>
       <div><div class="caphead"><span class="t">${esc(g.name)}</span><span class="s">${esc(g.season)} · Generated</span></div>
-        <div class="frame"><img src="${g.logoUrl||g.dataUrl}"></div></div>
+        <div class="frame zoom" data-full="${g.logoUrl||g.dataUrl}"><img src="${g.logoUrl||g.dataUrl}"></div></div>
     </div>
     <table class="difftable">
       <tr><td>시즌</td><td>${line?esc(line.season)+' → ':''}<b>${esc(g.season)}</b></td></tr>
@@ -1696,10 +1703,19 @@ function renderCompare(gid){
       <tr><td>디자인 밸런스</td><td>${g.balance!=null?g.balance:35}/100 <span style="color:var(--ink-45)">(${balanceHint(g.balance!=null?g.balance:35)})</span></td></tr>
       <tr><td>레퍼런스</td><td>${refNames.length?refNames.map(n=>`<span class="chip">${esc(n)}</span>`).join(''):'—'}</td></tr>
     </table>
+    <div class="caphead" style="margin-top:16px"><span class="t">믹스 재료</span><span class="s">이 생성물에 섞인 레퍼런스 — 클릭하면 확대</span></div>
+    <div style="padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--white)">
+      <div class="hint" style="margin:0 0 4px;color:var(--pine);font-weight:600">베이스 라인</div>${line?cstrip([line]):'<span class="hint" style="margin:0">없음</span>'}
+      <div class="hint" style="margin:12px 0 4px;color:var(--plum);font-weight:600">레퍼런스${refImgs.length?' ('+refImgs.length+')':''}</div>${cstrip(refImgs)}
+      ${modelIt?'<div class="hint" style="margin:12px 0 4px">모델</div>'+cstrip([modelIt]):''}
+      ${fabIt?'<div class="hint" style="margin:12px 0 4px">SHELL 원단</div>'+cstrip([fabIt]):''}
+    </div>
     <div class="row" style="margin-top:14px"><button class="btn sm" id="cmp-ai">AI 차이 설명 생성</button><button class="btn sm ghost" id="cmp-json">분석 JSON 보기</button></div>
     <div id="cmp-ai-out" style="margin-top:10px"></div><div id="cmp-json-out" style="margin-top:10px"></div>`;
   $('#cmp-ai').onclick=()=>aiDiff(g,line);
   $('#cmp-json').onclick=()=>{const o=$('#cmp-json-out');o.innerHTML=o.innerHTML?'':`<div class="promptbox" style="max-height:280px;font-family:var(--mono);color:var(--ink)">${esc(JSON.stringify(g.designJSON||{},null,2))}</div>`;};
+  box.querySelectorAll('.cc-thumb').forEach(im=>im.onclick=()=>openLightbox(im.dataset.full));
+  box.querySelectorAll('.frame.zoom').forEach(fr=>fr.onclick=()=>openLightbox(fr.dataset.full));
 }
 async function aiDiff(g,line){
   if(!line){toast('원본 라인이 없어 비교 불가.');return;}
@@ -1755,7 +1771,8 @@ ${state.commute?`<div class="sectlabel">DX COMMUTE DNA</div>
     se.textContent=state.dxSel[kind]?('· '+dxColorName(state.dxSel[kind])):'· 컬러/패턴 선택';}
   function dxChipRow(kind){const el=$('#dx-'+kind+'-chips');if(!el)return;const cur=state.dxSel[kind];
     el.classList.toggle('dxdim',!state.dxOn[kind]);
-    el.innerHTML=`<span class="dxchip none ${(cur===''&&!state.dxPat[kind])?'on':''}" data-dx="${kind}" data-code=""><span class="sw"></span>자동/유지</span>`+dxPalette().map(c=>`<span class="dxchip ${cur===c[1]?'on':''}" data-dx="${kind}" data-code="${c[1]}" title="${c[0]} ${c[1]}"><span class="sw" style="background:${c[1]}"></span>${c[0]}</span>`).join('');}
+    const _pal=dxPalette();
+    el.innerHTML=`<span class="dxchip none ${(cur===''&&!state.dxPat[kind])?'on':''}" data-dx="${kind}" data-code=""><span class="sw"></span>자동/유지</span>`+_pal.map(c=>`<span class="dxchip ${cur===c[1]?'on':''}" data-dx="${kind}" data-code="${c[1]}" title="${c[0]} ${c[1]}"><span class="sw" style="background:${c[1]}"></span>${c[0]}</span>`).join('')+(_pal.length?'':'<span class="hint" style="margin:0 0 0 6px">시즌 팔레트 없음</span>');}
   function dxPatRow(kind){const el=$('#dx-'+kind+'-pats');if(!el)return;el.classList.toggle('dxdim',!state.dxOn[kind]);const pats=dxPatterns();
     if(!pats.length){el.innerHTML='<span class="hint" style="margin:0">패턴 없음 — 설정 &gt; DX 패턴 스와치에서 추가</span>';return;}
     const cur=state.dxPat[kind];
