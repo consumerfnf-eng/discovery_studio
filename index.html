@@ -235,7 +235,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <header>
   <div class="bar">
-    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 V03</small></small></div>
+    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 V05</small></small></div>
     <nav id="nav">
       <button data-v="lib" class="on">라이브러리</button>
       <button data-v="gen">생성</button>
@@ -1060,14 +1060,15 @@ function computePlan(){
     const cc=g('cmt_cc'),pt=g('cmt_pt');
     const modelMode=model?'image':'idol';const images=[],roles=[];
     if(modelMode==='image'){images.push(model.dataUrl);roles.push('THE MODEL to keep and dress — the output MUST show this exact person (face, hair, skin tone, body), wearing the new commute outfit');}
-    cc.forEach(r=>{images.push(r.dataUrl);roles.push('CLASSIC & CASUAL reference — the heritage/daily base mood: refined tailored commute silhouette blended with relaxed everyday ease');});
+    cc.forEach(r=>{images.push(r.dataUrl);roles.push('CLASSIC & CASUAL reference — the DESIGN BASE: take its SILHOUETTE and DISTINCTIVE DESIGN DETAILS — collar or HOOD, the closure type AND its placement (reproduce an ASYMMETRIC / OFFSET / diagonal zipper if the reference has one, not a plain centre zip), lapel, plackets, pockets, seams, proportion and length — plus its heritage/daily commute mood. Use these as the DESIGN BASIS but REINTERPRET and slightly VARY each detail into a NEW design — do NOT copy the reference 1:1 and do NOT flatten it into a generic jacket.');});
     pt.forEach(r=>{images.push(r.dataUrl);roles.push('PERFORMANCE & TECH reference — adopt its technical performance function, sporty construction, modern technical fabric and hardware (apply to the main garment category, do NOT force it into an outer jacket)');});
     if(shell){images.push(shell.dataUrl);roles.push('a flat FABRIC SWATCH image (material sample) — replicate ONLY its weave, texture, finish and sheen across the shell; do NOT take its colour or shape');}
     const codyRefs=(state.cmt_cody||[]).slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,2); // 저장 코디 자동 적용(최신순 최대2)
     codyRefs.forEach(r=>{images.push(r.dataUrl);roles.push('STYLING / CODI reference — coordinate the FULL commute look (inner collared shirt, an optional mid-layer that FOLLOWS THIS reference — e.g. a fine-gauge sweater/knit, a half-zip, a vest or a cardigan, VARIED not always a half-zip, tailored trousers or shorts, accessories) after this styling; the newly designed main garment stays the hero, everything else styled to match');});
     const _lo=!!($('#logo-generate')&&$('#logo-generate').checked);
     if(_lo&&state.settings.logoDataUrl){images.push(state.settings.logoDataUrl);roles.push('DISCOVERY LOGO reference — reproduce ONLY this mark on the wearer left chest; ignore its background/box');}
-    return{commute:true,line:null,model,shell,refs:[],ccRefs:cc,ptRefs:pt,codyRefs,images,roles,noun:'commute outfit',modelMode,hasModel:modelMode==='image',refLed:false,balance:+($('#balance')?$('#balance').value:50)};
+    const _gg=((model&&model.gender)||(cc[0]&&cc[0].gender)||(pt[0]&&pt[0].gender)||'').toUpperCase();
+    return{commute:true,line:null,model,shell,refs:[],ccRefs:cc,ptRefs:pt,codyRefs,images,roles,noun:'commute outfit',modelMode,hasModel:modelMode==='image',refLed:false,gender:_gg,balance:+($('#balance')?$('#balance').value:50)};
   }
   const line=state.lines.find(l=>l.id===state.pick.line);
   const model=state.models.find(m=>m.id===state.pick.model);
@@ -1194,8 +1195,10 @@ function jsonToPrompt(J,plan){
     const _isTop=/top/i.test(cat.parent||'')||noun==='top', _isOuter=/outer/i.test(cat.parent||'')||noun==='outerwear';
     S.push('MAIN GARMENT — the newly DESIGNED HERO piece is a '+((cat.parent||noun)||'garment').toUpperCase()+' ('+noun+'). It MUST be the main, clearly visible garment and the focus of the image'+(_isTop?' — worn as the OUTERMOST visible top; do NOT cover it with a jacket, coat or heavy outer layer':(_isOuter?' — worn as the outer layer':''))+'.');
     S.push('STYLE FUSION — fuse CLASSIC heritage tailoring and CASUAL everyday ease (from the CLASSIC & CASUAL references) with PERFORMANCE technical function and TECH modern materials & hardware (from the PERFORMANCE & TECH references), applied to the '+noun+'. Blend into ONE cohesive, premium urban commute look, balanced per DESIGN BALANCE below. Do NOT turn the '+noun+' into a different category.');
+    S.push('ADOPT & REINTERPRET DESIGN DETAILS — take the distinctive design details of the CLASSIC & CASUAL reference on the '+noun+' — its collar or HOOD, its closure CHARACTER and placement (if the reference zip is ASYMMETRIC / OFFSET / diagonal or has a storm flap, KEEP that asymmetric character rather than a plain centre zip), its plackets, pocket style, seams and proportion — but SLIGHTLY CHANGE each detail into a fresh variation (do NOT copy the reference exactly; evolve the line, placement or proportion). Then layer in the PERFORMANCE & TECH features. DESIGN BALANCE decides which side leads the silhouette: low = CLASSIC & CASUAL leads, high = PERFORMANCE & TECH leads. Do NOT default to a generic centre-zip stand-collar jacket — it must read as a NEW design clearly inspired by these specific references.');
     S.push('COLOUR SOURCE — treat ALL reference images as DESIGN / silhouette / detail guides, NOT colour swatches. The final colourway is decided ONLY by the COLOUR BALANCE setting below — do NOT copy the colours of the reference photos.');
-    S.push('HARDWARE & TRIMS (PERFORMANCE) — all closures, snaps, buttons, zip pulls and trims must read as FUNCTIONAL PERFORMANCE hardware: exposed matte SILVER or gunmetal metal with a FLAT, MINIMAL, technical finish, clearly VISIBLE and crisply defined. NEVER hidden/covered plackets, NEVER tone-on-tone fabric-covered snaps, NEVER puffy, domed or bulbous buttons. Keep detailing clean, sharp and minimal — technical sportswear precision, not soft heritage tailoring.');
+    if((plan.gender||'')==='WOMEN')S.push("WOMEN'S DIRECTION — resolve detailing TONE-ON-TONE with the SELF-FABRIC, NOT with silver/metal hardware: tonal self-fabric STRAPS, ties, tabs, D-ring fabric loops and covered or tonal closures. Make generous use of STRAP details, PIN-TUCKS and PLEATS, with a refined, sculpted, TAILORED feel. AVOID exposed silver or gunmetal hardware and sporty performance trims — keep the technical function but express it through fabric and tailoring, not metal.");
+    else S.push('HARDWARE & TRIMS (PERFORMANCE) — all closures, snaps, buttons, zip pulls and trims must read as FUNCTIONAL PERFORMANCE hardware: exposed matte SILVER or gunmetal metal with a FLAT, MINIMAL, technical finish, clearly VISIBLE and crisply defined. NEVER hidden/covered plackets, NEVER tone-on-tone fabric-covered snaps, NEVER puffy, domed or bulbous buttons. Keep detailing clean, sharp and minimal — technical sportswear precision, not soft heritage tailoring.');
     if((plan.ccRefs||[]).length>=2)S.push('MULTIPLE CLASSIC & CASUAL references — BLEND them evenly into ONE coherent base: merge their shared silhouette, proportion, collar/lapel and overall mood. Do not copy only one; take the strongest common traits from all of them.');
     if((plan.ptRefs||[]).length>=2)S.push('MULTIPLE PERFORMANCE & TECH references — BLEND them evenly: combine their technical features, hardware, seams, pockets and material cues from all of them into one cohesive technical layer. Do not pick only one.');
     if(plan.codyRefs&&plan.codyRefs.length){
