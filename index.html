@@ -235,7 +235,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <header>
   <div class="bar">
-    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 V04</small></small></div>
+    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 V05</small></small></div>
     <nav id="nav">
       <button data-v="lib" class="on">라이브러리</button>
       <button data-v="gen">생성</button>
@@ -305,7 +305,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
     </div>
     <div id="lib-cmt_cody" class="libpane" style="display:none">
       <div class="panel">
-        <div class="drop" data-store="cmt_cody"><b>코디(STYLING) 이미지 올리기</b><br><span style="font-size:12px">클래식 코디 룩(셔츠+하프집+팬츠 등) · 카드를 눌러 <b>코디 컬러</b>를 지정하면 생성 컬러에 맞게 자동 적용됩니다 · 클릭·드래그·Ctrl+V</span></div>
+        <div class="drop" data-store="cmt_cody"><b>코디(STYLING) 이미지 올리기</b><br><span style="font-size:12px">클래식 코디 룩(셔츠+하프집+팬츠 등) · 카드를 눌러 <b>성별(남/여)</b>과 <b>코디 컬러</b>를 지정하세요 — 생성 성별에 맞는 코디가 자동 적용됩니다 · 클릭·드래그·Ctrl+V</span></div>
         <div id="grid-cmt_cody" class="cards lg"></div>
       </div>
     </div>
@@ -1102,11 +1102,13 @@ function computePlan(){
     cc.forEach(r=>{images.push(r.dataUrl);roles.push('CLASSIC & CASUAL reference — the DESIGN BASE: take its SILHOUETTE and DISTINCTIVE DESIGN DETAILS — collar or HOOD, the closure type AND its placement (reproduce an ASYMMETRIC / OFFSET / diagonal zipper if the reference has one, not a plain centre zip), lapel, plackets, pockets, seams, proportion and length — plus its heritage/daily commute mood. Use these as the DESIGN BASIS but REINTERPRET and slightly VARY each detail into a NEW design — do NOT copy the reference 1:1 and do NOT flatten it into a generic jacket.');});
     pt.forEach(r=>{images.push(r.dataUrl);roles.push('PERFORMANCE & TECH reference — adopt its technical performance function, sporty construction, modern technical fabric and hardware (apply to the main garment category, do NOT force it into an outer jacket)');});
     if(shell){images.push(shell.dataUrl);roles.push('a flat FABRIC SWATCH image (material sample) — replicate ONLY its weave, texture, finish and sheen across the shell; do NOT take its colour or shape');}
-    const codyRefs=(state.cmt_cody||[]).slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,2); // 저장 코디 자동 적용(최신순 최대2)
+    const _gg=((model&&model.gender)||(cc[0]&&cc[0].gender)||(pt[0]&&pt[0].gender)||'').toUpperCase();
+    const _codyPool=(state.cmt_cody||[]).slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    const _codyG=_gg?_codyPool.filter(c=>((c.gender||'').toUpperCase())===_gg):[];
+    const codyRefs=(_codyG.length?_codyG:_codyPool).slice(0,2); // 성별 매칭 코디 자동 적용(해당 성별 없으면 전체 최신)
     codyRefs.forEach(r=>{images.push(r.dataUrl);roles.push('STYLING / CODI reference — coordinate the FULL commute look (inner collared shirt, an optional mid-layer that FOLLOWS THIS reference — e.g. a fine-gauge sweater/knit, a half-zip, a vest or a cardigan, VARIED not always a half-zip, tailored trousers or shorts, accessories) after this styling; the newly designed main garment stays the hero, everything else styled to match');});
     const _lo=!!($('#logo-generate')&&$('#logo-generate').checked);
     if(_lo&&state.settings.logoDataUrl){images.push(state.settings.logoDataUrl);roles.push('DISCOVERY LOGO reference — reproduce ONLY this mark on the wearer left chest; ignore its background/box');}
-    const _gg=((model&&model.gender)||(cc[0]&&cc[0].gender)||(pt[0]&&pt[0].gender)||'').toUpperCase();
     return{commute:true,line:null,model,shell,refs:[],ccRefs:cc,ptRefs:pt,codyRefs,images,roles,noun:'commute outfit',modelMode,hasModel:modelMode==='image',refLed:false,gender:_gg,balance:+($('#balance')?$('#balance').value:50)};
   }
   const line=state.lines.find(l=>l.id===state.pick.line);
@@ -1930,7 +1932,7 @@ function openMeta(store,id){
   if(store==='lines')f+=clsFields+`<div class="row" style="margin-top:12px"><div style="flex:1"><label class="fld">세부(자유)</label><input id="me-cat" class="inp" value="${esc(it.category||'')}" placeholder="경량/Short/Long"></div><div style="flex:1"><label class="fld">라이프스타일</label><select id="me-life" class="inp"><option value=""></option>${['URBAN','ACTIVE WELLNESS','APRES-SKI'].map(x=>`<option ${it.lifestyle===x?'selected':''}>${x}</option>`).join('')}</select></div></div>`;
   if(store==='refs')f+=clsFields+`<label class="row" style="font-size:12px;color:#C0392B;font-weight:600;gap:6px;margin-top:12px"><input type="checkbox" id="me-trend" ${it.trend?'checked':''}> 트렌드 아이템 (빨간 테두리)</label>`+`<label class="fld" style="margin-top:12px">해시태그 (쉼표 또는 #로 구분)</label><input id="me-hashtags" class="inp" value="${esc((it.hashtags||[]).map(h=>'#'+(''+h).replace(/^#/,'')).join(' '))}" placeholder="#발레코어 #메쉬 #버건디"><div class="htagsug" id="me-htag-sug"></div>`+`<label class="fld" style="margin-top:12px">태그 (쉼표)</label><input id="me-tags" class="inp" value="${esc((it.tags||[]).join(', '))}" placeholder="숄카라, 다이아퀼팅, 와이드…">`+`<div class="row" style="margin-top:12px"><div style="flex:2"><label class="fld">랭킹 표기 (해시태그와 별도로 카드에 표시)</label><input id="me-rank" class="inp" value="${esc(it.rank||'')}" placeholder="예: 무신사 Rank #1"></div><div style="flex:1"><label class="fld">날짜 월·연 (비우면 업로드월)</label><input id="me-rankdate" class="inp" value="${esc(it.rankDate||'')}" placeholder="Jan \'26 = 2026년 1월"></div></div>`+`<label class="row" style="font-size:12px;color:var(--ink-70);gap:6px;margin-top:12px"><input type="checkbox" id="me-detail" ${it.detail?'checked':''}> 디테일(하드웨어) 레퍼런스 — 벨트·스트링·지퍼풀러 등, 전체 실루엣이 아니라 이 디테일만 채용</label>`;
   if(store==='fabrics')f+=`<label class="fld" style="margin-top:12px">원단 타입</label><input id="me-ftype" class="inp" value="${esc(it.ftype||'')}" placeholder="glossy nylon / taffeta…">`;
-  if(store==='cmt_cody')f+=`<label class="fld" style="margin-top:12px">코디 컬러 (생성 컬러에 맞춰 자동 매칭)</label><select id="me-codycolor" class="inp"><option value="">— 미지정 —</option>${COORD_COLORS.map(c=>`<option value="${c[1]}" ${it.color===c[1]?'selected':''}>${c[0]}</option>`).join('')}</select>`;
+  if(store==='cmt_cody')f+=`<div class="row" style="margin-top:12px"><div style="flex:1"><label class="fld">성별 (생성 성별과 매칭)</label><select id="me-codygender" class="inp"><option value="">— 공용 —</option>${GENDER_OPTS.map(x=>`<option ${it.gender===x?'selected':''}>${x}</option>`).join('')}</select></div></div><label class="fld" style="margin-top:12px">코디 컬러 (생성 컬러에 맞춰 자동 매칭)</label><select id="me-codycolor" class="inp"><option value="">— 미지정 —</option>${COORD_COLORS.map(c=>`<option value="${c[1]}" ${it.color===c[1]?'selected':''}>${c[0]}</option>`).join('')}</select>`;
   $('#m-body').innerHTML=`<div class="editgrid"><div><div class="preview"><img src="${it.dataUrl}"></div></div><div>${f}<button class="btn primary sm" id="me-save" style="margin-top:16px">저장</button></div></div>`;
   if(store==='refs'){
     const sugEl=$('#me-htag-sug'),inp=$('#me-hashtags');
@@ -1939,7 +1941,7 @@ function openMeta(store,id){
     sugEl.addEventListener('click',e=>{const b=e.target.closest('[data-tag]');if(!b)return;inp.value=(inp.value.trim()+' #'+b.dataset.tag).trim()+' ';renderSug();inp.focus();});
     inp.addEventListener('input',renderSug);
   }
-  $('#me-save').onclick=async()=>{it.name=$('#me-name').value.trim()||it.name;if(store==='lines'||store==='refs'){it.gender=$('#me-gender').value;it.gcat=$('#me-gcat').value;it.season=$('#me-season').value;}if(store==='lines'){it.category=$('#me-cat').value.trim();it.lifestyle=$('#me-life').value;}if(store==='refs'){it.tags=$('#me-tags').value.split(',').map(s=>s.trim()).filter(Boolean);it.detail=$('#me-detail').checked;it.trend=$('#me-trend').checked;it.hashtags=parseHashtags($('#me-hashtags').value);it.rank=$('#me-rank').value.trim();it.rankDate=$('#me-rankdate').value.trim();}if(store==='fabrics')it.ftype=$('#me-ftype').value.trim();if(store==='cmt_cody'){const cc=$('#me-codycolor');if(cc)it.color=cc.value;}await storePut(store,it);libGrid(store);if(state.commute)renderCommutePicks();renderPicks();$('#modal').classList.remove('on');toast('저장됨');};
+  $('#me-save').onclick=async()=>{it.name=$('#me-name').value.trim()||it.name;if(store==='lines'||store==='refs'){it.gender=$('#me-gender').value;it.gcat=$('#me-gcat').value;it.season=$('#me-season').value;}if(store==='lines'){it.category=$('#me-cat').value.trim();it.lifestyle=$('#me-life').value;}if(store==='refs'){it.tags=$('#me-tags').value.split(',').map(s=>s.trim()).filter(Boolean);it.detail=$('#me-detail').checked;it.trend=$('#me-trend').checked;it.hashtags=parseHashtags($('#me-hashtags').value);it.rank=$('#me-rank').value.trim();it.rankDate=$('#me-rankdate').value.trim();}if(store==='fabrics')it.ftype=$('#me-ftype').value.trim();if(store==='cmt_cody'){const cc=$('#me-codycolor');if(cc)it.color=cc.value;const cg=$('#me-codygender');if(cg)it.gender=cg.value;}await storePut(store,it);libGrid(store);if(state.commute)renderCommutePicks();renderPicks();$('#modal').classList.remove('on');toast('저장됨');};
   $('#modal').classList.add('on');
 }
 
