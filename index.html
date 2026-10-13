@@ -235,7 +235,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <header>
   <div class="bar">
-    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 V03</small></small></div>
+    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 V04</small></small></div>
     <nav id="nav">
       <button data-v="lib" class="on">라이브러리</button>
       <button data-v="gen">생성</button>
@@ -1905,6 +1905,7 @@ async function runEdit(kind,opt){
     if(opt.comment){prompt+=' ADDITIONAL USER DIRECTION — also apply this specific change: '+opt.comment+'. Apply it together with the changes above, changing only what this direction asks and keeping the model, pose, background and everything else unchanged.';if(/magnetic|마그네틱/i.test(opt.comment))prompt+=' MAGNETIC CLOSURE = HIDDEN EXTERIOR — conceal the magnetic snaps behind an inner placket/facing; the outside front stays clean and smooth with NO visible snap caps, studs, buttons or metal tabs.';}}
   else {const _padPart=_isOuterItem?(' down fill volume: '+volumeText(opt.volume)+';'):' keep the garment FLAT and UNPADDED with NO down fill, NO puffer volume and NO quilting (this is not a down/padded piece — do NOT turn it into a puffer);';prompt='Keep the garment DESIGN, silhouette, construction, category and model identical — this is ONLY a surface-finish re-render, NOT a redesign and NOT a new layer. Re-render only: fabric sheer: '+sheerText(opt.sheer)+'; surface sheen: '+shimmerText(opt.shimmer)+' — keep this a subtle fabric sheen only, NEVER a wet-look, patent, PVC or vinyl high-gloss;'+_padPart+' Keep the original colour, fabric type and category; do NOT add any new garment, jacket or layer. PRESERVE the DISCOVERY chest logo EXACTLY — do NOT remove, move, distort or re-draw it.';}
   prompt+=' Do NOT render any brand name, wordmark, caption or lettering anywhere in the image or background (no "DISCOVERY" / "DISCOVERY EXPEDITION" text); the only allowed mark is the small chest logo if already present.';
+  if(kind!=='finish')prompt+=' GLOBAL SAFETY — ABSOLUTELY DO NOT turn any existing garment into a down jacket, quilted jacket or PUFFER, do NOT add down/padding/quilting/puffy volume to anything, and do NOT change any fabric to a glossy, shiny, wet-look, patent, PVC or vinyl finish. Keep every existing garment its ORIGINAL type and ORIGINAL (matte) finish — only the specifically requested change may differ.';
   const prev=$('#edit-prev');prev.innerHTML=`<div class="load"><div class="spinner"></div><span>수정 중…</span></div>`;
   try{
     const raw=(await openaiEdit(prompt,imgs))[0];const logoUrl=(!state.commute&&state.settings.logoDefault)?await applyLogo(raw):raw;const root=editG.parentId||editG.id;
