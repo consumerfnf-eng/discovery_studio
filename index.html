@@ -235,7 +235,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <header>
   <div class="bar">
-    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 V01</small></small></div>
+    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 V02</small></small></div>
     <nav id="nav">
       <button data-v="lib" class="on">라이브러리</button>
       <button data-v="gen">생성</button>
@@ -1341,14 +1341,18 @@ function updatePromptPrev(){const plan=computePlan();$('#promptprev').textConten
 /* ---------- OpenAI ---------- */
 // API 키에서 보이지 않는 문자(공백·제로폭·NBSP·줄바꿈·비ASCII)를 제거 — 헤더 오류(non ISO-8859-1) 방지
 function cleanKey(k){return String(k||'').replace(/[^\x21-\x7E]/g,'');}
-async function openaiEdit(prompt,imgs,n){
+async function openaiEdit(prompt,imgs,n,fidelity){
   const st=state.settings;const key=cleanKey(st.apiKey);if(!key)throw new Error('설정에서 API 키를 먼저 입력하세요.');
-  const fd=new FormData();fd.append('model',st.model||'gpt-image-2');fd.append('prompt',prompt);
-  if(st.size&&st.size!=='auto')fd.append('size',st.size);
-  if(st.quality&&st.quality!=='auto')fd.append('quality',st.quality);
-  fd.append('n',String(Math.max(1,Math.min(10,n||1))));
-  for(let i=0;i<imgs.length;i++){fd.append('image[]',await toApiBlob(imgs[i]),`img_${i}.png`);}
-  const r=await fetch(`${st.base.replace(/\/$/,'')}/images/edits`,{method:'POST',headers:{'Authorization':`Bearer ${key}`},body:fd});
+  const blobs=[];for(let i=0;i<imgs.length;i++){blobs.push(await toApiBlob(imgs[i]));}
+  const send=async(withFid)=>{const fd=new FormData();fd.append('model',st.model||'gpt-image-2');fd.append('prompt',prompt);
+    if(st.size&&st.size!=='auto')fd.append('size',st.size);
+    if(st.quality&&st.quality!=='auto')fd.append('quality',st.quality);
+    fd.append('n',String(Math.max(1,Math.min(10,n||1))));
+    if(withFid&&fidelity)fd.append('input_fidelity',fidelity);
+    for(let i=0;i<blobs.length;i++)fd.append('image[]',blobs[i],`img_${i}.png`);
+    return fetch(`${st.base.replace(/\/$/,'')}/images/edits`,{method:'POST',headers:{'Authorization':`Bearer ${key}`},body:fd});};
+  let r=await send(!!fidelity);
+  if(!r.ok&&fidelity){let txt='';try{txt=await r.clone().text();}catch(e){}if(/fidelity|unknown|unsupported|unrecognized|invalid|param/i.test(txt)){r=await send(false);}}
   if(!r.ok){let m=`HTTP ${r.status}`;try{const j=await r.json();m=j.error?.message||m;}catch(e){}throw new Error(m);}
   const j=await r.json();const arr=(j.data||[]).map(d=>d.b64_json).filter(Boolean);if(!arr.length)throw new Error('응답에 이미지가 없습니다.');
   return arr.map(b=>'data:image/png;base64,'+b);
@@ -1886,7 +1890,7 @@ async function runEdit(kind,opt){
   const cur=state.gallery.find(g=>g.id===editShown)||editG;const curImg=Array.isArray(cur.dataUrl)?cur.dataUrl[0]:cur.dataUrl;let prompt,imgs=[curImg];
   const _cat=((cur.category&&cur.category.parent)||'').toUpperCase();const _isBottom=/PANTS|SKIRT/.test(_cat);const _isShoe=/SHOES/.test(_cat);const _isOuterItem=/OUTERWEAR/.test(_cat);
   if(kind==='model'){const m=state.models.find(x=>x.id===opt.modelId);imgs.push(m.dataUrl);prompt='Keep the garment in the first image EXACTLY the same (identical design, color, construction). The output MUST depict the exact person from the SECOND image — their face, hair, skin tone and body — replacing the first image model entirely. Only the pose may follow the first image. Clean studio lighting, neutral background. PRESERVE the DISCOVERY chest logo from the first image EXACTLY — same position, size, print style and spelling; do NOT remove, move, distort or re-draw it.';}
-  else if(kind==='cody')prompt=`LOCALIZED EDIT — reproduce the uploaded image EXACTLY and change ONLY this one thing: ${opt.text}. Treat EVERYTHING ELSE as a LOCKED, unchangeable layer that must be reproduced as-is: keep the model, face, hair, pose, framing, background AND every other garment — the jacket / outerwear, the top / knit / shirt, the bottoms, the shoes and accessories — 100% IDENTICAL to the original, with the same exact design, cut, length, fabric, texture, COLOUR and FINISH. CRITICAL: any jacket, coat, outer or top MUST stay its ORIGINAL MATTE fabric and shape — do NOT make it glossy, shiny, wet-look, patent, PVC, vinyl or a down / quilted PUFFER, do NOT add padding or volume, and do NOT re-texture, re-fit, restyle or re-interpret it in any way. Change ONLY the single item named in the request and nothing else — for example, if the request is to change the bottoms to a skirt, replace ONLY the bottoms with the skirt and leave the top and the outerwear completely untouched. Do NOT add any garment that was not requested. PRESERVE the DISCOVERY chest logo EXACTLY — same position, size and print style.`;
+  else if(kind==='cody')prompt=`LOCALIZED EDIT — start from the uploaded image and carry out EXACTLY the requested change(s), and APPLY EVERY ONE of them (the request may list more than one): ${opt.text}. Everything the request does NOT mention stays a LOCKED, unchangeable layer reproduced AS-IS: keep the model, face, hair, pose, framing, background and every garment or garment-part NOT named 100% IDENTICAL — same design, cut, length, fabric, texture, COLOUR and FINISH. Anything you are NOT asked to change MUST keep its ORIGINAL MATTE fabric and shape — do NOT make anything glossy, shiny, wet-look, patent, PVC, vinyl or a down/quilted PUFFER, do NOT add padding or volume, and do NOT re-texture, re-fit, restyle or re-interpret it. But you MUST fully perform each requested change — e.g. "플리스는 지퍼없이, 바지는 트레이닝 팬츠로 변경" means remove the fleece zipper AND change the trousers into training pants: do BOTH, completely. PRESERVE the DISCOVERY chest logo EXACTLY.`;
   else if(kind==='recolor')prompt="Use the uploaded image as the exact base. Keep the model's face, hair, body, pose, expression, skin tone, camera, lighting, background and the garment's category, silhouette, construction and every other colour unchanged. Apply ONLY the colour/pattern change(s) specified below; change nothing else. Preserve the DISCOVERY chest logo if present.";
   else if(kind==='dxdna'){
     const _hwLine=_isOuterItem
@@ -1910,7 +1914,7 @@ async function runEdit(kind,opt){
   if(kind!=='finish')prompt+=' GLOBAL SAFETY — ABSOLUTELY DO NOT turn any existing garment into a down jacket, quilted jacket or PUFFER, do NOT add down/padding/quilting/puffy volume to anything, and do NOT change any fabric to a glossy, shiny, wet-look, patent, PVC or vinyl finish. Keep every existing garment its ORIGINAL type and ORIGINAL (matte) finish — only the specifically requested change may differ.';
   const prev=$('#edit-prev');prev.innerHTML=`<div class="load"><div class="spinner"></div><span>수정 중…</span></div>`;
   try{
-    const raw=(await openaiEdit(prompt,imgs))[0];const logoUrl=(!state.commute&&state.settings.logoDefault)?await applyLogo(raw):raw;const root=editG.parentId||editG.id;
+    const raw=(await openaiEdit(prompt,imgs,1,'high'))[0];const logoUrl=(!state.commute&&state.settings.logoDefault)?await applyLogo(raw):raw;const root=editG.parentId||editG.id;
     const ng={id:uid(),name:cur.name+' ·'+(kind==='model'?'M':kind==='cody'?'C':kind==='dxdna'?'DX':kind==='recolor'?'RC':'F'),season:cur.season,dataUrl:raw,logoUrl,
       sourceLineId:cur.sourceLineId,refIds:cur.refIds,modelId:kind==='model'?opt.modelId:cur.modelId,fabricId:cur.fabricId,
       category:cur.category,keep:cur.keep,replace:cur.replace,adopt:cur.adopt,
