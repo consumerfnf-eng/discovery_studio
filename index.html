@@ -235,7 +235,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <header>
   <div class="bar">
-    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 V01</small></small></div>
+    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 V02</small></small></div>
     <nav id="nav">
       <button data-v="lib" class="on">라이브러리</button>
       <button data-v="gen">생성</button>
@@ -331,7 +331,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
           </div>
           <div id="commute-pickers" style="display:none">
             <div class="hint" style="margin:0 0 6px;color:var(--pine);font-weight:600">COMMUTE 모드 · CLASSIC·CASUAL(무드) × PERFORMANCE·TECH(기능)을 믹스</div>
-            <div id="cmt-arch-wrap" style="margin:0 0 10px;display:none"><div class="fld">키 아이템 · ARCHETYPE <span class="hint" style="margin:0;font-weight:400">— 선택 시 그 원형으로 유도 · <b>미선택이면 레퍼대로</b></span></div><div class="dxchips" id="cmt-arch-chips"></div></div>
+            <div id="cmt-arch-wrap" style="margin:0 0 10px;display:none"><div class="fld">키 아이템 · ARCHETYPE <span class="hint" style="margin:0;font-weight:400">— 선택 시 그 원형을 <b>베이스로 느슨하게(반영도 ~반)</b> 반영, 레퍼와 섞어 새 디자인 · <b>미선택이면 레퍼대로</b></span></div><div class="dxchips" id="cmt-arch-chips"></div></div>
             <div class="sectlabel">1 · CLASSIC &amp; CASUAL <span class="hint" style="margin:0">— 헤리티지·데일리 무드 (커뮤트 라이브러리에서 셀렉)</span></div>
             <div id="pick-cmt_cc" class="pickbar"></div>
             <div class="sectlabel">2 · PERFORMANCE &amp; TECH <span class="hint" style="margin:0">— 기능·테크 요소 채용 (커뮤트 라이브러리에서 셀렉)</span></div>
@@ -1234,7 +1234,7 @@ function jsonToPrompt(J,plan){
     else if(state.settings.baseModelPrompt)S.push(`SUBJECT / MODEL — ${state.settings.baseModelPrompt.trim()}`);
     const _isTop=/top/i.test(cat.parent||'')||noun==='top', _isOuter=/outer/i.test(cat.parent||'')||noun==='outerwear';
     S.push('MAIN GARMENT — the newly DESIGNED HERO piece is a '+((cat.parent||noun)||'garment').toUpperCase()+' ('+noun+'). It MUST be the main, clearly visible garment and the focus of the image'+(_isTop?' — worn as the OUTERMOST visible top; do NOT cover it with a jacket, coat or heavy outer layer':(_isOuter?' — worn as the outer layer':''))+'.');
-    {const _ad=J.cmt_arch?archDna(J.cmt_arch):'';if(_ad)S.push('ARCHETYPE — build the hero '+noun+' as '+_ad+'. Keep this archetype CLEARLY READABLE as the item type while blending in the distinctive details from the references. Do NOT drift to a different item type.');}
+    {const _ad=J.cmt_arch?archDna(J.cmt_arch):'';if(_ad)S.push('ARCHETYPE DIRECTION (about HALF influence) — use '+_ad+' only as a STARTING GRAMMAR and loose base for the '+noun+': borrow its CORE character (its defining collar/closure/pocket/silhouette cue), then FREELY EVOLVE and reinterpret it together with the reference details into a NEW, distinctive design. Do NOT reproduce a textbook or literal version — aim for roughly HALF this archetype grammar, HALF fresh new design from the references. Keep the same broad item category, but the result must feel NEW, not a template.');}
     {const _g=((plan&&plan.gender)||'').toUpperCase();
      S.push('BODY-ENHANCING PROPORTION — the garment MUST make the body look better, never hide it in volume. '+(_g==='WOMEN'?'WOMEN = POLISHED SCULPTED: a shaped shoulder–waist–hip line that is body-ENHANCING (clean and flattering, not skin-tight), a defined waist and a long lean leg line.':_g==='MEN'?'MEN = SHARP EXPLORER: a defined, subtly built-up shoulder, a clean controlled waist/torso and a long vertical lower-body line that lengthens the legs.':'a clean, body-ENHANCING tailored fit that flatters the figure — defined shoulder line, controlled waist and a long vertical line.')+' Even a BASIC item (hoodie, tee, knit, sweatshirt) must follow this — a trim, tailored, body-skimming fit, NOT an oversized relaxed blob.');
      S.push('FIT CONTROL — a clean, modern TAILORED fit that skims the body with sharp intentional lines. Do NOT render an overly LOOSE, baggy, boxy, slouchy, oversized or exaggerated drop-shoulder fit, and no excess sagging volume (unless a looser fit is explicitly requested in the directions).');}
