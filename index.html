@@ -235,7 +235,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <header>
   <div class="bar">
-    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 V03</small></small></div>
+    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 V01</small></small></div>
     <nav id="nav">
       <button data-v="lib" class="on">라이브러리</button>
       <button data-v="gen">생성</button>
@@ -331,6 +331,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
           </div>
           <div id="commute-pickers" style="display:none">
             <div class="hint" style="margin:0 0 6px;color:var(--pine);font-weight:600">COMMUTE 모드 · CLASSIC·CASUAL(무드) × PERFORMANCE·TECH(기능)을 믹스</div>
+            <div id="cmt-arch-wrap" style="margin:0 0 10px;display:none"><div class="fld">키 아이템 · ARCHETYPE <span class="hint" style="margin:0;font-weight:400">— 선택 시 그 원형으로 유도 · <b>미선택이면 레퍼대로</b></span></div><div class="dxchips" id="cmt-arch-chips"></div></div>
             <div class="sectlabel">1 · CLASSIC &amp; CASUAL <span class="hint" style="margin:0">— 헤리티지·데일리 무드 (커뮤트 라이브러리에서 셀렉)</span></div>
             <div id="pick-cmt_cc" class="pickbar"></div>
             <div class="sectlabel">2 · PERFORMANCE &amp; TECH <span class="hint" style="margin:0">— 기능·테크 요소 채용 (커뮤트 라이브러리에서 셀렉)</span></div>
@@ -811,6 +812,44 @@ function logoRule(type){
   var print=' FORM = FLAT PRINT (프린트): render the mark as a flat tonal screen-print / heat-transfer applied directly onto the fabric — no raised edge, no stitching, no backing plate; it moves and drapes with the fabric like printed ink.';
   return common+((type==='print')?print:patch);
 }
+const COMMUTE_ARCH={
+ OUTERWEAR:[
+  ['Tech Safari','테크 사파리','a Tech Safari jacket — a defined safari/field collar, refined 3D utility chest pockets, a sharp shaped body and clean hem control: organized Explorer utility in a polished city proportion'],
+  ['City Blouson','시티 블루종','a City Blouson — compact outerwear proportion, a refined cuff and hem rib, an action yoke across the back, defined shoulder and a clean sleeve'],
+  ['Harrington','해링턴','a Harrington jacket — classic short-outer grammar (stand collar, clean placket) with HIDDEN technical performance, minimal and refined'],
+  ['Field Jacket','필드 재킷','a Field Jacket — Explorer field utility (flap pockets, subtle drawcord waist) tidied into a refined city proportion'],
+  ['Shirt Jacket','셔츠 재킷','a Shirt Jacket / overshirt — a structured shirt collar and cuff with jacket-level flap-pocket usability and a clean body proportion'],
+  ['Tailored Tech','테일러드 테크','a Tailored Tech Jacket — a clean shoulder and lapel with a soft tech-stretch motion structure, polished front, movement back'],
+  ['Car Coat / Mac','카코트/맥','a Car Coat or Mac — a long vertical line, clean fly-front placket and weather-ready function, minimal'],
+  ['Light Padded','경량 패딩','a Light Padded Outer — clean body-line lightweight insulation at LOW loft, NOT a bulky puffer']
+ ],
+ TOP:[
+  ['Fine Tech Polo','파인 폴로','a Fine Tech Polo — a structured collar, clean shoulder/chest line, refined knit-tech hand'],
+  ['Tech Oxford','테크 옥스포드','a Tech Oxford shirt — oxford collar, cuff and shirt front, polished front and movement-ready back'],
+  ['Tech Shirt','테크 셔츠','a clean Tech Shirt with a refined collar and placket'],
+  ['High-Neck Half-Zip','하프집','a High-Neck Half-Zip top — a tall neck with a short zip placket in fine technical knit'],
+  ['Fine Knit','파인 니트','a Fine Gauge Knit top, clean and refined'],
+  ['Mock / Crew','모크/크루','a Mock-neck or Crew jersey top, clean and body-skimming'],
+  ['Vest','베스트','a tailored or knit Vest layer']
+ ],
+ PANTS:[
+  ['Tapered','테이퍼드','Tapered Tech Trousers — clean hip, tapered leg, long vertical line'],
+  ['Straight','스트레이트','Straight Tech Trousers — clean hip, uninterrupted long straight leg'],
+  ['Tuck Woven','턱 우븐','Tailored Tuck Woven Straight trousers — front tuck pleats, tailored straight leg'],
+  ['Wide','와이드','Tailored Wide trousers — tailored wide leg with controlled drape'],
+  ['Flare','플레어','Flare trousers — straight thigh with a subtle flare below the knee, long clean line'],
+  ['City Cargo','시티 카고','City Cargo trousers — a clean city trouser silhouette with integrated cargo pockets, NOT gorpcore'],
+  ['Tech Chino','테크 치노','a Tech Chino in a technical fabric, clean and tailored']
+ ],
+ SKIRT:[
+  ['Midi Woven','미디 스커트','a Woven Midi Skirt — clean hip, long straight or paneled drape'],
+  ['Subtle Flare','서틀 플레어','a subtle A-line / flare skirt with a clean waist']
+ ],
+ DRESS:[
+  ['Tech Shirt Dress','셔츠 드레스','a Tech Shirt Dress — shirt collar and placket, shaped waist, clean long line']
+ ]
+};
+function archDna(key){if(!key)return'';for(const g in COMMUTE_ARCH){const f=COMMUTE_ARCH[g].find(x=>x[0]===key);if(f)return f[2];}return'';}
 function commuteLogoRule(parent,sub){
   sub=(sub||'').toUpperCase();parent=(parent||'').toUpperCase();
   var place='upper left chest, slightly toward the armhole (never dead-center)',mm='26-32 mm';
@@ -965,7 +1004,7 @@ const state={
   lines:[],refs:[],models:[],fabrics:[],gallery:[],
   pick:{line:null,refs:new Set(),model:null,fabric:null,cmt:{cmt_cc:new Set(),cmt_pt:new Set()}},
   cmt_cc:[],cmt_pt:[],cmt_cody:[],cmt_gallery:[],
-  commute:false, cmtColor:'',
+  commute:false, cmtColor:'', cmtArch:'',
   brief:{keep:new Set(),replace:new Set(),adopt:new Set(),fabricType:'',shoeBal:{upper:50,sole:50}},
   aiAttrs:{}, jsonDirty:false, galFilter:'all', refSecretView:false, galSelMode:false, galSel:new Set(), pose:'auto', quiltRef:null, ctl:{}, ctlDetails:new Set(),
   libFilter:{lines:{gender:'ALL',gcat:'ALL',season:'ALL'},refs:{gender:'ALL',gcat:'ALL',season:'ALL'}},
@@ -1156,6 +1195,7 @@ function buildDesignJSON(){
     color_balance:+($('#colorbal')?$('#colorbal').value:50)/100,
     commute:!!state.commute,
     cmt_color:(state.cmtColor||''),
+    cmt_arch:(state.commute?(state.cmtArch||''):''),
     fill_on:($('#fill-on')?$('#fill-on').checked:false),
     shoe_balance:(parent==='SHOES'?{...state.brief.shoeBal}:null),
     pose:state.pose||'auto',
@@ -1194,6 +1234,10 @@ function jsonToPrompt(J,plan){
     else if(state.settings.baseModelPrompt)S.push(`SUBJECT / MODEL — ${state.settings.baseModelPrompt.trim()}`);
     const _isTop=/top/i.test(cat.parent||'')||noun==='top', _isOuter=/outer/i.test(cat.parent||'')||noun==='outerwear';
     S.push('MAIN GARMENT — the newly DESIGNED HERO piece is a '+((cat.parent||noun)||'garment').toUpperCase()+' ('+noun+'). It MUST be the main, clearly visible garment and the focus of the image'+(_isTop?' — worn as the OUTERMOST visible top; do NOT cover it with a jacket, coat or heavy outer layer':(_isOuter?' — worn as the outer layer':''))+'.');
+    {const _ad=J.cmt_arch?archDna(J.cmt_arch):'';if(_ad)S.push('ARCHETYPE — build the hero '+noun+' as '+_ad+'. Keep this archetype CLEARLY READABLE as the item type while blending in the distinctive details from the references. Do NOT drift to a different item type.');}
+    {const _g=((plan&&plan.gender)||'').toUpperCase();
+     S.push('BODY-ENHANCING PROPORTION — the garment MUST make the body look better, never hide it in volume. '+(_g==='WOMEN'?'WOMEN = POLISHED SCULPTED: a shaped shoulder–waist–hip line that is body-ENHANCING (clean and flattering, not skin-tight), a defined waist and a long lean leg line.':_g==='MEN'?'MEN = SHARP EXPLORER: a defined, subtly built-up shoulder, a clean controlled waist/torso and a long vertical lower-body line that lengthens the legs.':'a clean, body-ENHANCING tailored fit that flatters the figure — defined shoulder line, controlled waist and a long vertical line.')+' Even a BASIC item (hoodie, tee, knit, sweatshirt) must follow this — a trim, tailored, body-skimming fit, NOT an oversized relaxed blob.');
+     S.push('FIT CONTROL — a clean, modern TAILORED fit that skims the body with sharp intentional lines. Do NOT render an overly LOOSE, baggy, boxy, slouchy, oversized or exaggerated drop-shoulder fit, and no excess sagging volume (unless a looser fit is explicitly requested in the directions).');}
     if(_isTop){const _isShirt=/SHIRT|BLOUSE/.test((cat.sub||'').toUpperCase());S.push('TOP CATEGORY LOCK — the hero piece is a TOP worn directly on the torso (t-shirt, knit, sweatshirt'+(_isShirt?', shirt or blouse':'')+'). It MUST stay a soft TOP, NOT outerwear: do NOT turn it into a jacket, blouson, overshirt, zip-up or any outer layer; do NOT give it a full separating front zip, a storm flap, a heavy jacket/stand collar or technical outer hardware'+(_isShirt?' (a normal shirt collar and button placket ARE fine for a shirt/blouse)':', and do NOT add a collar to a collarless knit or tee')+'. Keep it lightweight and body-worn, in soft top fabric (jersey, knit'+(_isShirt?', woven shirting':'')+'), NOT a technical outer shell.');}
     S.push('STYLE FUSION — fuse CLASSIC heritage tailoring and CASUAL everyday ease (from the CLASSIC & CASUAL references) with PERFORMANCE technical function and TECH modern materials & hardware (from the PERFORMANCE & TECH references), applied to the '+noun+'. Blend into ONE cohesive, premium urban commute look, balanced per DESIGN BALANCE below. Do NOT turn the '+noun+' into a different category.');
     S.push('ADOPT ONLY THE REAL DETAILS — look carefully at the references and adopt ONLY the design details that are ACTUALLY present in them: the real neckline/collar type, the real closure (or NO closure if it is a pullover), sleeves, plackets, pocket style, the distinctive seam/drape lines, and proportion. Take the DISTINCTIVE details from the CLASSIC & CASUAL reference (e.g. an asymmetric wrap/drape line or offset seam) and the material & technical cues from the PERFORMANCE & TECH reference, and BLEND the two faithfully. CRITICAL — do NOT INVENT any feature the references do not have: if neither reference has a hood, do NOT add a hood; if the neckline is a soft DRAPE or COWL, keep it a drape/cowl (NOT a hood); if a reference is a PULLOVER with no zip, keep it a pullover and do NOT add a zipper or opening; only render an asymmetric/offset zip when a reference genuinely shows that zip. You may slightly reinterpret the lines, but keep each detail TRUE to what the references actually show. DESIGN BALANCE: low = CLASSIC & CASUAL leads, high = PERFORMANCE & TECH leads. Do NOT default to a generic zip-up jacket.');
@@ -1524,6 +1568,10 @@ function openCommuteArchive(store){
 async function loadCommuteStores(){for(const st of [...COMMUTE_SLOTS,'cmt_cody','cmt_gallery']){try{state[st]=await storeAll(st);}catch(e){try{state[st]=await allOf(st);}catch(_){state[st]=[];}}}}
 function fillCodyColorSelect(){const sel=$('#cmt-cody-color');if(!sel)return;const cur=sel.value;sel.innerHTML='<option value="">코디 자동/없음</option>'+COORD_COLORS.map(c=>`<option value="${c[1]}">${c[0]}</option>`).join('');sel.value=cur;}
 function updateCodyHint(){const h=$('#cmt-cody-hint');if(!h)return;const n=(state.cmt_cody||[]).length;h.textContent=n?`저장된 코디 ${n}개 중 최신 코디를 자동 적용 (레이어링 구조 + 톤온톤)`:'코디 탭에 클래식 코디를 올리면 생성 시 자동으로 레이어링해 줍니다 (없으면 기본 클래식 코디)';}
+function renderCmtArchChips(){const wrap=$('#cmt-arch-wrap'),el=$('#cmt-arch-chips');if(!el)return;const parent=($('#cat-parent')||{}).value||'';const list=COMMUTE_ARCH[parent]||[];
+  if(!state.commute||!list.length){if(wrap)wrap.style.display='none';return;}
+  if(wrap)wrap.style.display='';const cur=state.cmtArch||'';
+  el.innerHTML='<span class="dxchip none '+(cur===''?'on':'')+'" data-arch=""><span class="sw"></span>자동(레퍼대로)</span>'+list.map(a=>'<span class="dxchip '+(cur===a[0]?'on':'')+'" data-arch="'+esc(a[0])+'" title="'+esc(a[2])+'">'+esc(a[1])+'</span>').join('');}
 function renderCmtColorChips(){const el=$('#cmtcolor-chips');if(!el)return;const cur=state.cmtColor||'';
   const pal=dxPalette();
   el.innerHTML='<span class="dxchip none '+(cur===''?'on':'')+'" data-cmtcol=""><span class="sw"></span>자동(밸런스)</span>'+pal.map(c=>'<span class="dxchip '+(cur===c[1]?'on':'')+'" data-cmtcol="'+c[1]+'" title="'+esc(c[0])+' '+c[1]+'"><span class="sw" style="background:'+c[1]+'"></span>'+esc(c[0])+'</span>').join('')+(pal.length?'':'<span class="hint" style="margin:0 0 0 6px">시즌 팔레트 없음 — 설정 &gt; 시즌 생성 컬러 팔레트에서 추가</span>');
@@ -1533,7 +1581,7 @@ function applyCommuteMode(on){
   if(on){const lg=$('#logo-generate');if(lg&&!lg.checked){lg.checked=true;}}
   const np=$('#normal-pickers'),cp=$('#commute-pickers');if(np)np.style.display=on?'none':'';if(cp)cp.style.display=on?'block':'none';
   {const bn=$('#brief-normal'),bc=$('#brief-commute');if(bn)bn.style.display='none';if(bc)bc.style.display='';}
-  try{renderCmtColorChips();}catch(e){}
+  try{renderCmtColorChips();}catch(e){}try{renderCmtArchChips();}catch(e){}
   const stt=$('#cmt-state');if(stt)stt.textContent=on?'· 켜짐':'· 꺼짐';const btn=$('#btn-cmt-toggle');if(btn)btn.textContent=on?'비활성화':'활성화';
   // 라이브러리 탭 전환: 커뮤트면 라인·레퍼 숨기고 CLASSIC&CASUAL/PERFORMANCE&TECH 노출
   $$('.normal-tab').forEach(t=>t.style.display=on?'none':'');
@@ -1619,6 +1667,7 @@ document.addEventListener('click',e=>{if(e.target.closest&&(e.target.closest('#m
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){const m=$('#modal');if(m&&m.classList.contains('on'))closeModal();}});
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='cat-parent'){try{applyCategory(true);}catch(_){}}});
 document.addEventListener('click',e=>{const c=e.target.closest&&e.target.closest('#cmtcolor-chips [data-cmtcol]');if(!c)return;state.cmtColor=c.dataset.cmtcol||'';renderCmtColorChips();try{refreshJSON();}catch(_){}});
+document.addEventListener('click',e=>{const c=e.target.closest&&e.target.closest('#cmt-arch-chips [data-arch]');if(!c)return;state.cmtArch=c.dataset.arch||'';renderCmtArchChips();try{refreshJSON();}catch(_){}});
 document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closest('#cat-controls [data-ctl],#cat-controls [data-ctld]');if(!el)return;if(el.dataset.ctl!==undefined&&el.dataset.ctlv!==undefined){const id=el.dataset.ctl,v=el.dataset.ctlv;state.ctl[id]=(state.ctl[id]===v)?'':v;}else if(el.dataset.ctld!==undefined){const v=el.dataset.ctld;state.ctlDetails.has(v)?state.ctlDetails.delete(v):state.ctlDetails.add(v);}try{renderCatControls($('#cat-parent').value);refreshJSON();}catch(_){}});
 
 /* ---------- pills ---------- */
@@ -1640,6 +1689,7 @@ function applyCategory(reset){
   renderCatControls(parent);
 
   if(reset){state.brief.keep=new Set(C.keepDefault);state.brief.replace=new Set(C.replaceDefault);state.brief.adopt=new Set(C.adoptDefault);state.aiAttrs={};}
+  if(reset)state.cmtArch='';try{renderCmtArchChips();}catch(e){}
   renderPills();if(shoe)renderShoeBal();refreshJSON(true);
 }
 function renderShoeBal(){
@@ -1837,8 +1887,11 @@ async function runEdit(kind,opt){
   else if(kind==='cody')prompt=`Make ONE small change to the uploaded image: ${opt.text}. This is a MINOR DETAIL / styling edit to the EXISTING garments — it is NOT a redesign, NOT a replacement garment, NOT a new layer and NOT a material change. KEEP EVERY GARMENT EXACTLY AS IT IS in the photo — same TYPE, silhouette, construction, panels, length, fabric, colour and finish: a coat stays the SAME coat, a mac/trench stays a mac/trench, a shirt stays a shirt. NEVER turn any garment into a down jacket, quilted jacket or PUFFER, never add down/padding/quilting or puffy volume, and never change any fabric's finish to glossy, shiny, wet-look, patent, PVC or high-sheen (matte stays matte). Do NOT add any extra garment, layer or outerwear that was not requested. Keep the same model, face, pose, framing, background and colour. The requested change may touch a garment's own detail/length/fit/hardware OR a coordinating item — apply ONLY that. PRESERVE the DISCOVERY chest logo EXACTLY — same position, size and print style; do NOT remove, move, distort or alter it.`;
   else if(kind==='recolor')prompt="Use the uploaded image as the exact base. Keep the model's face, hair, body, pose, expression, skin tone, camera, lighting, background and the garment's category, silhouette, construction and every other colour unchanged. Apply ONLY the colour/pattern change(s) specified below; change nothing else. Preserve the DISCOVERY chest logo if present.";
   else if(kind==='dxdna'){
-    if(_isBottom||_isShoe)prompt="Use the uploaded image as the exact base. Keep the model's face, hair, body, pose, expression, skin tone, camera, lighting, background and the garment's CATEGORY, overall silhouette and MAIN COLOUR unchanged. This item is "+(_isShoe?'FOOTWEAR':'BOTTOMS (pants/skirt)')+", so apply DISCOVERY NEW COMMUTE DNA ONLY where it fits this item and NOTHING else: HARDWARE — silver zip pulls, silver tabs and trims, matte silver/gunmetal, flat, minimal and clearly visible; magnetic hidden snaps and clean buttons; subtle modular/detachable utility details; sculpted utility pockets and clean action-tailoring seams. Do NOT add a collar, lapel, hood, lining accent, jacket, coat, vest, top or ANY outerwear, and do NOT add down, padding, quilting or puffer volume. Keep it clean and minimal. Do NOT add any brand name, wordmark, caption or lettering. Preserve the small DISCOVERY chest logo if present. Photorealistic high-end quality.";
-    else prompt="Use the uploaded image as the exact base. Keep the model's face, hair, body, pose, expression, skin tone, camera, lighting, background and the garment's CATEGORY, overall silhouette and MAIN COLOUR unchanged. This is a DESIGN-DETAIL refinement applying the DISCOVERY NEW COMMUTE DNA to the EXISTING garment, NOT a replacement and NOT a new layer. Apply these DNA details cleanly and minimally: HARDWARE — silver zipper pulls and zip points, silver tabs and silver trims, matte silver/gunmetal, flat, minimal and clearly visible. CLOSURES — magnetic HIDDEN snaps plus clean buttons as the default closure system. MODULAR — subtle detachable/modular elements as standard (e.g. a detachable collar, hood or pocket), integrated and clean, never bulky. EXPLORER COLLAR — a refined 2-way safari/field collar (open = polished classic, closed = stand neck)"+(/TOP/.test(_cat)?' ONLY if the existing top naturally has a collar; never add a collar to a collarless tee or knit':'')+". SCULPTED UTILITY — pockets and seams that tidy the shoulder/waist/hip proportion. ACTION TAILORING — polished clean front, movement construction at back/inside. LINING ACCENT — reveal a subtle glimpse of inner lining ONLY where it naturally shows (under-collar/collar stand and the inner front placket facing), kept SYMMETRICAL left and right — never one side only, never an invented cuff: if the outer look is CASUAL the lining reads MORE FORMAL, if FORMAL the lining carries a refined COLOUR ACCENT; tasteful and small-dose. COLOUR — keep every colour within a refined muted commute palette; no loud off-palette colours. Do NOT add any brand name, wordmark, caption or lettering. Preserve the small DISCOVERY chest logo if present. Photorealistic high-end quality.";
+    const _hwLine=_isOuterItem
+      ? 'HARDWARE — refine ONLY the hardware that ALREADY EXISTS on the garment to a matte SILVER / gunmetal, flat, minimal finish; use magnetic HIDDEN snaps and clean buttons only where a closure already exists. Do NOT ADD any new zipper, zip pocket, zip point, snap or metal closure that the base garment does not already have.'
+      : 'HARDWARE — resolve details TONE-ON-TONE with the SELF-FABRIC (covered or tonal closures, self-fabric tabs and ties); use NO exposed silver, gunmetal or metal hardware. Do NOT ADD any zipper, zip pocket, snap, stud or metal closure that the base garment does not already have.';
+    if(_isBottom||_isShoe)prompt="Use the uploaded image as the exact base. Keep the model's face, hair, body, pose, expression, skin tone, camera, lighting, background and the garment's CATEGORY, overall silhouette and MAIN COLOUR unchanged. This item is "+(_isShoe?'FOOTWEAR':'BOTTOMS (pants/skirt)')+". Apply DISCOVERY NEW COMMUTE DNA ONLY where it already fits this item and NOTHING else: "+_hwLine+" Subtle modular/detachable utility details and sculpted utility pockets ONLY where they suit the existing design. Do NOT add a collar, lapel, hood, lining accent, jacket, coat, vest, top or ANY outerwear, and do NOT add down, padding, quilting or puffer volume. Keep it clean and minimal. Do NOT add any brand name, wordmark, caption or lettering. Preserve the small DISCOVERY chest logo if present. Photorealistic high-end quality.";
+    else prompt="Use the uploaded image as the exact base. Keep the model's face, hair, body, pose, expression, skin tone, camera, lighting, background and the garment's CATEGORY, overall silhouette and MAIN COLOUR unchanged. This is a DESIGN-DETAIL refinement of the EXISTING garment, NOT a replacement, NOT a new layer and NOT a redesign. "+_hwLine+" MODULAR — subtle detachable/modular elements only where they suit the existing design, never bulky. "+(_isOuterItem?'EXPLORER COLLAR — refine to a 2-way collar ONLY if the garment ALREADY has a collar or stand; never add a collar, stand or hood to a piece that does not have one. ':'Keep the existing neckline/collar exactly as-is; never add a collar, stand, hood or placket the garment does not already have. ')+"SCULPTED UTILITY & ACTION TAILORING — tidy the existing pockets, seams and proportion. LINING ACCENT — a subtle tonal lining glimpse ONLY where a lining naturally shows AND only if the piece has a real opening, kept symmetrical. COLOUR — keep every colour within a refined muted commute palette. Do NOT add any brand name, wordmark, caption or lettering. Preserve the small DISCOVERY chest logo if present. Photorealistic high-end quality.";
   }
   if(kind==='dxdna'||kind==='recolor'){prompt+=' GARMENT LOCK — the base image already contains a FIXED set of garments; do NOT add, invent or introduce ANY new garment, layer, jacket, coat, vest, puffer, top or outerwear that is not already present, and do NOT add down, padding, quilting or puffer volume. Keep exactly the same garments and the same category, and keep each garment TYPE unchanged (a coat stays a coat, a mac/trench stays a mac/trench, a shirt stays a shirt); NEVER convert any garment into a down jacket, quilted jacket or puffer. FABRIC LOCK — keep the EXACT fabric type, texture, weave and surface finish/sheen of each garment in the base image: if a fabric is matte keep it matte; do NOT make any fabric glossy, shiny, wet-look, patent, PVC, vinyl or high-sheen, and do NOT add a technical/performance sheen. Only apply the specific changes requested.';const sc=opt.shell?dxColorName(opt.shell):'',lc=opt.lining?dxColorName(opt.lining):'';const ORD=['','first','second','third','fourth','fifth'];let sIdx=0,lIdx=0;
     if(opt.shellPat){const p=dxPatterns().find(x=>x.id===opt.shellPat);if(p){imgs.push(p.dataUrl);sIdx=imgs.length;}}
@@ -2114,7 +2167,7 @@ async function exportDataset(){const rows=state.gallery.filter(g=>g.designJSON).
 async function importAll(file){const data=JSON.parse(await file.text());for(const store of['lines','refs','models','fabrics','gallery']){if(Array.isArray(data[store]))for(const it of data[store]){state[store].push(it);await storePut(store,it);}}if(data.settings){Object.assign(state.settings,data.settings);state.settings.id='main';await putOf('settings',state.settings);}renderAll();loadSettingsUI();toast('가져오기 완료');}
 
 /* ---------- wiring ---------- */
-function switchView(v){$$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));$$('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));if(v==='gen'){renderPicks();try{renderCmtColorChips();}catch(e){}}if(v==='gallery')galleryGrid();if(v==='compare')compareSelect();if(v==='settings')loadSettingsUI();}
+function switchView(v){$$('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));$$('.view').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));if(v==='gen'){renderPicks();try{renderCmtColorChips();}catch(e){}try{renderCmtArchChips();}catch(e){}}if(v==='gallery')galleryGrid();if(v==='compare')compareSelect();if(v==='settings')loadSettingsUI();}
 function bindCloudReload(){const b=$('#btn-cloud-reload');if(b&&!b._b){b._b=1;b.addEventListener('click',reloadCloud);}}
 function renderAll(){bindCloudReload();['lines','refs','models','fabrics'].forEach(libGrid);refreshCounts();renderPicks();renderPills();galleryGrid();compareSelect();}
 function fillSeasonSelects(){$('#season').innerHTML=SEASONS.map(s=>`<option ${s==='27FW'?'selected':''}>${s}</option>`).join('');}
