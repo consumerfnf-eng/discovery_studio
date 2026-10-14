@@ -235,7 +235,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <header>
   <div class="bar">
-    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)" id="appver">·이미지 V05</small></small></div>
+    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)" id="appver">·이미지 V01</small></small></div>
     <nav id="nav">
       <button data-v="lib" class="on">라이브러리</button>
       <button data-v="gen">생성</button>
@@ -804,7 +804,7 @@ async function toApiBlob(src){ // OpenAI가 avif 등 미지원 → 캔버스로 
   return await toBlob(src); // 폴백(재인코딩 실패 시 원본)
 }
 
-const APP_VER='V05'; // 배포 확인용 — 헤더·수정 디버그에 표시
+const APP_VER='V01'; // 배포 확인용 — 헤더·수정 디버그에 표시
 /* ---------- defaults ---------- */
 const DNA_DEFAULT=`Premium technical outdoor-lifestyle house. Clean, refined urban-outdoor construction; sharp modern proportions, clean high-density stitching and premium finishing throughout — city-polished rather than tactical. Fabric surfaces read natural MATTE woven or knit by default; sheen, insulation, padding or quilting appear ONLY when the design explicitly specifies them. QUILTING RULE: when the design calls for quilting, render EXACTLY the quilting pattern specified by the design (wide horizontal, horizontal channel, wave, square grid, hotmelt, vertical channel, diamond, or none) — do NOT default to diamond; keep stitch tension consistent and premium. LOGO RULE: do NOT draw any brand logo, patch, label or lettering on the garment — the surface stays completely blank and unbranded; the DISCOVERY logo is added later in post-production.`;
 const BASE_MODEL_DEFAULT=`Beautiful young adult Korean female K-pop idol, unmistakably Korean features: small refined oval face, soft V-line jaw, clear luminous skin, natural glossy hair. Soft cool grey-blue seamless studio backdrop, soft diffused editorial lookbook lighting with a gentle natural shadow, wearing a Discovery-inspired premium piece.`;
@@ -1947,12 +1947,12 @@ async function runEdit(kind,opt){
     if(sc||lc||sIdx||lIdx)prompt+=' Keep all other colours as they are in the base image.';
     if(kind==='dxdna'&&cur.category&&cur.category.parent)prompt+=' '+commuteLogoRule(cur.category.parent,cur.category.sub)+' Ensure EXACTLY ONE such lockup is present and correct on this garment: if a good one already exists keep it; if it is missing, misspelled, duplicated, or badly placed (for example sitting on a pocket), FIX it to this single correct placement. Do NOT add any wordmark at the bottom of the image.';
     if(opt.comment){prompt+=' ADDITIONAL USER DIRECTION — also apply this specific change: '+opt.comment+'. Apply it together with the changes above, changing only what this direction asks and keeping the model, pose, background and everything else unchanged.';if(/magnetic|마그네틱/i.test(opt.comment))prompt+=' MAGNETIC CLOSURE = HIDDEN EXTERIOR — conceal the magnetic snaps behind an inner placket/facing; the outside front stays clean and smooth with NO visible snap caps, studs, buttons or metal tabs.';}}
-  else {const _padPart=_isOuterItem?(' down fill volume: '+volumeText(opt.volume)+';'):' keep the garment FLAT and UNPADDED with NO down fill, NO puffer volume and NO quilting (this is not a down/padded piece — do NOT turn it into a puffer);';prompt='Keep the garment DESIGN, silhouette, construction, category and model identical — this is ONLY a surface-finish re-render, NOT a redesign and NOT a new layer. Re-render only: fabric sheer: '+sheerText(opt.sheer)+'; surface sheen: '+shimmerText(opt.shimmer)+' — keep this a subtle fabric sheen only, NEVER a wet-look, patent, PVC or vinyl high-gloss;'+_padPart+' Keep the original colour, fabric type and category; do NOT add any new garment, jacket or layer. PRESERVE the DISCOVERY chest logo EXACTLY — do NOT remove, move, distort or re-draw it.';}
+  if(kind==='finish'){const _padPart=_isOuterItem?(' down fill volume: '+volumeText(opt.volume)+';'):' keep the garment FLAT and UNPADDED with NO down fill, NO puffer volume and NO quilting (this is not a down/padded piece — do NOT turn it into a puffer);';prompt='Keep the garment DESIGN, silhouette, construction, category and model identical — this is ONLY a surface-finish re-render, NOT a redesign and NOT a new layer. Re-render only: fabric sheer: '+sheerText(opt.sheer)+'; surface sheen: '+shimmerText(opt.shimmer)+' — keep this a subtle fabric sheen only, NEVER a wet-look, patent, PVC or vinyl high-gloss;'+_padPart+' Keep the original colour, fabric type and category; do NOT add any new garment, jacket or layer. PRESERVE the DISCOVERY chest logo EXACTLY — do NOT remove, move, distort or re-draw it.';}
   if(kind!=='cody')prompt+=' Do NOT render any brand name, wordmark, caption or lettering anywhere in the image or background (no "DISCOVERY" / "DISCOVERY EXPEDITION" text); the only allowed mark is the small chest logo if already present.';
   if(kind!=='finish'&&kind!=='cody')prompt+=' Keep every existing garment its original garment type and its original fabric surface — woven stays woven, knit stays knit, a matte surface stays matte, and overall volume stays the same. Change only what the instruction above specifically asks for.';
   const prev=$('#edit-prev');prev.innerHTML=`<div class="load"><div class="spinner"></div><span>수정 중…</span></div>`;
   try{
-    const raw=(await openaiEdit(prompt,imgs,1,'high'))[0];const logoUrl=(!state.commute&&state.settings.logoDefault)?await applyLogo(raw):raw;const root=editG.parentId||editG.id;
+    const raw=(await openaiEdit(prompt,imgs,1,/gpt-image-1/.test(state.settings.model||'')?'high':undefined))[0];const logoUrl=(!state.commute&&state.settings.logoDefault)?await applyLogo(raw):raw;const root=editG.parentId||editG.id;
     const ng={id:uid(),name:cur.name+' ·'+(kind==='model'?'M':kind==='cody'?'C':kind==='dxdna'?'DX':kind==='recolor'?'RC':'F'),season:cur.season,dataUrl:raw,logoUrl,
       sourceLineId:cur.sourceLineId,refIds:cur.refIds,modelId:kind==='model'?opt.modelId:cur.modelId,fabricId:cur.fabricId,
       category:cur.category,keep:cur.keep,replace:cur.replace,adopt:cur.adopt,
