@@ -235,7 +235,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <header>
   <div class="bar">
-    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)" id="appver">·이미지 V02</small></small></div>
+    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)" id="appver">·이미지 V05</small></small></div>
     <nav id="nav">
       <button data-v="lib" class="on">라이브러리</button>
       <button data-v="gen">생성</button>
@@ -337,6 +337,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
             <div class="sectlabel">2 · PERFORMANCE &amp; TECH <span class="hint" style="margin:0">— 기능·테크 요소 채용 (커뮤트 라이브러리에서 셀렉)</span></div>
             <div id="pick-cmt_pt" class="pickbar"></div>
             <div class="sectlabel">3 · 코디(STYLING) <span class="hint" style="margin:0">— 저장된 코디를 <b>자동 적용</b> · 레이어링 구조를 가져와 생성 컬러에 맞춰 톤온톤으로 코디</span></div>
+            <div id="cmt-gender-chips" style="margin:6px 0 2px"></div>
             <div class="hint" id="cmt-cody-hint" style="margin:2px 0 0"></div>
           </div>
           <div class="grid2" style="gap:18px">
@@ -803,7 +804,7 @@ async function toApiBlob(src){ // OpenAI가 avif 등 미지원 → 캔버스로 
   return await toBlob(src); // 폴백(재인코딩 실패 시 원본)
 }
 
-const APP_VER='V02'; // 배포 확인용 — 헤더·수정 디버그에 표시
+const APP_VER='V05'; // 배포 확인용 — 헤더·수정 디버그에 표시
 /* ---------- defaults ---------- */
 const DNA_DEFAULT=`Premium technical outdoor-lifestyle house. Clean, refined urban-outdoor construction; sharp modern proportions, clean high-density stitching and premium finishing throughout — city-polished rather than tactical. Fabric surfaces read natural MATTE woven or knit by default; sheen, insulation, padding or quilting appear ONLY when the design explicitly specifies them. QUILTING RULE: when the design calls for quilting, render EXACTLY the quilting pattern specified by the design (wide horizontal, horizontal channel, wave, square grid, hotmelt, vertical channel, diamond, or none) — do NOT default to diamond; keep stitch tension consistent and premium. LOGO RULE: do NOT draw any brand logo, patch, label or lettering on the garment — the surface stays completely blank and unbranded; the DISCOVERY logo is added later in post-production.`;
 const BASE_MODEL_DEFAULT=`Beautiful young adult Korean female K-pop idol, unmistakably Korean features: small refined oval face, soft V-line jaw, clear luminous skin, natural glossy hair. Soft cool grey-blue seamless studio backdrop, soft diffused editorial lookbook lighting with a gentle natural shadow, wearing a Discovery-inspired premium piece.`;
@@ -1103,10 +1104,11 @@ function computePlan(){
     cc.forEach(r=>{images.push(r.dataUrl);roles.push('CLASSIC & CASUAL reference — the DESIGN BASE: take its SILHOUETTE and DISTINCTIVE DESIGN DETAILS — collar or HOOD, the closure type AND its placement (reproduce an ASYMMETRIC / OFFSET / diagonal zipper if the reference has one, not a plain centre zip), lapel, plackets, pockets, seams, proportion and length — plus its heritage/daily commute mood. Use these as the DESIGN BASIS but REINTERPRET and slightly VARY each detail into a NEW design — do NOT copy the reference 1:1 and do NOT flatten it into a generic jacket.');});
     pt.forEach(r=>{images.push(r.dataUrl);roles.push('PERFORMANCE & TECH reference — adopt its technical performance function, sporty construction, modern technical fabric and hardware (apply to the main garment category, do NOT force it into an outer jacket)');});
     if(shell){images.push(shell.dataUrl);roles.push('a flat FABRIC SWATCH image (material sample) — replicate ONLY its weave, texture, finish and sheen across the shell; do NOT take its colour or shape');}
-    const _gg=((model&&model.gender)||(cc[0]&&cc[0].gender)||(pt[0]&&pt[0].gender)||'').toUpperCase();
+    const _gg=(state.cmtGender||(model&&model.gender)||(cc[0]&&cc[0].gender)||(pt[0]&&pt[0].gender)||'').toUpperCase();
     const _codyPool=(state.cmt_cody||[]).slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
     const _codyG=_gg?_codyPool.filter(c=>((c.gender||'').toUpperCase())===_gg):[];
-    const codyRefs=(_codyG.length?_codyG:_codyPool).slice(0,2); // 성별 매칭 코디 자동 적용(해당 성별 없으면 전체 최신)
+    const _codyU=_gg?_codyPool.filter(c=>{const x=(c.gender||'').toUpperCase();return !x||x==='UNISEX';}):[];
+    const codyRefs=(_codyG.length?_codyG:_codyU.length?_codyU:_codyPool).slice(0,2); // 성별 일치 → 공용 → 전체 최신
     codyRefs.forEach(r=>{images.push(r.dataUrl);roles.push('STYLING / CODI reference — coordinate the FULL commute look (inner collared shirt, an optional mid-layer that FOLLOWS THIS reference — e.g. a fine-gauge sweater/knit, a half-zip, a vest or a cardigan, VARIED not always a half-zip, tailored trousers or shorts, accessories) after this styling; the newly designed main garment stays the hero, everything else styled to match');});
     const _lo=!!($('#logo-generate')&&$('#logo-generate').checked);
     if(_lo&&state.settings.logoDataUrl){images.push(state.settings.logoDataUrl);roles.push('DISCOVERY LOGO reference — reproduce ONLY this mark on the wearer left chest; ignore its background/box');}
@@ -1342,6 +1344,30 @@ function updatePromptPrev(){const plan=computePlan();$('#promptprev').textConten
 /* ---------- OpenAI ---------- */
 // API 키에서 보이지 않는 문자(공백·제로폭·NBSP·줄바꿈·비ASCII)를 제거 — 헤더 오류(non ISO-8859-1) 방지
 function cleanKey(k){return String(k||'').replace(/[^\x21-\x7E]/g,'');}
+async function openaiEditRaw(prompt,imgs,p){
+  const st=state.settings;const key=cleanKey(st.apiKey);if(!key)throw new Error('API 키 없음');
+  const fd=new FormData();fd.append('model',p.model);fd.append('prompt',prompt);
+  if(p.size)fd.append('size',p.size);if(p.quality)fd.append('quality',p.quality);if(p.fid)fd.append('input_fidelity',p.fid);fd.append('n','1');
+  for(let i=0;i<imgs.length;i++)fd.append('image[]',await toApiBlob(imgs[i]),`img_${i}.png`);
+  const r=await fetch(`${st.base.replace(/\/$/,'')}/images/edits`,{method:'POST',headers:{'Authorization':`Bearer ${key}`},body:fd});
+  if(!r.ok){let m=`HTTP ${r.status}`;try{const j=await r.json();m=j.error?.message||m;}catch(e){}throw new Error(m);}
+  const j=await r.json();const b=(j.data||[])[0]&&j.data[0].b64_json;if(!b)throw new Error('응답에 이미지 없음');return 'data:image/png;base64,'+b;
+}
+async function codyAB(text){
+  const box=$('#edit-ab');const cur=state.gallery.find(g=>g.id===editShown)||editG;const img=Array.isArray(cur.dataUrl)?cur.dataUrl[0]:cur.dataUrl;
+  const st=state.settings;const M=st.model||'gpt-image-2';
+  const wrap=`Apply only this change to the image: ${text}. Keep everything else identical — the same model, pose and framing, and every garment not mentioned unchanged in design, colour and fabric.`;
+  const V=[
+    {k:'A',lab:`현재 설정 그대로 · ${M} · q:${st.quality||'-'} · ${st.size||'-'} · fid high`,pr:wrap,p:{model:M,quality:st.quality&&st.quality!=='auto'?st.quality:'',size:st.size&&st.size!=='auto'?st.size:'',fid:'high'}},
+    {k:'B',lab:`파라미터 최소 · ${M} · quality/size/fid 없음`,pr:wrap,p:{model:M}},
+    {k:'C',lab:`문구만 그대로 (ChatGPT식) · ${M} · 파라미터 없음`,pr:text,p:{model:M}},
+    {k:'D',lab:`gpt-image-1 · fid high · quality/size 없음`,pr:wrap,p:{model:'gpt-image-1',fid:'high'}}
+  ];
+  const tile=(v,inner)=>`<div style="flex:1 1 45%;min-width:120px"><div style="font-size:10.5px;font-weight:600;color:var(--ink-70);margin-bottom:3px">${v.k} · ${esc(v.lab)}</div>${inner}</div>`;
+  box.innerHTML=`<div style="margin-top:10px;padding:10px;border:1px solid var(--line);border-radius:10px"><div style="font-size:11px;color:var(--ink-45);margin-bottom:8px">원인 진단 — 같은 이미지·같은 요청, 호출 조건만 다름. 어느 칸이 매트+변경 반영인지 확인하세요.</div><div id="ab-grid" style="display:flex;flex-wrap:wrap;gap:8px">${V.map(v=>tile(v,`<div id="ab-${v.k}" style="aspect-ratio:2/3;background:var(--line-2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--ink-45)">생성 중…</div>`)).join('')}</div></div>`;
+  await Promise.allSettled(V.map(async v=>{const el=$('#ab-'+v.k);try{const u=await openaiEditRaw(v.pr,[img],v.p);el.outerHTML=`<img src="${u}" style="width:100%;border-radius:8px;cursor:zoom-in" onclick="openLightbox(this.src)">`;}catch(e){el.textContent='실패: '+e.message;el.style.color='var(--alert)';el.style.padding='8px';}}));
+  toast('원인 진단 완료 — 4칸 비교');
+}
 async function openaiEdit(prompt,imgs,n,fidelity){
   const st=state.settings;const key=cleanKey(st.apiKey);if(!key)throw new Error('설정에서 API 키를 먼저 입력하세요.');
   const blobs=[];for(let i=0;i<imgs.length;i++){blobs.push(await toApiBlob(imgs[i]));}
@@ -1352,8 +1378,8 @@ async function openaiEdit(prompt,imgs,n,fidelity){
     if(withFid&&fidelity)fd.append('input_fidelity',fidelity);
     for(let i=0;i<blobs.length;i++)fd.append('image[]',blobs[i],`img_${i}.png`);
     return fetch(`${st.base.replace(/\/$/,'')}/images/edits`,{method:'POST',headers:{'Authorization':`Bearer ${key}`},body:fd});};
-  let r=await send(!!fidelity);
-  if(!r.ok&&fidelity){let txt='';try{txt=await r.clone().text();}catch(e){}if(/fidelity|unknown|unsupported|unrecognized|invalid|param/i.test(txt)){r=await send(false);}}
+  let r=await send(!!fidelity);openaiEdit.fidUsed=!!fidelity;
+  if(!r.ok&&fidelity){let txt='';try{txt=await r.clone().text();}catch(e){}if(/fidelity|unknown|unsupported|unrecognized|invalid|param/i.test(txt)){openaiEdit.fidUsed=false;r=await send(false);}}
   if(!r.ok){let m=`HTTP ${r.status}`;try{const j=await r.json();m=j.error?.message||m;}catch(e){}throw new Error(m);}
   const j=await r.json();const arr=(j.data||[]).map(d=>d.b64_json).filter(Boolean);if(!arr.length)throw new Error('응답에 이미지가 없습니다.');
   return arr.map(b=>'data:image/png;base64,'+b);
@@ -1574,7 +1600,16 @@ function openCommuteArchive(store){
 }
 async function loadCommuteStores(){for(const st of [...COMMUTE_SLOTS,'cmt_cody','cmt_gallery']){try{state[st]=await storeAll(st);}catch(e){try{state[st]=await allOf(st);}catch(_){state[st]=[];}}}}
 function fillCodyColorSelect(){const sel=$('#cmt-cody-color');if(!sel)return;const cur=sel.value;sel.innerHTML='<option value="">코디 자동/없음</option>'+COORD_COLORS.map(c=>`<option value="${c[1]}">${c[0]}</option>`).join('');sel.value=cur;}
-function updateCodyHint(){const h=$('#cmt-cody-hint');if(!h)return;const n=(state.cmt_cody||[]).length;h.textContent=n?`저장된 코디 ${n}개 중 최신 코디를 자동 적용 (레이어링 구조 + 톤온톤)`:'코디 탭에 클래식 코디를 올리면 생성 시 자동으로 레이어링해 줍니다 (없으면 기본 클래식 코디)';}
+function updateCodyHint(){
+  const gc=$('#cmt-gender-chips');const g=state.cmtGender||'';
+  if(gc){gc.innerHTML='<span style="font-size:11px;color:var(--ink-70);margin-right:6px">생성 성별</span>'+[['','자동'],['WOMEN','WOMEN'],['MEN','MEN']].map(o=>`<span class="dxchip ${g===o[0]?'on':''}" data-cmtg="${o[0]}" style="cursor:pointer">${o[1]}</span>`).join('');
+    gc.querySelectorAll('[data-cmtg]').forEach(el=>el.onclick=()=>{state.cmtGender=el.dataset.cmtg;updateCodyHint();try{updatePromptPrev();}catch(e){}});}
+  const h=$('#cmt-cody-hint');if(!h)return;const all=state.cmt_cody||[];const n=all.length;
+  if(!n){h.textContent='코디 탭에 클래식 코디를 올리면 생성 시 자동으로 레이어링해 줍니다 (없으면 기본 클래식 코디)';return;}
+  const cnt=k=>all.filter(c=>((c.gender||'').toUpperCase())===k).length;const nw=cnt('WOMEN'),nm=cnt('MEN'),nu=n-nw-nm;
+  const tag=`코디 ${n}개 (WOMEN ${nw} · MEN ${nm} · 공용/미지정 ${nu})`;
+  if(!g){h.textContent=tag+' — 성별 자동: 모델·레퍼에 성별 태그가 없으면 구분 없이 최신 2개 적용. 확실하게 하려면 WOMEN/MEN을 고르세요.';return;}
+  const m=cnt(g);h.textContent=tag+' — '+(m?`${g} 코디 최신 ${Math.min(2,m)}개 적용`:(nu?`${g} 코디 없음 → 공용/미지정 코디 적용`:`${g} 코디 없음 → 전체 최신 적용 (코디 카드를 눌러 성별 지정)`))+' · 체형 프로포션도 '+g+' 기준';}
 function renderCmtArchChips(){const wrap=$('#cmt-arch-wrap'),el=$('#cmt-arch-chips');if(!el)return;const parent=($('#cat-parent')||{}).value||'';const list=COMMUTE_ARCH[parent]||[];
   if(!state.commute||!list.length){if(wrap)wrap.style.display='none';return;}
   if(wrap)wrap.style.display='';const cur=state.cmtArch||'';
@@ -1813,7 +1848,7 @@ async function aiDiff(g,line){
 
 /* ---------- gallery edit ---------- */
 let editG=null,editShown=null;
-function showEditDbg(v){const el=$('#edit-dbg');if(!el)return;el.innerHTML=(v&&v.prompt)?`<details style="margin-top:8px"><summary style="font-size:10.5px;color:var(--ink-45);cursor:pointer">이 결과에 전송된 지시 전문 보기${v.appVer?' · 앱 ·이미지 '+esc(v.appVer):''}</summary><div style="font-size:10.5px;color:var(--ink-70);line-height:1.55;margin-top:4px;white-space:pre-wrap;border:1px solid var(--line);border-radius:8px;padding:8px;max-height:170px;overflow:auto">${esc(v.prompt)}</div></details>`:'';}
+function showEditDbg(v){const el=$('#edit-dbg');if(!el)return;el.innerHTML=(v&&v.prompt)?`<details style="margin-top:8px"><summary style="font-size:10.5px;color:var(--ink-45);cursor:pointer">이 결과에 전송된 지시 전문 보기${v.appVer?' · 앱 ·이미지 '+esc(v.appVer):''}${v.fid?' · fidelity:'+esc(v.fid):''}</summary><div style="font-size:10.5px;color:var(--ink-70);line-height:1.55;margin-top:4px;white-space:pre-wrap;border:1px solid var(--line);border-radius:8px;padding:8px;max-height:170px;overflow:auto">${esc(v.prompt)}</div></details>`:'';}
 function openEdit(gid){
   editG=state.gallery.find(g=>g.id===gid);editShown=editG.id;normalizeDxPalettes();
   $('#m-title').textContent='갤러리 수정 · '+editG.name;
@@ -1827,7 +1862,7 @@ function openEdit(gid){
         <div id="edit-models" class="cards" style="grid-template-columns:repeat(auto-fill,minmax(80px,1fr))"></div>
         <button class="btn sm" id="edit-model-go" style="margin-top:8px">선택 모델로 재생성</button>
         <div class="sectlabel">코디 변경 &amp; 디테일 수정</div><input id="edit-cody" class="inp" placeholder="예: 아우터 기장을 엉덩이까지 · 소매 롱하게 · 와이드 데님 코디">
-        <button class="btn sm" id="edit-cody-go" style="margin-top:8px">코디 &amp; 디테일 수정 생성</button>
+        <button class="btn sm" id="edit-cody-go" style="margin-top:8px">코디 &amp; 디테일 수정 생성</button> <button class="btn sm" id="edit-cody-ab" style="margin-top:8px" title="같은 요청을 호출 조건 4가지로 동시에 돌려 글로시 원인을 갈라냅니다 (갤러리 저장 안 함, 이미지 4장 비용)">원인 진단 · 4종 비교</button><div id="edit-ab"></div>
 <div class="sectlabel">${state.commute?'DX COMMUTE DNA':'겉감·안감 컬러·패턴 변경'}</div>
         <div class="hint" style="margin:2px 0 8px">${state.commute?'모델·옷 형태는 유지하고 <b>DISCOVERY NEW COMMUTE DNA</b>를 2차로 입힙니다 — 실버 부자재 · 히든스냅+버튼 · 모듈/탈부착 · Explorer 2-way 칼라 · Sculpted 포켓 · 안감 포인트. 아래에서 <b>겉감·안감을 지정 팔레트 컬러 또는 등록 패턴</b>으로 돌려볼 수 있어요.':'모델·포즈·배경·디자인은 그대로 두고 <b>겉감·안감 컬러/패턴만</b> 시즌 팔레트·등록 패턴으로 바꿉니다.'} (패턴은 <b>설정 &gt; DX 패턴 스와치</b>에서 추가)</div>
         <div class="fld" style="margin-top:4px">COMMENT · 추가 수정 지시 (선택)</div>
@@ -1852,6 +1887,7 @@ function openEdit(gid){
   $('#e-volume-h').textContent=volumeHint($('#e-volume').value);
   $('#edit-model-go').onclick=()=>{if(!chosenModel){toast('모델을 선택하세요.');return;}runEdit('model',{modelId:chosenModel});};
   $('#edit-cody-go').onclick=()=>{const t=$('#edit-cody').value.trim();if(!t){toast('변경 내용을 입력하세요.');return;}runEdit('cody',{text:t});};
+  $('#edit-cody-ab').onclick=()=>{const t=$('#edit-cody').value.trim();if(!t){toast('변경 내용을 입력하세요.');return;}codyAB(t);};
   state.dxSel={shell:'',lining:''};state.dxOn={shell:false,lining:false};state.dxPat={shell:'',lining:''};
   function dxSelText(kind){const se=$('#dx-'+kind+'-sel');if(!se)return;
     if(!state.dxOn[kind]){se.textContent='· 변경 안 함';return;}
@@ -1892,7 +1928,7 @@ async function runEdit(kind,opt){
   const cur=state.gallery.find(g=>g.id===editShown)||editG;const curImg=Array.isArray(cur.dataUrl)?cur.dataUrl[0]:cur.dataUrl;let prompt,imgs=[curImg];
   const _cat=((cur.category&&cur.category.parent)||'').toUpperCase();const _isBottom=/PANTS|SKIRT/.test(_cat);const _isShoe=/SHOES/.test(_cat);const _isOuterItem=/OUTERWEAR/.test(_cat);
   if(kind==='model'){const m=state.models.find(x=>x.id===opt.modelId);imgs.push(m.dataUrl);prompt='Keep the garment in the first image EXACTLY the same (identical design, color, construction). The output MUST depict the exact person from the SECOND image — their face, hair, skin tone and body — replacing the first image model entirely. Only the pose may follow the first image. Clean studio lighting, neutral background. PRESERVE the DISCOVERY chest logo from the first image EXACTLY — same position, size, print style and spelling; do NOT remove, move, distort or re-draw it.';}
-  else if(kind==='cody')prompt=`Apply only this change to the image: ${opt.text}. Keep everything else identical — the same model, pose and framing, and every garment not mentioned unchanged in design, colour and fabric. Keep the small DISCOVERY chest logo. Do not render legible logo text.`;
+  else if(kind==='cody'){const _pv=$('#edit-prev');_pv.innerHTML='<div class="load"><div class="spinner"></div><span>수정 중…</span></div>';let _req=opt.text;try{const _t=(await openaiVision([{role:'system',content:'You convert a fashion photo-edit request (usually Korean) into ONE explicit English instruction for an image editing model. Write each requested change as a direct imperative sentence, e.g. "Replace the trousers with a skirt. Remove the zipper from the fleece top." Include every requested change, add nothing that was not requested, and mention no other garments. Output only the instruction text.'},{role:'user',content:opt.text}])||'').trim().replace(/^["']|["']$/g,'');if(_t)_req=_t;}catch(e){}prompt=`Apply these changes to the attached photo: ${_req} Carry out every listed change fully and visibly — including replacing a garment with a different type of garment when asked. When changing a garment, change only the named aspect and keep its fabric, colour and fit as in the original. Everything not mentioned stays exactly as the original photo: same model, pose, framing and background, and every other garment keeps its original design, colour and fabric surface (a matte fabric stays matte). Keep the small DISCOVERY chest logo. Do not render legible logo text.`;}
   else if(kind==='recolor')prompt="Use the uploaded image as the exact base. Keep the model's face, hair, body, pose, expression, skin tone, camera, lighting, background and the garment's category, silhouette, construction and every other colour unchanged. Apply ONLY the colour/pattern change(s) specified below; change nothing else. Preserve the DISCOVERY chest logo if present.";
   else if(kind==='dxdna'){
     const _hwLine=_isOuterItem
@@ -1916,12 +1952,12 @@ async function runEdit(kind,opt){
   if(kind!=='finish'&&kind!=='cody')prompt+=' Keep every existing garment its original garment type and its original fabric surface — woven stays woven, knit stays knit, a matte surface stays matte, and overall volume stays the same. Change only what the instruction above specifically asks for.';
   const prev=$('#edit-prev');prev.innerHTML=`<div class="load"><div class="spinner"></div><span>수정 중…</span></div>`;
   try{
-    const raw=(await openaiEdit(prompt,imgs,1,kind==='cody'?undefined:'high'))[0];const logoUrl=(!state.commute&&state.settings.logoDefault)?await applyLogo(raw):raw;const root=editG.parentId||editG.id;
+    const raw=(await openaiEdit(prompt,imgs,1,'high'))[0];const logoUrl=(!state.commute&&state.settings.logoDefault)?await applyLogo(raw):raw;const root=editG.parentId||editG.id;
     const ng={id:uid(),name:cur.name+' ·'+(kind==='model'?'M':kind==='cody'?'C':kind==='dxdna'?'DX':kind==='recolor'?'RC':'F'),season:cur.season,dataUrl:raw,logoUrl,
       sourceLineId:cur.sourceLineId,refIds:cur.refIds,modelId:kind==='model'?opt.modelId:cur.modelId,fabricId:cur.fabricId,
       category:cur.category,keep:cur.keep,replace:cur.replace,adopt:cur.adopt,
       sheer:kind==='finish'?opt.sheer:cur.sheer,shimmer:kind==='finish'?opt.shimmer:cur.shimmer,volume:kind==='finish'?opt.volume:cur.volume,balance:cur.balance,
-      designJSON:cur.designJSON,prompt,appVer:APP_VER,extra:cur.extra,parentId:root,createdAt:Date.now()};
+      designJSON:cur.designJSON,prompt,appVer:APP_VER,fid:(openaiEdit.fidUsed?'high':'off'),extra:cur.extra,parentId:root,createdAt:Date.now()};
     state.gallery.push(ng);await storePut('gallery',ng);editShown=ng.id;prev.innerHTML=`<img src="${logoUrl}">`;renderVersions();showEditDbg(ng);galleryGrid();compareSelect();toast('수정본 생성됨');
   }catch(e){prev.innerHTML=`<img src="${cur.logoUrl||cur.dataUrl}">`;const msg=/safety system|rejected by the safety/i.test(e.message||'')?'OpenAI 안전 시스템이 이 요청을 거부했어요(코드 오류 아님). 노출이 많은 이미지·특정 포즈에서 자주 발생 — 다른 포즈를 고르거나 옷이 더 덮인 이미지로 시도해 보세요.':('수정 실패: '+e.message);toast(msg);}
 }
