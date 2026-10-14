@@ -235,7 +235,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <header>
   <div class="bar">
-    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)">·이미지 V01</small></small></div>
+    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)" id="appver">·이미지 V02</small></small></div>
     <nav id="nav">
       <button data-v="lib" class="on">라이브러리</button>
       <button data-v="gen">생성</button>
@@ -803,6 +803,7 @@ async function toApiBlob(src){ // OpenAI가 avif 등 미지원 → 캔버스로 
   return await toBlob(src); // 폴백(재인코딩 실패 시 원본)
 }
 
+const APP_VER='V02'; // 배포 확인용 — 헤더·수정 디버그에 표시
 /* ---------- defaults ---------- */
 const DNA_DEFAULT=`Premium technical outdoor-lifestyle house. Clean, refined urban-outdoor construction; sharp modern proportions, clean high-density stitching and premium finishing throughout — city-polished rather than tactical. Fabric surfaces read natural MATTE woven or knit by default; sheen, insulation, padding or quilting appear ONLY when the design explicitly specifies them. QUILTING RULE: when the design calls for quilting, render EXACTLY the quilting pattern specified by the design (wide horizontal, horizontal channel, wave, square grid, hotmelt, vertical channel, diamond, or none) — do NOT default to diamond; keep stitch tension consistent and premium. LOGO RULE: do NOT draw any brand logo, patch, label or lettering on the garment — the surface stays completely blank and unbranded; the DISCOVERY logo is added later in post-production.`;
 const BASE_MODEL_DEFAULT=`Beautiful young adult Korean female K-pop idol, unmistakably Korean features: small refined oval face, soft V-line jaw, clear luminous skin, natural glossy hair. Soft cool grey-blue seamless studio backdrop, soft diffused editorial lookbook lighting with a gentle natural shadow, wearing a Discovery-inspired premium piece.`;
@@ -1812,13 +1813,14 @@ async function aiDiff(g,line){
 
 /* ---------- gallery edit ---------- */
 let editG=null,editShown=null;
+function showEditDbg(v){const el=$('#edit-dbg');if(!el)return;el.innerHTML=(v&&v.prompt)?`<details style="margin-top:8px"><summary style="font-size:10.5px;color:var(--ink-45);cursor:pointer">이 결과에 전송된 지시 전문 보기${v.appVer?' · 앱 ·이미지 '+esc(v.appVer):''}</summary><div style="font-size:10.5px;color:var(--ink-70);line-height:1.55;margin-top:4px;white-space:pre-wrap;border:1px solid var(--line);border-radius:8px;padding:8px;max-height:170px;overflow:auto">${esc(v.prompt)}</div></details>`:'';}
 function openEdit(gid){
   editG=state.gallery.find(g=>g.id===gid);editShown=editG.id;normalizeDxPalettes();
   $('#m-title').textContent='갤러리 수정 · '+editG.name;
   $('#m-body').innerHTML=`
     <div class="editgrid">
       <div><div class="preview zoomable" id="edit-prev"><img src="${editG.logoUrl||editG.dataUrl}"></div>
-        <div class="miniver" id="edit-vers"></div>
+        <div class="miniver" id="edit-vers"></div><div id="edit-dbg"></div>
         <button class="btn sm" style="margin-top:12px;width:100%;justify-content:center" id="edit-dl">이 이미지 다운로드</button></div>
       <div>
         <div class="sectlabel" style="margin-top:0">모델 변경</div><div class="hint">같은 옷을 다른 모델/포즈로.</div>
@@ -1843,7 +1845,7 @@ function openEdit(gid){
   $('#edit-models').innerHTML=state.models.length?state.models.map(m=>`<div class="card sw" data-emodel="${m.id}"><span class="pick">✓</span><span class="thumb" style="background-image:url('${thumb(m.dataUrl)}')"></span></div>`).join(''):'<div class="hint">기본모델을 먼저 올려주세요.</div>';
   let chosenModel=null;
   $$('#edit-models .card').forEach(c=>c.onclick=()=>{$$('#edit-models .card').forEach(x=>x.classList.remove('sel'));c.classList.add('sel');chosenModel=c.dataset.emodel;});
-  renderVersions();
+  renderVersions();showEditDbg(editG);
   $('#e-sheer').oninput=e=>$('#e-sheer-v').textContent=e.target.value;
   $('#e-shimmer').oninput=e=>$('#e-shimmer-v').textContent=e.target.value;
   $('#e-volume').oninput=e=>{$('#e-volume-v').textContent=e.target.value;$('#e-volume-h').textContent=volumeHint(e.target.value);};
@@ -1885,7 +1887,7 @@ function openEdit(gid){
 }
 function editVersions(){const root=editG.parentId||editG.id;return state.gallery.filter(g=>g.id===root||g.parentId===root);}
 function renderVersions(){const el=$('#edit-vers');el.innerHTML=editVersions().sort((a,b)=>a.createdAt-b.createdAt).map(v=>`<img data-ver="${v.id}" class="${v.id===editShown?'on':''}" src="${v.logoUrl||v.dataUrl}">`).join('');
-  $$('#edit-vers img').forEach(im=>im.onclick=()=>{editShown=im.dataset.ver;const v=state.gallery.find(g=>g.id===editShown);$('#edit-prev').innerHTML=`<img src="${v.logoUrl||v.dataUrl}">`;$$('#edit-vers img').forEach(x=>x.classList.toggle('on',x.dataset.ver===editShown));});}
+  $$('#edit-vers img').forEach(im=>im.onclick=()=>{editShown=im.dataset.ver;const v=state.gallery.find(g=>g.id===editShown);$('#edit-prev').innerHTML=`<img src="${v.logoUrl||v.dataUrl}">`;showEditDbg(v);$$('#edit-vers img').forEach(x=>x.classList.toggle('on',x.dataset.ver===editShown));});}
 async function runEdit(kind,opt){
   const cur=state.gallery.find(g=>g.id===editShown)||editG;const curImg=Array.isArray(cur.dataUrl)?cur.dataUrl[0]:cur.dataUrl;let prompt,imgs=[curImg];
   const _cat=((cur.category&&cur.category.parent)||'').toUpperCase();const _isBottom=/PANTS|SKIRT/.test(_cat);const _isShoe=/SHOES/.test(_cat);const _isOuterItem=/OUTERWEAR/.test(_cat);
@@ -1919,8 +1921,8 @@ async function runEdit(kind,opt){
       sourceLineId:cur.sourceLineId,refIds:cur.refIds,modelId:kind==='model'?opt.modelId:cur.modelId,fabricId:cur.fabricId,
       category:cur.category,keep:cur.keep,replace:cur.replace,adopt:cur.adopt,
       sheer:kind==='finish'?opt.sheer:cur.sheer,shimmer:kind==='finish'?opt.shimmer:cur.shimmer,volume:kind==='finish'?opt.volume:cur.volume,balance:cur.balance,
-      designJSON:cur.designJSON,prompt,extra:cur.extra,parentId:root,createdAt:Date.now()};
-    state.gallery.push(ng);await storePut('gallery',ng);editShown=ng.id;prev.innerHTML=`<img src="${logoUrl}">`;renderVersions();galleryGrid();compareSelect();toast('수정본 생성됨');
+      designJSON:cur.designJSON,prompt,appVer:APP_VER,extra:cur.extra,parentId:root,createdAt:Date.now()};
+    state.gallery.push(ng);await storePut('gallery',ng);editShown=ng.id;prev.innerHTML=`<img src="${logoUrl}">`;renderVersions();showEditDbg(ng);galleryGrid();compareSelect();toast('수정본 생성됨');
   }catch(e){prev.innerHTML=`<img src="${cur.logoUrl||cur.dataUrl}">`;const msg=/safety system|rejected by the safety/i.test(e.message||'')?'OpenAI 안전 시스템이 이 요청을 거부했어요(코드 오류 아님). 노출이 많은 이미지·특정 포즈에서 자주 발생 — 다른 포즈를 고르거나 옷이 더 덮인 이미지로 시도해 보세요.':('수정 실패: '+e.message);toast(msg);}
 }
 
