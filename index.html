@@ -235,7 +235,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 </div>
 <header>
   <div class="bar">
-    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)" id="appver">·이미지 V02</small></small></div>
+    <div class="wordmark">Discovery<small>AI Image Design Studio</small><small class="team">소비자전략팀 <small class="team" style="color:var(--pine)" id="appver">·이미지 V04</small></small></div>
     <nav id="nav">
       <button data-v="lib" class="on">라이브러리</button>
       <button data-v="gen">생성</button>
@@ -804,7 +804,7 @@ async function toApiBlob(src){ // OpenAI가 avif 등 미지원 → 캔버스로 
   return await toBlob(src); // 폴백(재인코딩 실패 시 원본)
 }
 
-const APP_VER='V02'; // 배포 확인용 — 헤더·수정 디버그에 표시
+const APP_VER='V04'; // 배포 확인용 — 헤더·수정 디버그에 표시
 /* ---------- defaults ---------- */
 const DNA_DEFAULT=`Premium technical outdoor-lifestyle house. Clean, refined urban-outdoor construction; sharp modern proportions, clean high-density stitching and premium finishing throughout — city-polished rather than tactical. Fabric surfaces read natural MATTE woven or knit by default; sheen, insulation, padding or quilting appear ONLY when the design explicitly specifies them. QUILTING RULE: when the design calls for quilting, render EXACTLY the quilting pattern specified by the design (wide horizontal, horizontal channel, wave, square grid, hotmelt, vertical channel, diamond, or none) — do NOT default to diamond; keep stitch tension consistent and premium. LOGO RULE: do NOT draw any brand logo, patch, label or lettering on the garment — the surface stays completely blank and unbranded; the DISCOVERY logo is added later in post-production.`;
 const BASE_MODEL_DEFAULT=`Beautiful young adult Korean female K-pop idol, unmistakably Korean features: small refined oval face, soft V-line jaw, clear luminous skin, natural glossy hair. Soft cool grey-blue seamless studio backdrop, soft diffused editorial lookbook lighting with a gentle natural shadow, wearing a Discovery-inspired premium piece.`;
@@ -1094,6 +1094,13 @@ const POSE_PROMPTS={
 function renderGenPose(){const el=$('#gen-pose');if(!el)return;el.innerHTML=POSE_LIST.map(p=>'<button class="togglepill '+(state.pose===p.id?'on':'')+'" data-gpose="'+p.id+'">'+p.ko+'</button>').join('');}
 
 /* ---------- plan (images + roles) ---------- */
+function codyPoolFor(g){const all=state.cmt_cody||[];g=(g||'').toUpperCase();if(!g)return all;
+  return all.filter(c=>{const x=(c.gender||'').toUpperCase();return x===g||!x||x==='UNISEX';});} // 해당 성별 + 공용(미지정) 함께 랜덤 풀
+function pickCody(g){const pool=codyPoolFor(g);if(!pool.length){state._codyPick=null;return [];}
+  const key=(g||'')+'|'+pool.map(c=>c.id).join(',');const ck=state._codyPick;
+  if(ck&&ck.key===key){const got=ck.ids.map(id=>pool.find(c=>c.id===id)).filter(Boolean);if(got.length)return got;}
+  const sh=pool.slice();for(let i=sh.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[sh[i],sh[j]]=[sh[j],sh[i]];}
+  const out=sh.slice(0,2);state._codyPick={key,ids:out.map(c=>c.id)};return out;}
 function computePlan(){
   if(state.commute){
     const model=state.models.find(m=>m.id===state.pick.model);
@@ -1106,10 +1113,7 @@ function computePlan(){
     pt.forEach(r=>{images.push(r.dataUrl);roles.push('PERFORMANCE & TECH reference — adopt its technical performance function, sporty construction and hardware'+((+($('#matperf')?$('#matperf').value:50))>=60?' and its modern technical fabric':' (but NOT its fabric — the fabric is set by MATERIAL CHARACTER)')+' (apply to the main garment category, do NOT force it into an outer jacket)');});
     if(shell){images.push(shell.dataUrl);roles.push('a flat FABRIC SWATCH image (material sample) — replicate ONLY its weave, texture, finish and sheen across the shell; do NOT take its colour or shape');}
     const _gg=(state.cmtGender||(model&&model.gender)||(cc[0]&&cc[0].gender)||(pt[0]&&pt[0].gender)||'').toUpperCase();
-    const _codyPool=(state.cmt_cody||[]).slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
-    const _codyG=_gg?_codyPool.filter(c=>((c.gender||'').toUpperCase())===_gg):[];
-    const _codyU=_gg?_codyPool.filter(c=>{const x=(c.gender||'').toUpperCase();return !x||x==='UNISEX';}):[];
-    const codyRefs=(_codyG.length?_codyG:_codyU.length?_codyU:_codyPool).slice(0,2); // 성별 일치 → 공용 → 전체 최신
+    const codyRefs=pickCody(_gg); // 성별 풀(일치 → 공용, 반대 성별은 절대 안 씀)에서 랜덤 2개, 생성 1회 동안 고정
     codyRefs.forEach(r=>{images.push(r.dataUrl);roles.push('STYLING / CODI reference — coordinate the FULL commute look (inner collared shirt, an optional mid-layer that FOLLOWS THIS reference — e.g. a fine-gauge sweater/knit, a half-zip, a vest or a cardigan, VARIED not always a half-zip, tailored trousers or shorts, accessories) after this styling; the newly designed main garment stays the hero, everything else styled to match');});
     const _lo=!!($('#logo-generate')&&$('#logo-generate').checked);
     if(_lo&&state.settings.logoDataUrl){images.push(state.settings.logoDataUrl);roles.push('DISCOVERY LOGO reference — reproduce ONLY this mark on the wearer left chest; ignore its background/box');}
@@ -1254,8 +1258,8 @@ function jsonToPrompt(J,plan){
     if((plan.ccRefs||[]).length>=2)S.push('MULTIPLE CLASSIC & CASUAL references — BLEND them evenly into ONE coherent base: merge their shared silhouette, proportion, collar/lapel and overall mood. Do not copy only one; take the strongest common traits from all of them.');
     if((plan.ptRefs||[]).length>=2)S.push('MULTIPLE PERFORMANCE & TECH references — BLEND them evenly: combine their technical features, hardware, seams and pockets from all of them into one cohesive technical layer. Do not pick only one.');
     if(plan.codyRefs&&plan.codyRefs.length){
-      if(_isOuter)S.push('STYLING / CODI — take the LAYERING STRUCTURE and styling from the CODI reference image(s): which pieces are worn and how they are layered (inner shirt at collar/hem/cuffs, a mid-layer that follows the reference — a fine-gauge sweater/knit, half-zip, vest or cardigan, VARIED across looks, tailored trousers/shorts, a belt). Apply this put-together layering with the hero '+noun+' as the outer layer. RE-COLOUR the layered pieces to COORDINATE with the main garment colour (TONE-ON-TONE or tastefully complementary); do NOT copy reference colours when they clash. Refined, classic commute styling.');
-      else S.push('STYLING / CODI ('+noun+') — take ONLY the inner-base and bottoms styling from the CODI reference (e.g. a shirt shown at collar/hem/cuffs, OR a shirt layered under a fine-gauge sweater/knit, clean tailored trousers or shorts, a belt — vary the inner combination to match the reference). The hero '+noun+' is the OUTERMOST garment: do NOT add any jacket, coat, blazer or outer layer over it, and do NOT put the '+noun+' underneath another piece. RE-COLOUR the styled pieces to COORDINATE (TONE-ON-TONE or complementary) with the '+noun+' colour; do NOT copy reference colours when they clash. Refined, classic commute styling.');
+      if(_isOuter)S.push('STYLING / CODI — take the LAYERING STRUCTURE and styling from the CODI reference image(s): which pieces are worn and how they are layered (inner shirt at collar/hem/cuffs, a mid-layer that follows the reference — a fine-gauge sweater/knit, half-zip, vest or cardigan, VARIED across looks, tailored trousers/shorts, a belt). Apply this put-together layering with the hero '+noun+' as the outer layer. COLOUR — where a CODI reference colour already HARMONISES with the main garment colour (tone-on-tone, a natural neutral, or a refined complementary accent), KEEP that colour on part of the styling (for example one layered piece); re-colour only the pieces whose colours would clash so the whole look reads coordinated. Refined, classic commute styling.');
+      else S.push('STYLING / CODI ('+noun+') — take ONLY the inner-base and bottoms styling from the CODI reference (e.g. a shirt shown at collar/hem/cuffs, OR a shirt layered under a fine-gauge sweater/knit, clean tailored trousers or shorts, a belt — vary the inner combination to match the reference). The hero '+noun+' is the OUTERMOST garment: do NOT add any jacket, coat, blazer or outer layer over it, and do NOT put the '+noun+' underneath another piece. COLOUR — where a CODI reference colour already HARMONISES with the '+noun+' colour (tone-on-tone, a natural neutral, or a refined complementary accent), KEEP that colour on part of the styling (for example the bottoms or the inner piece); re-colour only the pieces whose colours would clash so the whole look reads coordinated. Refined, classic commute styling.');
     }
     else{
       if(_isOuter)S.push('STYLING — build a refined CLASSIC commute look with the '+noun+' as the outer layer: a neat inner shirt with a VARIED mid-layer (fine-gauge sweater/knit, half-zip, vest or cardigan — not always a half-zip), and clean tailored bottoms — all TONE-COORDINATED with the '+noun+' colour and put-together.');
@@ -1444,6 +1448,7 @@ async function analyzeFabric(){
 
 /* ---------- generate ---------- */
 async function doGenerate(){
+  if(state.commute)state._codyPick=null; // 생성할 때마다 코디 랜덤 재추첨
   if(state.commute){const c=state.pick.cmt;if(!COMMUTE_SLOTS.some(k=>c[k]&&c[k].size)){toast('CLASSIC & CASUAL 또는 PERFORMANCE & TECH에서 최소 하나를 선택하세요.');return;}}
   else{
   {const cp=($('#cat-parent')||{}).value;if(cp&&!catEnabled(cp)){toast('"'+cp+'" 카테고리는 개발중입니다. 현재 OUTERWEAR·TOP·PANTS만 생성 가능합니다.');return;}}
@@ -1610,8 +1615,8 @@ function updateCodyHint(){
   if(!n){h.textContent='코디 탭에 클래식 코디를 올리면 생성 시 자동으로 레이어링해 줍니다 (없으면 기본 클래식 코디)';return;}
   const cnt=k=>all.filter(c=>((c.gender||'').toUpperCase())===k).length;const nw=cnt('WOMEN'),nm=cnt('MEN'),nu=n-nw-nm;
   const tag=`코디 ${n}개 (WOMEN ${nw} · MEN ${nm} · 공용/미지정 ${nu})`;
-  if(!g){h.textContent=tag+' — 성별 자동: 모델·레퍼에 성별 태그가 없으면 구분 없이 최신 2개 적용. 확실하게 하려면 WOMEN/MEN을 고르세요.';return;}
-  const m=cnt(g);h.textContent=tag+' — '+(m?`${g} 코디 최신 ${Math.min(2,m)}개 적용`:(nu?`${g} 코디 없음 → 공용/미지정 코디 적용`:`${g} 코디 없음 → 전체 최신 적용 (코디 카드를 눌러 성별 지정)`))+' · 체형 프로포션도 '+g+' 기준';}
+  if(!g){h.textContent=tag+' — 성별 자동: 모델·레퍼에 성별 태그가 없으면 구분 없이 전체 중 랜덤 2개. 확실하게 하려면 WOMEN/MEN을 고르세요.';return;}
+  const m=cnt(g)+nu;h.textContent=tag+' — '+(m?`${g} ${cnt(g)}개 + 공용 ${nu}개 = ${m}개 중 랜덤 ${Math.min(2,m)}개 적용 (생성할 때마다 새로 뽑음)`:`${g}·공용 코디 없음 → 기본 클래식 코디 (코디 카드를 눌러 성별 지정)`)+' · 체형 프로포션도 '+g+' 기준';}
 function renderCmtArchChips(){const wrap=$('#cmt-arch-wrap'),el=$('#cmt-arch-chips');if(!el)return;const parent=($('#cat-parent')||{}).value||'';const list=COMMUTE_ARCH[parent]||[];
   if(!state.commute||!list.length){if(wrap)wrap.style.display='none';return;}
   if(wrap)wrap.style.display='';const cur=state.cmtArch||'';
